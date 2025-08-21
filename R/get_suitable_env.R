@@ -5,6 +5,7 @@ get_suitable_env <- function(niche,
                              env_bg,
                              out = c("data.frame", "spatial", "both"),
                              distances = FALSE) {
+
   out <- tolower(match.arg(out))
 
   # --- 1) Input validation and coercion ---
@@ -60,41 +61,23 @@ get_suitable_env <- function(niche,
     }
 
     # Predictor columns will be all raster layers (exclude x,y)
-    pred_cols <- setdiff(names(env_bg_df), c("x", "y"))
+    niche_vars <- setdiff(names(env_bg_df), c("x", "y"))
 
-    if (length(pred_cols) < niche$dimen) {
+    if (length(niche_vars) < niche$dimen) {
       stop("Raster has fewer predictor layers than 'niche$dimen'.")
     }
 
-    # All predictors must be numeric
-    non_num <- pred_cols[!vapply(env_bg_df[pred_cols], is.numeric, logical(1))]
-
-    if (length(non_num)) {
-      stop(sprintf("These raster-derived columns must be numeric: %s",
-                   paste(non_num, collapse = ", ")))
-    }
-
-    # Use the first 'dimen' predictors in the same order as the niche definition
-    # If you prefer named matching, pass the intended names to this function later.
-    use_cols <- pred_cols[seq_len(niche$dimen)]
   } else {
     # data.frame or matrix path (non-spatial outputs)
     if (!(is.matrix(env_bg) || is.data.frame(env_bg))) {
       stop("For 'data.frame' output, 'env_bg' must be a matrix or data.frame.")
     }
+
     env_bg_df <- as.data.frame(env_bg)
+    niche_vars <- setdiff(names(env_bg_df), c("x", "y"))
 
     if (ncol(env_bg_df) < niche$dimen) {
       stop("The number of predictor columns in 'env_bg' is less than 'niche$dimen'.")
-    }
-    # All columns used must be numeric
-    # By default, we assume the first 'dimen' columns are the predictors
-    use_cols <- names(env_bg_df)[seq_len(niche$dimen)]
-    non_num <- use_cols[!vapply(env_bg_df[use_cols], is.numeric, logical(1))]
-
-    if (length(non_num)) {
-      stop(sprintf("These predictor columns must be numeric in 'env_bg': %s",
-                   paste(non_num, collapse = ", ")))
     }
   }
 
@@ -107,8 +90,8 @@ get_suitable_env <- function(niche,
   # --- 2. Calculate Mahalanobis Distance and Filter ---
 
   # Clean predictors first ---
-  # use_cols should be the predictor columns you selected earlier
-  cc <- stats::complete.cases(env_bg_df[, use_cols, drop = FALSE])
+  # niche_vars should be the predictor columns you selected earlier
+  cc <- stats::complete.cases(env_bg_df[, niche_vars, drop = FALSE])
 
   if (!any(cc)) {
     stop("All candidate rows contain NA in predictor columns. Provide complete predictors or impute values.")
@@ -117,7 +100,7 @@ get_suitable_env <- function(niche,
   env_bg_df_cc <- env_bg_df[cc, , drop = FALSE]
 
   ## --- Distances on clean data ---
-  pts <- as.matrix(env_bg_df_cc[, use_cols, drop = FALSE])
+  pts <- as.matrix(env_bg_df_cc[, niche_vars, drop = FALSE])
   diffs <- sweep(pts, 2, niche$center, "-")
   m_sq_dist <- rowSums((diffs %*% niche$Sigma_inv) * diffs)
 
@@ -149,7 +132,7 @@ get_suitable_env <- function(niche,
       xy <- return_df[, c("x", "y"), drop = FALSE]
 
     } else {
-     stop("Something went wrong with the spatial calcualtions")
+      stop("Something went wrong with the spatial calcualtions")
     }
 
     # Clean XY and map to cells
