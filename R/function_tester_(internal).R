@@ -14,32 +14,28 @@
 
 library(ggplot2)
 library(terra)
-library(dplyr)
-library(ggpubr)
-library(rnaturalearth)
+
+
+# Make Package alone should load all dependencies!
+
 
 # Environmental Predictors ------------------------------------------------
-
-# Dummy data
 
 # Based on WorldClim Data
 bio_1 <- terra::rast("inst/extdata/Bio1.tif")
 bio_4 <- terra::rast("inst/extdata/Bio4.tif")
 bio_12 <- terra::rast("inst/extdata/Bio12.tif")
 
-world_sf <- ne_countries(scale = "medium", returnclass = "sf")
-
 # Sample this distributions assume normality
 bio_stack <- c(bio_1, bio_12, bio_4)
 names(bio_stack) <- c("env_x", "env_y", "env_z")
-
-bio_stack <- mask(bio_stack, vect(world_sf))
 
 bio_df <- as.data.frame(bio_stack, xy = TRUE)
 
 df <- bio_df
 names(df) <- c("x", "y", "env_x", "env_y", "env_z")
 
+# Just when plotting outside the function calls of plot_e_space
 if(nrow(df) > 10000){
   set.seed(1234)
   df_plotting <- df[sample(1:nrow(df), size = 10000, replace = FALSE), ]
@@ -74,7 +70,7 @@ plot_e_space(df,
 
 # Create Ellipsoids -------------------------------------------------------
 
-source("R/build_ellipsoid.R")
+source("R/build_ellps.R")
 
 # 3D Ellipsoid #
 center <- c(300, 1500, 2000) # center
@@ -93,6 +89,7 @@ plot_e_space(df,
              x = "env_x", y = "env_y", z = "env_z",
              niche = FN_1)
 
+
 # Visual in 3D
 plot_e_space(df,
              x = "env_x", y = "env_y", z = "env_z",
@@ -101,22 +98,23 @@ plot_e_space(df,
 
 # Extract Points from Ellipsoid -------------------------------------------
 
-source("R/get_suitable_environment.R")
+source("R/get_suitable_env.R")
 
 # Extract points
-pts_in <- get_suitable_environment(niche = FN_1,
-                                   env_bg = df[, c("env_x", "env_y", "env_z")],
-                                   out = "data.frame")
+pts_in <- get_suitable_env(niche = FN_1,
+                           env_bg = df[, c("env_x", "env_y", "env_z")],
+                           out = "data.frame")
 
-ras_in <- get_suitable_environment(niche = FN_1,
-                                   env_bg = bio_stack,
-                                   out = "spatial")
+ras_in <- get_suitable_env(niche = FN_1,
+                           env_bg = bio_stack,
+                           out = "spatial")
 
 plot(ras_in, col = rev(terrain.colors(5)))
 
-both_in <- get_suitable_environment(niche = FN_1,
-                                   env_bg = bio_stack,
-                                   out = "both")
+both_in <- get_suitable_env(niche = FN_1,
+                            env_bg = bio_stack,
+                            out = "both")
+
 
 
 # Visual in 2D
@@ -132,31 +130,31 @@ plot_e_space(env_bg = df, x = "env_x", y = "env_y", z = "env_z",
 
 # Sampling Occurrences ----------------------------------------------------
 
-source("R/get_sample_occurrences.R")
+source("R/get_sample_occ.R")
 
 
-sampled_pts <- get_sample_occurrences(n_occ = 100,
-                                      niche = FN_1,
-                                      env_bg = df,
-                                      seed = 101)
+sampled_pts_random_df <- get_sample_occ(n_occ = 100,
+                                        niche = FN_1,
+                                        env_bg = df,
+                                        seed = 101)
 
-sampled_pts_random <- get_sample_occurrences(n = 100,
-                                          niche = FN_1,
-                                          env_bg = bio_stack,
-                                          seed = 101)
-
-sampled_pts_center <- get_sample_occurrences(n = 100,
-                                          niche = FN_1,
-                                          env_bg = bio_stack,
-                                          method = "center")
-
-sampled_pts_edge <- get_sample_occurrences(n = 100,
+sampled_pts_random_sp <- get_sample_occ(n = 100,
                                         niche = FN_1,
                                         env_bg = bio_stack,
-                                        method = "edge")
+                                        seed = 101)
+
+sampled_pts_center <- get_sample_occ(n = 100,
+                                     niche = FN_1,
+                                     env_bg = bio_stack,
+                                     method = "center")
+
+sampled_pts_edge <- get_sample_occ(n = 100,
+                                   niche = FN_1,
+                                   env_bg = bio_stack,
+                                   method = "edge")
 
 occ_x <- ggplot() +
-  geom_density(data = sampled_pts_random,
+  geom_density(data = sampled_pts_random_sp,
                aes(x = env_x, fill = "Random"), alpha = 0.5) +
   geom_density(data = sampled_pts_center,
                aes(x = env_x, fill = "Center"), alpha = 0.5) +
@@ -172,7 +170,7 @@ occ_x <- ggplot() +
   theme_bw()
 
 occ_y <- ggplot() +
-  geom_density(data = sampled_pts_random,
+  geom_density(data = sampled_pts_random_sp,
                aes(x = env_y, fill = "Random"), alpha = 0.5) +
   geom_density(data = sampled_pts_center,
                aes(x = env_y, fill = "Center"), alpha = 0.5) +
@@ -188,7 +186,7 @@ occ_y <- ggplot() +
   theme_bw()
 
 occ_z <- ggplot() +
-  geom_density(data = sampled_pts_random,
+  geom_density(data = sampled_pts_random_sp,
                aes(x = env_z, fill = "Random"), alpha = 0.5) +
   geom_density(data = sampled_pts_center,
                aes(x = env_z, fill = "Center"), alpha = 0.5) +
@@ -223,7 +221,7 @@ ggplot(sampled_pts_center, aes(x=env_z, y=env_y) ) +
 plot_e_space(df, x = "env_x", y = "env_y", z = "env_z",
              niche = FN_1,
              show.pts.in = FALSE,
-             occ_pts = sampled_pts)
+             occ_pts = sampled_pts_random_df)
 
 # Show density
 plot_e_space(df, x = "env_x", y = "env_y", z = "env_z",
@@ -236,7 +234,7 @@ plot_e_space(df, x = "env_x", y = "env_y", z = "env_z",
 plot_e_space(df, x = "env_x", y = "env_y", z = "env_z",
              niche = FN_1,
              show.pts.in = TRUE,
-             occ_pts = sampled_pts, plot.3d = TRUE)
+             occ_pts = sampled_pts_edge, plot.3d = TRUE)
 
 
 # Plot in geography -------------------------------------------------------
@@ -248,15 +246,62 @@ plot(ras_in,
      col  = rev(terrain.colors(50)))
 
 # 2. Overlay the sampled points
-points(sampled_pts$x, sampled_pts$y,
+points(sampled_pts_center$x, sampled_pts_center$y,
        pch   = 20,         # solid circle
        col   = "red",
        cex   = 0.4)        # point size multiplier
 
 
 
+# Example 2 ---------------------------------------------------------------
+
+# Based on WorldClim Data
+bio_1 <- terra::rast("inst/extdata/Bio1.tif")
+bio_4 <- terra::rast("inst/extdata/Bio4.tif")
+bio_12 <- terra::rast("inst/extdata/Bio12.tif")
+
+# Sample this distributions assume normality
+bio_stack <- c(bio_1, bio_12, bio_4)
+names(bio_stack) <- c("env_x", "env_y", "env_z")
+
+bio_df <- as.data.frame(bio_stack, xy = TRUE)
+
+df <- bio_df
+names(df) <- c("x", "y", "env_x", "env_y", "env_z")
 
 
+# 1. Make Ellipoid
+
+# 3D Ellipsoid
+center <- c(100, 750, 5000) # center
+axes <- c(50, 250, 1500) # offsets
+
+# Build Ellipsoid
+FN_2 <- build_ellipsoid(center = center,
+                        axes = axes)
+
+# 2. (optional) Visualize ellipsoid
+plot_e_space(env_bg = bio_df,
+             x = "env_x", y = "env_y", z = "env_z",
+             niche = FN_2)
+
+# 3. (optional) Visualize suitable environment
+plot_e_space(env_bg = bio_df,
+             x = "env_x", y = "env_y", z = "env_z",
+             niche = FN_2, show.pts.in = TRUE)
+
+# 4. Obtain occurrences
+sampled_occ <- get_sample_occ(n_occ = 100,
+                              niche = FN_2,
+                              env_bg = bio_stack,
+                              method = "center")
+
+# 5. (optional) Visualize suitable environment
+plot_e_space(env_bg = bio_df,
+             x = "env_x", y = "env_y", z = "env_z",
+             niche = FN_2,
+             occ_pts = sampled_occ,
+             show.occ.density = TRUE)
 
 
 

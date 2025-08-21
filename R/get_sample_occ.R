@@ -1,10 +1,10 @@
 # Sample Occurrence Points from a Suitable Environment
 
-get_sample_occurrences <- function(n_occ,
-                                   env_bg, # accepts Spat.Rasters and data.frames
-                                   niche,
-                                   method = c("random", "center", "edge"),
-                                   seed = NULL) {
+get_sample_occ <- function(n_occ,
+                           env_bg, # accepts Spat.Rasters and data.frames
+                           niche,
+                           method = c("random", "center", "edge"),
+                           seed = NULL) {
 
   method <- tolower(match.arg(method))
 
@@ -27,10 +27,10 @@ get_sample_occurrences <- function(n_occ,
   }
 
   # Calculate mahalanobis distance
-  suitable_pool <- get_suitable_environment(niche,
-                                            env_bg[ , c(niche_vars)],
-                                            out = "data.frame",
-                                            distances = TRUE)
+  suitable_pool <- get_suitable_env(niche,
+                                    env_bg[ , c(niche_vars)],
+                                    out = "data.frame",
+                                    distances = TRUE)
 
   # If there is no suitable area send message
   if (nrow(suitable_pool) < 1)
@@ -76,8 +76,11 @@ get_sample_occurrences <- function(n_occ,
   rownames(occ) <- NULL
 
   occ_xy <- left_join(occ, env_bg, by = niche_vars)
-  # table(duplicated(suitable_pool[,1:3]))
 
-  message("Done sampling occurrences")
+  # table(duplicated(suitable_pool[,1:3]))
+  occ_xy <- occ_xy[, c(which(!names(occ_xy) %in% c(niche_vars)),
+                       which(names(occ_xy) %in% c(niche_vars)))]
+
+  message(sprintf("Done sampling %d occurrences", n_occ))
   return(occ_xy)
 }
