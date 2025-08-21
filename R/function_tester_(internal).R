@@ -1,11 +1,11 @@
 # Title: Internal File to test functionalities of each of the functions
-# 
-# Authors: Mariana Castaneda-Guzman, 
-#          Paanwaris Paansri, and 
+#
+# Authors: Mariana Castaneda-Guzman,
+#          Paanwaris Paansri, and
 #          Connor Hughes
-# 
+#
 # Date Created: 07/17/2025
-# Date Last Updated: 08/20/2025
+# Date Last Updated: 08/21/2025
 
 # Description: This is the Demo use of the package 'virtualniche'. With
 # adapatations of NicheA and R package 'virtualspecies'
@@ -16,19 +16,24 @@ library(ggplot2)
 library(terra)
 library(dplyr)
 library(ggpubr)
+library(rnaturalearth)
 
 # Environmental Predictors ------------------------------------------------
 
 # Dummy data
 
 # Based on WorldClim Data
-bio_1 <- terra::rast("climate/wc2.1_2.5m/wc2.1_2.5m_bio_1.tif")
-bio_4 <- terra::rast("climate/wc2.1_2.5m/wc2.1_2.5m_bio_4.tif")
-bio_12 <- terra::rast("climate/wc2.1_2.5m/wc2.1_2.5m_bio_12.tif")
+bio_1 <- terra::rast("inst/extdata/Bio1.tif")
+bio_4 <- terra::rast("inst/extdata/Bio4.tif")
+bio_12 <- terra::rast("inst/extdata/Bio12.tif")
+
+world_sf <- ne_countries(scale = "medium", returnclass = "sf")
 
 # Sample this distributions assume normality
 bio_stack <- c(bio_1, bio_12, bio_4)
 names(bio_stack) <- c("env_x", "env_y", "env_z")
+
+bio_stack <- mask(bio_stack, vect(world_sf))
 
 bio_df <- as.data.frame(bio_stack, xy = TRUE)
 
@@ -63,7 +68,7 @@ plot_e_space(df,
 
 plot_e_space(df,
              x = "env_x", y = "env_y", z = "env_z",
-             labels = c("BIO 1", "BIO 4", "BIO 12"), 
+             labels = c("BIO 1", "BIO 4", "BIO 12"),
              plot.3d = TRUE)
 
 
@@ -72,15 +77,16 @@ plot_e_space(df,
 source("R/build_ellipsoid.R")
 
 # 3D Ellipsoid #
-center <- c(10, 500, 400) # center
-axes <- c(15, 300, 300) # offsets
-# angles = c(pi/6, pi/6, pi/4)
+center <- c(300, 1500, 2000) # center
+axes <- c(100, 500, 2500) # offsets
+angles <- c(0, 0, pi/12)
 n_points <- 50 # more for plotting
 
 # Build Ellipsoid
 FN_1 <- build_ellipsoid(center = center,
-                         axes = axes,
-                         n_points = n_points)
+                        axes = axes,
+                        angles = angles,
+                        n_points = n_points)
 
 # Visual in 2D
 plot_e_space(df,
@@ -105,7 +111,8 @@ pts_in <- get_suitable_environment(niche = FN_1,
 ras_in <- get_suitable_environment(niche = FN_1,
                                    env_bg = bio_stack,
                                    out = "spatial")
-plot(ras_in)
+
+plot(ras_in, col = rev(terrain.colors(5)))
 
 both_in <- get_suitable_environment(niche = FN_1,
                                    env_bg = bio_stack,
@@ -125,8 +132,6 @@ plot_e_space(env_bg = df, x = "env_x", y = "env_y", z = "env_z",
 
 # Sampling Occurrences ----------------------------------------------------
 
-# HERE DOWN: THIS NEEDS TO BE FIX
-
 source("R/get_sample_occurrences.R")
 
 
@@ -137,7 +142,8 @@ sampled_pts <- get_sample_occurrences(n_occ = 100,
 
 sampled_pts_random <- get_sample_occurrences(n = 100,
                                           niche = FN_1,
-                                          env_bg = bio_stack)
+                                          env_bg = bio_stack,
+                                          seed = 101)
 
 sampled_pts_center <- get_sample_occurrences(n = 100,
                                           niche = FN_1,
@@ -161,7 +167,7 @@ occ_x <- ggplot() +
                     values = c("Random" = "lightblue",
                                "Center" = "lightgreen",
                                "Edge" = "red")) +
-  scale_color_manual(name = "", 
+  scale_color_manual(name = "",
                      values = c("Centroid" = "black")) +
   theme_bw()
 
@@ -177,7 +183,7 @@ occ_y <- ggplot() +
                     values = c("Random" = "lightblue",
                                "Center" = "lightgreen",
                                "Edge" = "red")) +
-  scale_color_manual(name = "", 
+  scale_color_manual(name = "",
                      values = c("Centroid" = "black")) +
   theme_bw()
 
@@ -193,11 +199,11 @@ occ_z <- ggplot() +
                     values = c("Random" = "lightblue",
                                "Center" = "lightgreen",
                                "Edge" = "red")) +
-  scale_color_manual(name = "", 
+  scale_color_manual(name = "",
                      values = c("Centroid" = "black")) +
   theme_bw()
 
-ggpubr::ggarrange(occ_x, occ_y, occ_z, 
+ggpubr::ggarrange(occ_x, occ_y, occ_z,
                   legend = "right", ncol = 1,
                   common.legend = TRUE)
 
