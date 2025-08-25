@@ -40,4 +40,5 @@ Imports:
     magrittr,
     plotly,
     RColorBrewer,
-    terra
+    terra,
+    rgl
