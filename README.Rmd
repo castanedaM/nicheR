@@ -205,7 +205,7 @@ points(sampled_occ_center$x, sampled_occ_center$y,
 Visualize Sampled Occurrences in Environmental Space You can integrate
 these simulated occurrences back into your environmental space plots.
 
-```{r, rgl=TRUE, eval = FALSE}
+```{r, rgl=TRUE}
 plot_e_space(
   env_bg = env_df_plotting,
   x = "mean_temp",
