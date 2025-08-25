@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # Plot pairwise environmental space views with optional ellipsoid overlays
 library(ggplot2)
 library(plotly)
@@ -5,6 +6,59 @@ library(RColorBrewer)
 
 
 plot_e_space <- function(env_bg, 
+=======
+#' Plot Environmental Space with Optional Ellipsoid Overlays
+#'
+#' Produces pairwise views of a 3D environmental space with optional overlays of a
+#' virtual niche ellipsoid and occurrence points. In 2D mode, it returns a grid
+#' of pairwise scatterplots with projected ellipse boundaries. In 3D mode, it
+#' returns an interactive `plotly` scatterplot.
+#'
+#' @param env_bg A `data.frame` of background environments with at least three
+#'   numeric predictor columns. These columns must contain the variables
+#'   referenced by `x`, `y`, and `z`.
+#' @param x,y,z Column specifications for the three predictors to display. Each may
+#'   be a single column name (character string) or a single 1-based integer index
+#'   into `env_bg`.
+#' @param labels Character vector of length 3 giving axis labels for the x, y,
+#'   and z variables in display order. Defaults to `c("ENV 1", "ENV 2", "ENV 3")`.
+#' @param n_bg Positive integer giving the maximum number of background rows to plot.
+#'   If `nrow(env_bg)` is greater than `n_bg`, a random subset of size `n_bg` is
+#'   drawn. Using a large `n_bg` may slow plotting.
+#' @param niche Optional object of class `ellipsoid` describing the niche. If
+#'   provided, its boundary and center will be plotted. For 2D plots, the
+#'   object must contain `niche$angles`.
+#' @param show.pts.in Logical. If `TRUE` and `niche` is provided, points from
+#'   `env_bg` that fall inside the ellipsoid are highlighted. A warning is
+#'   issued if `niche` is not provided.
+#' @param occ_pts Optional `data.frame` of occurrence points that includes the
+#'   same predictor columns used for `x`, `y`, and `z`. These are overplotted
+#'   if supplied.
+#' @param rand_seed Integer used to set the random number generator seed for
+#'   reproducible background downsampling.
+#' @param show.occ.density Logical. If `TRUE` and `occ_pts` is provided, this
+#'   adds marginal density panels for each variable. This is only supported in
+#'   2D plots (`plot.3d = FALSE`).
+#' @param plot.3d Logical. If `TRUE`, returns an interactive `plotly` 3D scatter
+#'   plot. If `FALSE` (the default), returns a static `ggpubr` grid of 2D panels.
+#'
+#' @return
+#' - If `plot.3d = TRUE`: A `plotly` object.
+#' - If `plot.3d = FALSE`: A `ggpubr` object containing arranged `ggplot2` panels.
+#'
+#' @details This function is a powerful visualization tool for understanding the
+#'   relationship between a species' niche, its occurrences, and the available
+#'   environmental space. The 2D views are especially useful for publication-quality
+#'   figures, while the 3D interactive plot is great for data exploration. Note that
+#'   in 2D plots, points from a 3D space may appear to fall outside the projected
+#'   2D ellipse boundary. This is expected and does not indicate an error.
+#'
+#' @family plotting functions
+#' @seealso [build_ellps()], [get_suitable_env()]
+#'
+#' @export
+plot_e_space <- function(env_bg,
+>>>>>>> Stashed changes
                          x, y, z,
                          labels = c("ENV 1", "ENV 2", "ENV 3"),
                          n_bg = 10000,
