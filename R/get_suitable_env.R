@@ -206,14 +206,13 @@ get_suitable_env <- function(niche,
 
 }
 
-# ---- Pretty print helper ----
 #' @export
 print.suitable_env <- function(x, ...) {
   if (is.list(x) && all(c("suitable_env_sp", "suitable_env_df") %in% names(x))) {
     cat("Suitable environment object:\n")
-    cat("  • Spatial layer (SpatRaster):\n")
+    cat("Spatial layer (SpatRaster):\n")
     print(x$suitable_env_sp)
-    cat("\n  • Data frame (showing first 6 rows):\n")
+    cat("\n Data frame (showing first 6 rows):\n")
     print(utils::head(x$suitable_env_df))
   } else if (inherits(x, "SpatRaster")) {
     cat("Suitable environment raster:\n")

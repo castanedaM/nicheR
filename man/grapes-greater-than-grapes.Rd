@@ -3,9 +3,6 @@
 \name{\%>\%}
 \alias{\%>\%}
 \title{Pipe operator}
-\usage{
-lhs \%>\% rhs
-}
 \arguments{
 \item{lhs}{A value or the magrittr placeholder.}
 
@@ -15,6 +12,7 @@ lhs \%>\% rhs
 The result of calling `rhs(lhs)`.
 }
 \description{
+This re-exports the pipe operator from \code{magrittr} to make it available
+for use in your package's functions and for package users.
 See \code{magrittr::\link[magrittr:pipe]{\%>\%}} for details.
 }
-\keyword{internal}

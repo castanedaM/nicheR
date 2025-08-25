@@ -31,10 +31,10 @@
 #'   the `method` argument to probabilistically select `n_occ` points from this
 #'   suitable environment pool.
 #'   The Mahalanobis distance squared is defined as:
-#'   $$(x - \mu)^T \Sigma^{-1} (x - \mu)$$
-#'   where $x$ is a point in environmental space, $\mu$ is the niche center, and
-#'   $\Sigma^{-1}$ is the inverse covariance matrix. Points with a distance
-#'   $\le 1$ are considered suitable.
+#'   \deqn{(x - \mu)^T \Sigma^{-1} (x - \mu)}{ (x - mu)^T Sigma^-1 (x - mu) }
+#'   where \eqn{x} is a point in environmental space, \eqn{\mu} is the niche center, and
+#'   \eqn{\Sigma^{-1}} is the inverse covariance matrix. Points with a distance
+#'   \eqn{\le 1} are considered suitable.
 #'
 #' @seealso [build_ellipsoid()], [get_suitable_env()]
 #'

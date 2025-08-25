@@ -46,7 +46,7 @@
 #'
 #' @family plotting functions
 #' @seealso [validate_plot_e_space_args()], [build_ellps()], [get_suitable_env()]
-#'
+#' @importFrom RColorBrewer brewer.pal
 #' @export
 plot_e_space <- function(env_bg,
                          x, y, z,
@@ -62,7 +62,7 @@ plot_e_space <- function(env_bg,
   # -- 0. Validate (no rlang in helper) --
   v <- validate_plot_e_space_args(env_bg, x, y, z,
                                   labels, n_bg, niche, show.pts.in,
-                                  occ_pts, show.occ.density)
+                                  occ_pts, show.occ.density, plot.3d)
 
   # Downsample info + action
   if (nrow(env_bg) > n_bg) {

@@ -37,6 +37,7 @@ Imports:
     dplyr,
     ggplot2,
     ggpubr,
+    magrittr,
     plotly,
     RColorBrewer,
     terra
