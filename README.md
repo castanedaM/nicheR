@@ -224,7 +224,10 @@ plot_e_space(
   show.pts.in = TRUE, # Highlight background points within niche
   show.occ.density = TRUE # Show marginal density plots for occurrences
 )
+#> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 ```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 ### Contributing
 
