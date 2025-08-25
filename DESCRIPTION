@@ -1,18 +1,42 @@
 Package: NicheR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Ecological Niche Modeling and Simulation
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Mariana", "Castaneda-Guzman",
+      email = "marianacg@vt.edu", 
       role = c("aut", "cre")
+    ),
+    person(
+      "Paanwaris", "Paansri",
+      email = "paanwaris@vt.edu", 
+      role = "aut"
+    ),
+    person(
+      "Connor", "Hughes",
+      email = "connorjh@vt.edu", 
+      role = "aut"
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Provides a robust set of tools for researchers and modelers to
+    construct and define virtual ecological niches using ellipsoid geometries.
+    It enables the identification and extraction of suitable environmental
+    areas, simulation of species occurrence points with various sampling
+    strategies, and visualization of niche boundaries and simulated occurrences
+    in both environmental and geographic space. Inspired by methodologies in
+    NicheA and the virtualspecies R package, NicheR aims to streamline the
+    process of niche conceptualization and data generation for ecological studies.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/castanedaM/NicheR
 BugReports: https://github.com/castanedaM/NicheR/issues
+RoxygenNote: 7.3.2
+Imports:
+    dplyr,
+    ggplot2,
+    ggpubr,
+    plotly,
+    RColorBrewer,
+    terra
