@@ -169,6 +169,8 @@ plot_e_space(
 )
 ```
 
+<img src="man/figures/3D.png" width="100%" />
+
 ### 4. Extract Suitable Environments and Sample Occurrences The
 
 get_suitable_env() function identifies all environmental points that
