@@ -188,16 +188,19 @@ plot_e_space <- function(env_bg,
 
       center_y_x <- c(niche$center[2], niche$center[1])
       axes_y_x   <- c(niche$axes[2],   niche$axes[1])
+      angle_y_x <- c(niche$angles[2], niche$angles[1])
 
       center_z_x <- c(niche$center[3], niche$center[1])
       axes_z_x   <- c(niche$axes[3],   niche$axes[1])
+      angle_z_x <- c(niche$angles[3], niche$angles[1])
 
       center_z_y <- c(niche$center[3], niche$center[2])
       axes_z_y   <- c(niche$axes[3],   niche$axes[2])
+      angle_z_y <- c(niche$angles[3], niche$angles[2])
 
-      ell2d_y_x <- build_ellps(center = center_y_x, axes = axes_y_x, angles = c(0, 0))
-      ell2d_z_x <- build_ellps(center = center_z_x, axes = axes_z_x, angles = c(0, 0))
-      ell2d_z_y <- build_ellps(center = center_z_y, axes = axes_z_y, angles = c(0, 0))
+      ell2d_y_x <- build_ellps(center = center_y_x, axes = axes_y_x, angles = angle_y_x)
+      ell2d_z_x <- build_ellps(center = center_z_x, axes = axes_z_x, angles = angle_z_x)
+      ell2d_z_y <- build_ellps(center = center_z_y, axes = axes_z_y, angles = angle_z_y)
 
       ell_y_x <- p_main_y_x +
         ggplot2::geom_path(data = ell2d_y_x$surface, aes(x, y), color = "royalblue", linewidth = 0.5) +
