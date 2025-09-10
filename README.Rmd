@@ -220,14 +220,14 @@ plot_e_space(
 )
 
 # Plot in 3D, toggle option plot.3d = TRUE
-plot_e_space(
-  env_bg = env_df_plotting,
-  x = "mean_temp",
-  y = "temp_seasonality",
-  z = "annual_precip",
-  niche = my_niche,
-  occ_pts = sampled_occ_center,
-  plot.3d = TRUE)
+# plot_e_space(
+#   env_bg = env_df_plotting,
+#   x = "mean_temp",
+#   y = "temp_seasonality",
+#   z = "annual_precip",
+#   niche = my_niche,
+#   occ_pts = sampled_occ_center,
+#   plot.3d = TRUE)
 
 ```
 
