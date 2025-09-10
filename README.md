@@ -131,10 +131,12 @@ my_niche <- build_ellps(
 )
 ```
 
-### 3. Visualize the Niche in Environmental Space plot_e_space() allows you
+### 3. Visualize the Niche in Environmental Space (E-space)
 
-to visualize the environmental background and the niche ellipsoid. It
-can generate both static 2D pairwise plots and interactive 3D plots.
+Function ‘plot_e_space()’ allows you to visualize e-sapce and the niche
+ellipsoidal boundary.
+
+It can generate both static 2D pairwise plots and interactive 3D plots.
 
 #### 3.1. 2D Pairwise Plots
 
@@ -144,9 +146,8 @@ plot_e_space(
   x = "mean_temp",
   y = "temp_seasonality",
   z = "annual_precip",
-  labels = c("Mean Temperature (°C)", "Temp. Seasonality", "Annual Precipitation (mm)"),
-  niche = my_niche,
-  plot.3d = FALSE
+  labels = c("Mean T (°C)", "Temp Seasonality", "Annual Prec (mm)"),
+  niche = my_niche
 )
 #> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 ```
@@ -155,25 +156,41 @@ plot_e_space(
 
 #### 3.2. 3D Interactive Plot
 
+To render a 3D interactive plot within the same plotting function as 2D,
+add the argument `plot.3d = TRUE`.
+
+The code will then generate an interactive **plotly** plot.
+
 ``` r
-# This code will generate an interactive plotly plot,
-# which cannot be directly embedded in static markdown but is great for exploration.
+
 plot_e_space(
   env_bg = env_df_plotting,
   x = "mean_temp",
   y = "temp_seasonality",
   z = "annual_precip",
-  labels = c("Mean Temperature (°C)", "Temp. Seasonality", "Annual Precipitation (mm)"),
+  labels = c("Mean T (°C)", "Temp Seasonality", "Annual Prec (mm)"),
   niche = my_niche,
-  plot.3d = TRUE
+  plot.3d = TRUE # Toggle 3D plotting by setting plot.3d = TRUE
 )
 ```
 
-### 4. Extract Suitable Environments and Sample Occurrences The
+<figure>
+<img src="man/figures/3D.png" alt="3D plot Example" />
+<figcaption aria-hidden="true">3D plot Example</figcaption>
+</figure>
 
-get_suitable_env() function identifies all environmental points that
-fall within your niche, while get_sample_occ() samples a subset of these
-points with a specified bias.
+### 4. Extract Suitable Environments and Sample Occurrences
+
+The `get_suitable_env()` function identifies all environmental points
+that fall within the niche.  
+It includes an argument `out` that can take the values `"spatial"`,
+`"data.frame"`, or `"both"`.
+
+- `"spatial"` returns a **SpatRaster**, allowing visualization of the
+  suitable area in geographic space (G-space).  
+- `"data.frame"` returns a table of points, better suited for
+  visualization in environmental space (E-space).  
+- `"both"` returns both formats simultaneously.
 
 ``` r
 # Extract suitable environmental areas as a spatial raster
@@ -184,13 +201,37 @@ suitable_g_space <- get_suitable_env(
 )
 
 # Plot the suitable area on a map
-plot(suitable_g_space, main = "Suitable Geographic Environment", 
+plot(suitable_g_space, main = "Suitable Geographic Environment (G-space)", 
      col = rev(terrain.colors(10)))
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
-Now, let’s sample some occurrences within this suitable area.
+**Note:** For 3D and 2D plotting in E-space, there is no need to run the
+function beforehand.
+
+Simply toggle the argument `show.pts.in` in `plot_e_space()`, and the
+function will automatically calculate and plot the suitable
+environments.
+
+``` r
+# Plot in 2D
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  show.pts.in = TRUE # Change this argument to TRUE to show suitable environments
+)
+#> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
+```
+
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
+Next, let’s sample some occurrences within the suitable area.  
+The function `get_sample_occ()` draws a subset of points from within the
+niche boundary and suitable environment.
 
 ``` r
 # Sample 500 occurrences, biased towards the center of the niche
@@ -203,14 +244,15 @@ sampled_occ_center <- get_sample_occ(
 )
 #> Done sampling 500 occurrences
 
-plot(suitable_g_space, main = "Suitable Geographic Environment", 
-     col = rev(terrain.colors(10)))
-# Overlay sampled points on the geographic suitable area map
+# Expand right margin so there's room for legend
+plot(suitable_g_space,
+     main = "Suitable Geographic Environment (G-space)",
+     col = rev(terrain.colors(2)))
 points(sampled_occ_center$x, sampled_occ_center$y,
-       pch = 20, col = "red", cex = 0.6)
+       pch = 20, col = "tomato", cex = 0.6)
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 Visualize Sampled Occurrences in Environmental Space You can integrate
 these simulated occurrences back into your environmental space plots.
@@ -224,25 +266,12 @@ plot_e_space(
   z = "annual_precip",
   niche = my_niche,
   occ_pts = sampled_occ_center,
-  show.occ.density = TRUE # Show marginal density plots for occurrences
+  show.occ.density = TRUE # Change to remove density plots for occurrences points
 )
 #> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
-
-``` r
-
-# Plot in 3D, toggle option plot.3d = TRUE
-# plot_e_space(
-#   env_bg = env_df_plotting,
-#   x = "mean_temp",
-#   y = "temp_seasonality",
-#   z = "annual_precip",
-#   niche = my_niche,
-#   occ_pts = sampled_occ_center,
-#   plot.3d = TRUE)
-```
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 Finally, we visualize all objects in one visualization.
 
@@ -262,19 +291,78 @@ plot_e_space(
 #> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
 Try some of the other color palettes within the Package!!
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+
+Example: Palette 4
 
     #> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 
-<img src="man/figures/README-unnamed-chunk-11-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+
+Example: Palette 6
 
     #> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
 
-<img src="man/figures/README-unnamed-chunk-11-3.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
+
+Don’t like these palettes? Provide your own! Use the colors argument
+with a list of hex codes. If colors are unnamed, they will be assigned
+in order: bg (background), ellipsoid, centroid, tolerance (axis ranges),
+suitable_env (environment inside ellipsoid), and occ (occurrence
+records). Best practice is to use named values, for example:
+
+``` r
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  show.pts.in = TRUE,
+  occ_pts = sampled_occ_center,
+  show.occ.density = TRUE,
+  colors = list(bg = "lightgrey",
+                ellipsoid = "lightblue", 
+                centroid = "#FF6347", 
+                tolerance = "orange",
+                suitable_env = "#EEEE00",
+                occ = "purple4")
+  )
+#> Sampling 10000 of 20000 rows from 'env_bg' for plotting.
+```
+
+<img src="man/figures/README-unnamed-chunk-15-1.png" width="100%" />
+
+Note: for 3D plotting is better to provide the HEX color codes!
+
+Want to save your plot in high resolution, publication-ready format?
+Below is an example of how to save it as a TIFF with recommended sizing
+for 2D plots.
+
+``` r
+
+tiff(filename = "NicheR_plot2D.tiff", width = 11, height = 8, 
+     units = "in", res = 300, compression = "lzw")
+
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  labels = c("Mean T (°C)", "Temp Seasonality", "Annual Prec (mm)"),
+  niche = my_niche,
+  show.pts.in = TRUE, 
+  occ_pts = sampled_occ_center,
+  show.occ.density = TRUE,
+  palette = "palette3"
+)
+
+dev.off()
+```
 
 ### Contributing
 

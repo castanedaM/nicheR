@@ -69,55 +69,55 @@ plot_e_space <- function(env_bg,
   # Set colors for legend and plot
   palettes <- list(
 
-  default = list(
-    bg           = "#9093A2FF",
-    ellipsoid    = "#2A363BFF",
-    centroid     = "#D72000FF",
-    tolerance    = "#EE6100FF",
-    suitable_env = "#FED789FF",
-    occ          = "#B4BF3AFF"),
+    default = list(
+      bg           = "#9093A2FF",
+      ellipsoid    = "#2A363BFF",
+      centroid     = "#D72000FF",
+      tolerance    = "#EE6100FF",
+      suitable_env = "#FED789FF",
+      occ          = "#B4BF3AFF"),
 
-  palette2 = list(
-    bg           = "#9CA9BAFF",
-    ellipsoid    = "#3D619DFF",
-    centroid     = "#345084FF",
-    tolerance    = "#693829FF",
-    suitable_env = "#CFB267FF",
-    occ          = "#A56A3EFF"),
-
-
-  palette3 = list(
-    bg           = "#C8CCC6FF",
-    ellipsoid    = "#023743FF",
-    centroid     = "#72874EFF",
-    tolerance    = "#476F84FF",
-    suitable_env = "#FED789FF",
-    occ          = "#A4BED5FF"),
-
-  palette4 = list(
-    bg           = "#C0D1CEFF",
-    ellipsoid    = "#859B6CFF",
-    centroid     = "#B74954FF",
-    tolerance    = "#A99364FF",
-    suitable_env = "#C2DDB2FF",
-    occ          = "#EBA49EFF"),
-
-  palette5 = list(
-    bg           = "#A89F8EFF",
-    ellipsoid    = "#7887A4FF",
-    centroid     = "#A8CDECFF",
-    tolerance    = "#682C37FF",
-    suitable_env = "#F6955EFF",
-    occ          = "#9B6981FF"),
+    palette2 = list(
+      bg           = "#9CA9BAFF",
+      ellipsoid    = "#3D619DFF",
+      centroid     = "#345084FF",
+      tolerance    = "#693829FF",
+      suitable_env = "#CFB267FF",
+      occ          = "#A56A3EFF"),
 
 
-  palette6 = list(
-    bg           = "#D3D4D8FF",
-    ellipsoid    = "#731A12FF",
-    centroid     = "#F2D43DFF",
-    tolerance    = "#3F858CFF",
-    suitable_env = "#D9814EFF",
-    occ          = "#707322FF")
+    palette3 = list(
+      bg           = "#C8CCC6FF",
+      ellipsoid    = "#023743FF",
+      centroid     = "#72874EFF",
+      tolerance    = "#476F84FF",
+      suitable_env = "#FED789FF",
+      occ          = "#A4BED5FF"),
+
+    palette4 = list(
+      bg           = "#C0D1CEFF",
+      ellipsoid    = "#859B6CFF",
+      centroid     = "#B74954FF",
+      tolerance    = "#A99364FF",
+      suitable_env = "#C2DDB2FF",
+      occ          = "#EBA49EFF"),
+
+    palette5 = list(
+      bg           = "#A89F8EFF",
+      ellipsoid    = "#7887A4FF",
+      centroid     = "#A8CDECFF",
+      tolerance    = "#682C37FF",
+      suitable_env = "#F6955EFF",
+      occ          = "#9B6981FF"),
+
+
+    palette6 = list(
+      bg           = "#D3D4D8FF",
+      ellipsoid    = "#731A12FF",
+      centroid     = "#F2D43DFF",
+      tolerance    = "#3F858CFF",
+      suitable_env = "#D9814EFF",
+      occ          = "#707322FF")
 
   )
 
@@ -146,7 +146,7 @@ plot_e_space <- function(env_bg,
 
     if(!is.list(colors)){ colors <- as.list(colors)}
 
-     # merge with defaults (keeps user overrides, fills missing)
+    # merge with defaults (keeps user overrides, fills missing)
     colors <- modifyList(base_colors, colors)
   }
 
@@ -169,8 +169,8 @@ plot_e_space <- function(env_bg,
     id       = c("background_point","trace_line","centroid_point",
                  "tolerance_range_line","suitable_point","occurrence_point"),
     type     = c("point","line","point","line","point","point"),
-    label    = c("Background env.","Ellipsoid","Centroid",
-                 "Tolerance ranges","Suitable env.","Occurrence"),
+    label    = c("Background environments","Niche boundary","Niche centroid",
+                 "Tolerance ranges","Suitable evironments","Occurrence"),
     color    = c(colors[["bg"]], colors[["ellipsoid"]], colors[["centroid"]],
                  colors[["tolerance"]], colors[["suitable_env"]], colors[["occ"]]),
     linetype = c(NA, 1, NA, 2, NA, NA),
@@ -290,11 +290,14 @@ plot_e_space <- function(env_bg,
       ggplot2::theme(axis.title = ggplot2::element_blank())
 
     x_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[1])) + ggplot2::xlab(NULL)
+      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[1]),
+                         fontface = "bold")
     y_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[2])) + ggplot2::xlab(NULL)
+      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[2]),
+                         fontface = "bold")
     z_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[3])) + ggplot2::xlab(NULL)
+      ggplot2::geom_text(ggplot2::aes(0, 0, label = labels[3]),
+                         fontface = "bold")
 
     return_plot <- ggpubr::ggarrange(
       x_name, p_main_y_x, p_main_z_x,
@@ -383,6 +386,16 @@ plot_e_space <- function(env_bg,
       ell_z_x <- p_main_z_x
       ell_z_y <- p_main_z_y
 
+
+      if (any(my_niche$angles != 0)) {
+        angle_warn <- ggplot2::ggplot() + ggplot2::theme_void() +
+          ggplot2::geom_text(ggplot2::aes(0, 0,
+                             label = "Note: The ellipsoid is angled, its shape may appear distorted and some points may fall outside due to dimensionality."),
+                             size = 2)
+      } else {
+        angle_warn <- NULL
+      }
+
       if (isTRUE(show.pts.in)) {
         # Use base subsetting with resolved names from validator
         pts_in <- get_suitable_env(niche = niche,
@@ -469,7 +482,7 @@ plot_e_space <- function(env_bg,
 
       return_plot <- ggpubr::ggarrange(x_name,        ell_y_x,   ell_z_x,
                                        legend_plot,   y_name,    ell_z_y,
-                                       NULL,          NULL,      z_name,
+                                       NULL,          angle_warn,      z_name,
                                        ncol = 3, nrow = 3,
                                        widths = c(0.15, 0.425, 0.425),
                                        heights = c(0.45, 0.45, 0.15))
@@ -489,7 +502,8 @@ plot_e_space <- function(env_bg,
             ggplot2::theme_minimal() +
             ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                            axis.title.x = ggplot2::element_blank(),
-                           axis.title.y = ggplot2::element_blank())
+                           axis.title.y = ggplot2::element_blank(),
+                           axis.text.y = ggplot2::element_text(size = 5))
 
           env_y_top <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[ if (is.numeric(y)) names(env_bg)[y] else y ]])) +
             ggplot2::geom_density(fill =  colors[["occ"]], alpha = 0.6) +
@@ -498,7 +512,8 @@ plot_e_space <- function(env_bg,
             ggplot2::theme_minimal() +
             ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                            axis.title.x = ggplot2::element_blank(),
-                           axis.title.y = ggplot2::element_blank())
+                           axis.title.y = ggplot2::element_blank(),
+                           axis.text.y = ggplot2::element_text(size = 5))
 
           env_x_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[ if (is.numeric(x)) names(env_bg)[x] else x ]])) +
             ggplot2::geom_density(fill =  colors[["occ"]], alpha = 0.6) +
@@ -508,7 +523,8 @@ plot_e_space <- function(env_bg,
             ggplot2::theme_minimal() +
             ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                            axis.title.y = ggplot2::element_blank(),
-                           axis.title.x = ggplot2::element_blank())
+                           axis.title.x = ggplot2::element_blank(),
+                           axis.text.x = ggplot2::element_text(size = 5))
 
           env_y_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[ if (is.numeric(y)) names(env_bg)[y] else y ]])) +
             ggplot2::geom_density(fill =  colors[["occ"]], alpha = 0.6) +
@@ -518,13 +534,14 @@ plot_e_space <- function(env_bg,
             ggplot2::theme_minimal() +
             ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                            axis.title.y = ggplot2::element_blank(),
-                           axis.title.x = ggplot2::element_blank())
+                           axis.title.x = ggplot2::element_blank(),
+                           axis.text.x = ggplot2::element_text(size = 5))
 
           return_plot <- ggpubr::ggarrange(
             NULL, env_y_top, env_z_top, NULL,
             x_name, ell_y_x, ell_z_x, env_x_right,
             legend_plot, y_name, ell_z_y, env_y_right,
-            NULL, NULL, z_name, NULL,
+            NULL, angle_warn, z_name, NULL,
             ncol = 4, nrow = 4,
             widths = c(0.1, 0.4, 0.4, 0.1),
             heights = c(0.1, 0.4, 0.4, 0.1)
