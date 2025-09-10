@@ -422,7 +422,7 @@ Want to save your plot in high resolution, publication-ready format? Below is an
 
 ```{r echo=TRUE, eval=FALSE}
 
-tiff(filename = "NicheR_plot2D.tiff", width = 11, height = 8, 
+tiff(filename = "NicheR_plot2D.png", width = 11, height = 8, 
      units = "in", res = 300, compression = "lzw")
 
 plot_e_space(
@@ -442,6 +442,7 @@ dev.off()
 
 
 ```
+
 
 
 ### Contributing 

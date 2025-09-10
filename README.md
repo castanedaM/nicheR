@@ -345,7 +345,7 @@ for 2D plots.
 
 ``` r
 
-tiff(filename = "NicheR_plot2D.tiff", width = 11, height = 8, 
+tiff(filename = "NicheR_plot2D.png", width = 11, height = 8, 
      units = "in", res = 300, compression = "lzw")
 
 plot_e_space(
@@ -363,6 +363,11 @@ plot_e_space(
 
 dev.off()
 ```
+
+<figure>
+<img src="man/figures/NicheR_plot2D.png" alt="high res pic" />
+<figcaption aria-hidden="true">high res pic</figcaption>
+</figure>
 
 ### Contributing
 
