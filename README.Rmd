@@ -206,6 +206,34 @@ Visualize Sampled Occurrences in Environmental Space You can integrate
 these simulated occurrences back into your environmental space plots.
 
 ```{r, rgl=TRUE}
+# Plot in 2D
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  occ_pts = sampled_occ_center,
+  show.occ.density = TRUE # Show marginal density plots for occurrences
+)
+
+# Plot in 3D, toggle option plot.3d = TRUE
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  occ_pts = sampled_occ_center,
+  plot.3d = TRUE)
+
+```
+
+
+Finally, we visualize all objects in one visualization.
+
+```{r, rgl=TRUE}
+# Plot in 2D
 plot_e_space(
   env_bg = env_df_plotting,
   x = "mean_temp",
@@ -214,9 +242,120 @@ plot_e_space(
   niche = my_niche,
   occ_pts = sampled_occ_center,
   show.pts.in = TRUE, # Highlight background points within niche
-  show.occ.density = TRUE # Show marginal density plots for occurrences
+  show.occ.density = TRUE,
+  palette = "default"# Show marginal density plots for occurrences
 )
+
 ```
+
+
+Try some of the other color palettes within the Package!! 
+
+```{r echo=FALSE, rgl=TRUE}
+
+  palettes <- list(
+
+  default = list(
+    bg           = "#9093A2FF",
+    ellipsoid    = "#2A363BFF",
+    centroid     = "#D72000FF",
+    tolerance    = "#EE6100FF",
+    suitable_env = "#FED789FF",
+    occ          = "#B4BF3AFF"),
+
+  palette2 = list(
+    bg           = "#9CA9BAFF",
+    ellipsoid    = "#3D619DFF",
+    centroid     = "#345084FF",
+    tolerance    = "#693829FF",
+    suitable_env = "#CFB267FF",
+    occ          = "#A56A3EFF"),
+
+
+  palette3 = list(
+    bg           = "#C8CCC6FF",
+    ellipsoid    = "#023743FF",
+    centroid     = "#72874EFF",
+    tolerance    = "#476F84FF",
+    suitable_env = "#FED789FF",
+    occ          = "#A4BED5FF"),
+
+  palette4 = list(
+    bg           = "#C0D1CEFF",
+    ellipsoid    = "#859B6CFF",
+    centroid     = "#B74954FF",
+    tolerance    = "#A99364FF",
+    suitable_env = "#C2DDB2FF",
+    occ          = "#EBA49EFF"),
+
+  palette5 = list(
+    bg           = "#A89F8EFF",
+    ellipsoid    = "#7887A4FF",
+    centroid     = "#A8CDECFF",
+    tolerance    = "#682C37FF",
+    suitable_env = "#F6955EFF",
+    occ          = "#9B6981FF"),
+
+
+  palette6 = list(
+    bg           = "#D3D4D8FF",
+    ellipsoid    = "#731A12FF",
+    centroid     = "#F2D43DFF",
+    tolerance    = "#3F858CFF",
+    suitable_env = "#D9814EFF",
+    occ          = "#707322FF")
+
+  )
+
+df <- do.call(rbind, lapply(names(palettes), function(pname) {
+  data.frame(
+    palette = pname,
+    role    = names(palettes[[pname]]),
+    color   = unlist(palettes[[pname]]),
+    stringsAsFactors = FALSE
+  )
+}))
+
+ggplot(df, aes(x = role, y = palette, fill = color)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = color), color = "white", size = 3.5) +
+  scale_fill_identity() +
+  theme_minimal() +
+  labs(x = NULL, y = NULL, title = "Palette comparison") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  show.pts.in = TRUE, # Highlight background points within niche
+  occ_pts = sampled_occ_center,
+  show.occ.density = TRUE,
+  palette = "default"# Show marginal density plots for occurrences
+)
+
+plot_e_space(
+  env_bg = env_df_plotting,
+  x = "mean_temp",
+  y = "temp_seasonality",
+  z = "annual_precip",
+  niche = my_niche,
+  show.pts.in = TRUE, # Highlight background points within niche
+  occ_pts = sampled_occ_center,
+  show.occ.density = TRUE,
+  palette = "palette6"# Show marginal density plots for occurrences
+)
+
+
+
+```
+
 
 ### Contributing 
 We welcome contributions! If you have suggestions, bug
