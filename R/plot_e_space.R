@@ -387,7 +387,7 @@ plot_e_space <- function(env_bg,
       ell_z_y <- p_main_z_y
 
 
-      if (any(my_niche$angles != 0)) {
+      if (any(niche$angles != 0)) {
         angle_warn <- ggplot2::ggplot() + ggplot2::theme_void() +
           ggplot2::geom_text(ggplot2::aes(0, 0,
                              label = "Note: The ellipsoid is angled, its shape may appear distorted and some points may fall outside due to dimensionality."),
