@@ -147,6 +147,8 @@ get_sample_occ <- function(n_occ,
     }
 
   }
+  # Allow user to supply the suitbale env, but need to check if distance are
+  # included of not, need to calcualte again and send message [NEEDS FIX!]
 
   # Calculate mahalanobis distance
   suitable_pool <- get_suitable_env(niche,

@@ -152,7 +152,7 @@ plot_g_space <- function(env_bg,
   }
 
 
-  if(show.suitable || show.distance){
+  if(isTRUE(show.suitable) || isTRUE(show.distance)){
     suitable_g_space <- get_suitable_env(niche = niche,
                                          env_bg = env_bg,
                                          out = "data.frame",
@@ -161,7 +161,7 @@ plot_g_space <- function(env_bg,
   }
 
 
-  if(show.distance){
+  if(isTRUE(show.distance)){
 
     return_plot <- return_plot +
       geom_tile(data = suitable_g_space,
@@ -173,7 +173,7 @@ plot_g_space <- function(env_bg,
       )
   }
 
-  if(show.suitable){
+  if(isTRUE(show.suitable)){
 
     return_plot <- return_plot +
       geom_tile(data = suitable_g_space,
