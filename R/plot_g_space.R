@@ -1,3 +1,7 @@
+#' @family plotting functions
+#' @seealso [build_ellps()], [get_suitable_env()]
+#' @import RColorBrewer ggplot2 dplyr
+#' @export
 plot_g_space <- function(env_bg,
                          n_bg = 10000,
                          niche = NULL,

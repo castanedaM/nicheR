@@ -46,7 +46,7 @@
 #'
 #' @family plotting functions
 #' @seealso [validate_plot_e_space_args()], [build_ellps()], [get_suitable_env()]
-#' @importFrom RColorBrewer brewer.pal
+#' @import RColorBrewer ggplot2 dplyr
 #' @export
 plot_e_space <- function(env_bg,
                          x, y, z,
