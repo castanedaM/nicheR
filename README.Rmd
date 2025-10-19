@@ -129,7 +129,7 @@ plot_e_space(
   z = "annual_precip",
   labels = c("Mean T (°C)", "Temp Seasonality", "Annual Prec (mm)"),
   niche = my_niche, 
-  plot.3d = T
+  plot.3d = F
 )
 ```
 
