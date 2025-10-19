@@ -4,7 +4,7 @@
 # Restart session and do not load any packaged besides NicheR. This ensures that
 # we have loaded all package dependencies into the R package
 
-library(NicheR)
+# library(NicheR)
 
 # 1. Data Preparation -----------------------------------------------------
 
