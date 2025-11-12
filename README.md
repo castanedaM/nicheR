@@ -364,6 +364,17 @@ plot_e_space(
 dev.off()
 ```
 
+# Apply Bias Surface
+
+``` r
+sp_rich <- terra::rast(system.file("extdata", "sr_sp_host_0.05.tif", package = "NicheR"))
+nighttime <- terra::rast(system.file("extdata", "nighttime.tif", package = "NicheR"))
+Bias <- apply_bias_surface(bias_surface = c(sp_rich, nighttime), 
+                             bias_direction = c(1, -1), 
+                             ecological_suitability = suitable_g_space)
+```
+
+
 ### Contributing
 
 We welcome contributions! If you have suggestions, bug reports, or would
