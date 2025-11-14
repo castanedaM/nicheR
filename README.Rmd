@@ -4,7 +4,7 @@ editor_options:
   chunk_output_type: console
   markdown: 
     wrap: 72
-always_allow_html: true # Add this line
+always_allow_html: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -18,11 +18,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# NicheR: An R package for ellipsoid-based virtual species and niche visualization in environmental (E-space) and geographic (G-space) space
-
-<!-- badges: start -->
-
-<!-- badges: end -->
+# NicheR: An R package for ellipsoid-based virtual species and niche visualization in E-space and G-space
 
 The goal of **NicheR** is to provide a robust set of tools for researchers and modelers to:  
 
@@ -42,6 +38,10 @@ Paanwaris Paansri
 
 Connor Hughes
 
+## Last Updated
+
+11/14/2025
+
 ## Installation
 
 You can install the development version of NicheR from GitHub as follows:
@@ -56,20 +56,25 @@ if (!require("devtools")) {
 devtools::install_github("castanedaM/NicheR")
 ```
 
-## Dependencies NicheR relies on the following R packages, which will be
-
-installed automatically with the package: dplyr, ggplot2, ggpubr,
+Dependencies NicheR relies on the following R packages, which will be installed automatically with the package: dplyr, ggplot2, ggpubr,
 plotly, RColorBrewer, and terra.
 
-### Example This is a basic example demonstrating the core functionality
+## Example Application
 
-of NicheR.
+This is a basic example demonstrating the core functionality of NicheR.
+Before you start, remember the distinction between what the package handles internally and what requires user input. You will need:
 
-### 1. Load Data and Define Environmental Background We'll load NicheR and
+  1. Environmental layers (raster layers), and
 
-prepare some example environmental raster data. For this, we'll use
-example files that should be located in your package's inst/extdata
-directory.
+  2. (Optional) a bias surface if you wish to include one.
+
+For this example, we provide both the environmental layers and a sample bias surface.
+
+
+### 1. Define Environmental Backskground 
+
+Your environmental background, also refered to as environmental predictors, will be the base on which your virtual species will be build. 
+
 
 ```{r}
 library(NicheR)
@@ -78,6 +83,7 @@ library(ggplot2)
 library(ggpubr)
 library(rgl)
 library(plotly)
+
 
 # Access example environmental raster files from the package
 # Make sure "Bio1.tif", "Bio4.tif", "Bio12.tif" exist in inst/extdata
@@ -93,7 +99,98 @@ names(env_stack) <- c("mean_temp", "temp_seasonality", "annual_precip")
 env_df <- as.data.frame(env_stack, xy = TRUE, na.rm = TRUE)
 ```
 
-### 2. Build a 3D Ellipsoid Niche The build_ellipsoid() function creates
+
+### 2. Create your virtual Species
+
+Now that the environmental background has been loaded and prepared, the next step is to define the virtual species.
+
+In this package, you can do this in two ways:
+
+  1. Using `create_virtual_species()`, a high-level function that creates the virtual species in a single step, or 
+  2. Running each individual function separately for greater control.
+
+Below, we demonstrate both approaches—first using the high-level function, and then showing each step individually.
+
+
+#### High-Level Approach
+
+In this step, we specify the virtual species’ niche characteristics and generate the species using create_virtual_species().
+
+    center: defines the environmental centroid of the species’ niche (in this case, mean temperature, temperature seasonality, and annual precipitation).
+
+    axes: controls the spread or tolerance along each environmental variable.
+
+    angles: defines the rotation of the ellipsoid in environmental space (set to 0 for no rotation).
+
+    env_bg: the environmental background raster stack used to project suitability.
+
+    n_occ: number of occurrence points to sample from the suitability surface.
+
+    out: determines which outputs are returned ("both" returns suitability and occurrences).
+
+    distances: whether to calculate distances from the niche centroid.
+
+    out.file: if TRUE, saves results to a file.
+
+The resulting object includes the species’ suitability surface, sampled occurrences, and internal parameters used to generate them.
+
+
+```{r}
+
+# Define niche parameters (can also be defined in the create_virtual_species function)
+niche_center <- c(mean_temp = 200,
+                  temp_seasonality = 1000,
+                  annual_precip = 6500)
+niche_axes <- c(75, 250, 2000) 
+niche_angles <- c(0, 0, 0) 
+
+
+
+nicheR_vs <- create_virtual_species(env_bg = env_stack,
+                                             center = niche_center,
+                                             axes = niche_axes,
+                                             angles = niche_angles,
+                                             n_occ = 100,
+                                             out = "both",
+                                             distances = TRUE,
+                                             out.file = FALSE)
+
+```
+
+And here are the final visuals of our virtual species. For additional visuals and customization options, see the Step-by-Step Approach section.
+
+```{r}
+plot_e_space(env_bg = env_stack,
+             x = "mean_temp",
+             y = "temp_seasonality",
+             z = "annual_precip",
+             labels = c("Mean T (°C)",
+                        "Temp Seasonality", 
+                        "Annual Prec (mm)"),
+             niche = nicheR_vs$niche,
+             palette = "default",
+             show.pts.in = TRUE,
+             occ_pts = nicheR_vs$occurrences)
+
+```
+
+
+
+```{r}
+
+plot_g_space(env_bg = nicheR_vs$call_args$env_bg,
+             niche = nicheR_vs$niche,
+             show.suitable = TRUE,
+             show.distance = TRUE,
+             occ_pts = nicheR_vs$occurrences)
+```
+
+
+
+#### Step-by-Step Approach
+
+
+##### 1. Build a 3D Ellipsoid Niche The build_ellipsoid() function creates
 
 the core niche object by specifying its center, semi-axis lengths, and
 rotation angles.
@@ -113,13 +210,13 @@ my_niche <- build_ellps(
 )
 ```
 
-### 3. Visualize the Niche in Environmental Space (E-space) 
+##### 2. Visualize the Niche in Environmental Space (E-space) 
 
 Function 'plot_e_space()' allows you to visualize e-sapce and the niche ellipsoidal boundary. 
 
 It can generate both static 2D pairwise plots and interactive 3D plots.
 
-#### 3.1. 2D Pairwise Plots
+##### 3. 2D Pairwise Plots
 
 ```{r, fig.width=11, fig.height=8, dpi=300, dpi=300}
 plot_e_space(
@@ -133,7 +230,7 @@ plot_e_space(
 )
 ```
 
-#### 3.2. 3D Interactive Plot
+##### 4. 3D Interactive Plot
 
 To render a 3D interactive plot within the same plotting function as 2D, add the argument `plot.3d = TRUE`.  
 
