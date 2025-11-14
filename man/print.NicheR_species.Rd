@@ -2,10 +2,18 @@
 % Please edit documentation in R/create_virtual_species.R
 \name{print.NicheR_species}
 \alias{print.NicheR_species}
-\title{Print method for NicheR_species}
+\title{Print a NicheR virtual species}
 \usage{
 \method{print}{NicheR_species}(x, ...)
 }
+\arguments{
+\item{x}{A \code{NicheR_species} object.}
+
+\item{...}{Not used.}
+}
+\value{
+\code{x}, invisibly.
+}
 \description{
-Print method for NicheR_species
+Print a NicheR virtual species
 }

@@ -2,62 +2,73 @@
 % Please edit documentation in R/set_bias_surface.R
 \name{set_bias_surface}
 \alias{set_bias_surface}
-\title{This function applies one or more bias surfaces (sampling probability layers) to an
-ecological suitability layer to determine the final realized suitability.}
+\title{Apply one or more bias surfaces to a suitability raster}
 \usage{
 set_bias_surface(
+  suitable_env,
   bias_surface,
-  ecological_suitability = NULL,
-  bias_direction = 1,
-  raster_resolution = 0.5,
-  output = "default"
+  bias_dir = 1,
+  out = c("default", "both")
 )
 }
 \arguments{
-\item{bias_surface}{A single bias layer or a collection of bias layers. This can be:
+\item{suitable_env}{A required \code{terra::SpatRaster} representing the
+ecological suitability surface (values typically 0–1).}
+
+\item{bias_surface}{One or more bias layers which may be:
 \itemize{
-  \item A \code{terra::SpatRaster} (single layer or stack).
-  \item A \code{terra::SpatVector} (which will be rasterized).
-  \item A path to a single raster/vector file.
-  \item A \code{list} of any of the above (paths, SpatRasters, SpatVectors).
-}
-Values should ideally be scaled from 0 to 1.}
-
-\item{ecological_suitability}{Optional. A \code{terra::SpatRaster} (values 0/1) representing the
-ecological suitability layer. If \code{NULL} (default), the function returns only the
-\strong{Pooled Bias Surface}.}
-
-\item{bias_direction}{Numeric vector. Defines the directionality for each bias layer.
-\itemize{
-  \item \code{1} (or \code{-1}) applies to all layers if a single value is provided.
-  \item A vector (e.g., \code{c(1, -1, 1)}) must match the number of \code{bias_surface} layers.
-}
-A value of \code{1} indicates higher raw layer values mean higher bias. A value of \code{-1}
-indicates higher raw layer values mean \strong{lower} bias (applying the $1 - \text{layer}$ reversal).}
-
-\item{raster_resolution}{Numeric. The resolution to use when rasterizing vector inputs
-or creating a template if no \code{ecological_suitability} raster is provided. Defaults to 0.5.}
-
-\item{output}{Character string, controlling the returned layers.
-\itemize{
-  \item \code{"default"} (or \code{NULL}): Returns the \code{final_suitability} (or Pooled Bias) and the \code{pooled_bias} layer.
-  \item \code{"all"}: Returns all layers: \code{final_suitability} (or Pooled Bias), \code{pooled_bias}, and the stack of \code{directional_bias_stack}.
+  \item a \code{terra::SpatRaster} (single layer or multi-layer),
+  \item a \code{terra::SpatVector} (rasterized to match
+        \code{suitable_env}),
+  \item a character path to a raster or vector file,
+  \item a \code{list} of any of the above.
 }}
+
+\item{bias_dir}{Numeric values of \code{1} or \code{-1} controlling
+directionality. A length 1 value is recycled across all layers. A value
+of \code{-1} applies \code{1 - layer} after scaling to \eqn{[0, 1]}.}
+
+\item{out}{Character, one of \code{"default"} or \code{"both"}, determining
+whether to return only the pooled bias and final suitability
+(\code{"default"}) or also the individual standardized, direction-adjusted
+bias layers (\code{"both"}).}
 }
 \value{
-A list of class \code{biased_suitable_env} containing:
-  \item{pooled_bias_sp}{The pooled (multiplied) and standardized bias layer (\code{SpatRaster}).}
-  \item{pooled_bias_df}{Data frame of coordinates/values for non-zero cells of \code{pooled_bias_sp}.}
-  \item{final_suitability_sp}{*Only when \code{ecological_suitability} is provided.* The final \code{terra::SpatRaster} result (Niche * Pooled Bias).}
-  \item{final_suitability_df}{*Only when \code{ecological_suitability} is provided.* Data frame of coordinates/values for non-zero cells of \code{final_suitability_sp}.}
-  \item{directional_bias_stack}{*Only with \code{output="all"}.* \code{SpatRaster} stack of all individual, standardized, and direction-corrected bias layers.}
-  \item{directional_bias_df}{*Only with \code{output="all"}.* Data frame of coordinates/values for non-zero cells of \code{directional_bias_stack}.}
-  \item{combination_formula}{*Internal*: A string detailing how the layers were combined.}
-  \item{is_niche_applied}{*Internal*: Boolean indicating if \code{ecological_suitability} was used.}
+A list of class \code{"biased_suitable_env"} containing:
+  \item{pooled_bias_sp}{Pooled bias raster (scaled 0–1; \code{SpatRaster}).}
+  \item{pooled_bias_df}{Data frame version of pooled bias (non-zero cells).}
+  \item{final_suitability_sp}{Suitability * pooled bias (\code{SpatRaster}).}
+  \item{final_suitability_df}{Data frame version of final suitability
+        (non-zero cells).}
+  \item{directional_bias_stack}{(If \code{out = "both"}) stack of all
+        standardized, direction-corrected bias layers (\code{SpatRaster}).}
+  \item{directional_bias_df}{(If \code{out = "both"}) data frame version of
+        the directional stack (rows where at least one bias layer > 0).}
+  \item{combination_formula}{String describing how layers were combined
+        (e.g., \code{"Bias layers were combined: bias_1 * (1-bias_2)"}).}
+  \item{is_niche_applied}{Logical, always \code{TRUE} for this function
+        (reserved for potential future use).}
 }
 \description{
-It handles multiple bias inputs, aligns them to a common template, standardizes them
-individually, applies user-defined directionality (e.g., $1 - \text{layer}$), and
-multiplies them together before applying the pooled bias to the ecological suitability.
+This function combines one or more bias layers (sampling probability
+surfaces) and applies them to a suitability raster. Each bias layer is:
+\itemize{
+  \item aligned to the suitability raster,
+  \item scaled to \eqn{[0, 1]},
+  \item optionally reversed via \eqn{1 - x},
+  \item multiplied with other bias layers to form a pooled bias surface.
+}
+The pooled bias is then multiplied with the ecological suitability raster to
+obtain a biased suitability surface.
+}
+\details{
+This function currently expects \code{suitable_env} to be a
+\code{terra::SpatRaster}. If you are working with suitability in data.frame
+form, you can:
+\enumerate{
+  \item convert the suitability to a raster before calling,
+  \item or use the returned \code{pooled_bias_df} to merge back into your
+        data.frame by coordinates.
+}
 }
 \concept{niche functions}

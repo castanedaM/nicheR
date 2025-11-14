@@ -2,9 +2,7 @@
 % Please edit documentation in R/create_virtual_species.R
 \name{create_virtual_species}
 \alias{create_virtual_species}
-\title{Create a virtual species end to end
-Routes ... to build_ellps(), get_suitable_env(), and get_sample_occ()
-Returns an S3 object of class "NicheR_species"}
+\title{Create a virtual species end to end}
 \usage{
 create_virtual_species(
   ...,
@@ -13,8 +11,66 @@ create_virtual_species(
   verbose = TRUE
 )
 }
+\arguments{
+\item{...}{Named arguments passed to the component functions.
+Arguments are routed by name to the matching formal parameters of
+[build_ellps()], [get_suitable_env()], and [get_sample_occ()].
+Unknown names are ignored with a warning.}
+
+\item{out.file}{Logical. If `TRUE`, save the returned object to an `.rds`
+file in the working directory.}
+
+\item{out.file.name}{Optional base name (without extension) for the saved
+file. If `NULL` or empty, a timestamped name is used.}
+
+\item{verbose}{Logical. If `TRUE`, print progress messages.}
+}
+\value{
+A list of class **NicheR_species** with elements:
+\itemize{
+  \item \code{niche}: the ellipsoid object returned by [build_ellps()].
+  \item \code{suitability}: suitability surface from [get_suitable_env()].
+  \item \code{occurrences}: sampled occurrences from [get_sample_occ()].
+  \item \code{call_args}: the original `...` captured as a named list.
+  \item \code{routed_args}: a list showing which args went to each function.
+  \item \code{save_path}: file path if \code{out.file = TRUE}, otherwise `NULL`.
+}
+}
 \description{
-Create a virtual species end to end
-Routes ... to build_ellps(), get_suitable_env(), and get_sample_occ()
-Returns an S3 object of class "NicheR_species"
+Orchestrates the full NicheR workflow by routing `...` to
+[build_ellps()], [get_suitable_env()], and [get_sample_occ()].
+Returns an S3 object of class **NicheR_species** containing the
+niche object, suitability raster, and sampled occurrences.
+}
+\details{
+If any component function requires `env_bg` and it is supplied only at the
+top level, it is forwarded to that function automatically. If a required
+argument (such as `env_bg`) is missing for a component, the function stops
+with an informative error.
+}
+\section{Workflow}{
+
+1. Calls [build_ellps()] to define the ellipsoid in E-space.
+2. Calls [get_suitable_env()] to compute suitability in G-space.
+3. Calls [get_sample_occ()] to sample occurrences from the constrained surface.
+}
+
+\examples{
+\dontrun{
+vs <- create_virtual_species(
+  # build_ellps() args
+  centroid = c(temp = 20, precip = 140, seas = 25),
+  axes     = c(8, 45, 6.5),
+  # get_suitable_env() args
+  env_bg   = my_env_spatraster,
+  bias     = my_bias_raster,
+  # get_sample_occ() args
+  n_points = 500
+)
+print(vs)
+}
+
+}
+\seealso{
+[build_ellps()], [get_suitable_env()], [get_sample_occ()]
 }
