@@ -84,7 +84,7 @@ get_suitable_env <- function(niche,
     }
 
     # Build a data.frame with XY and layer values for lookups later
-    env_bg_df <- terra::as.data.frame.nicheR(env_bg, verbose = FALSE, use_cache = TRUE)
+    env_bg_df <- as.data.frame.nicheR(env_bg, verbose = FALSE, use_cache = TRUE)
 
     # Ensure XY names exist
     if (!all(c("x", "y") %in% names(env_bg_df))) {
@@ -102,7 +102,7 @@ get_suitable_env <- function(niche,
 
     if (inherits(env_bg, "SpatRaster")){
       # Build a data.frame with XY and layer values for lookups later
-      env_bg_df <- terra::as.data.frame.nicheR(env_bg, verbose = FALSE, use_cache = TRUE)
+      env_bg_df <- as.data.frame.nicheR(env_bg, verbose = FALSE, use_cache = TRUE)
 
     }else{
       env_bg_df <- as.data.frame.nicheR(env_bg, verbose = FALSE, use_cache = TRUE)
