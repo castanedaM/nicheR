@@ -11,6 +11,9 @@
 #' The pooled bias is then multiplied with the ecological suitability raster to
 #' obtain a biased suitability surface.
 #'
+#' All operations are performed with \pkg{terra} objects; no data.frame
+#' conversion is used internally to keep memory usage manageable.
+#'
 #' @param suitable_env A required \code{terra::SpatRaster} representing the
 #'   ecological suitability surface (values typically 0–1).
 #' @param bias_surface One or more bias layers which may be:
@@ -28,43 +31,33 @@
 #'   whether to return only the pooled bias and final suitability
 #'   (\code{"default"}) or also the individual standardized, direction-adjusted
 #'   bias layers (\code{"both"}).
+#' @param verbose Logical. If \code{TRUE}, prints progress messages before and
+#'   after major processing steps.
 #'
 #' @return A list of class \code{"biased_suitable_env"} containing:
 #'   \item{pooled_bias_sp}{Pooled bias raster (scaled 0–1; \code{SpatRaster}).}
-#'   \item{pooled_bias_df}{Data frame version of pooled bias (non-zero cells).}
 #'   \item{final_suitability_sp}{Suitability * pooled bias (\code{SpatRaster}).}
-#'   \item{final_suitability_df}{Data frame version of final suitability
-#'         (non-zero cells).}
 #'   \item{directional_bias_stack}{(If \code{out = "both"}) stack of all
 #'         standardized, direction-corrected bias layers (\code{SpatRaster}).}
-#'   \item{directional_bias_df}{(If \code{out = "both"}) data frame version of
-#'         the directional stack (rows where at least one bias layer > 0).}
 #'   \item{combination_formula}{String describing how layers were combined
 #'         (e.g., \code{"Bias layers were combined: bias_1 * (1-bias_2)"}).}
 #'   \item{is_niche_applied}{Logical, always \code{TRUE} for this function
 #'         (reserved for potential future use).}
 #'
-#' @details
-#' This function currently expects \code{suitable_env} to be a
-#' \code{terra::SpatRaster}. If you are working with suitability in data.frame
-#' form, you can:
-#' \enumerate{
-#'   \item convert the suitability to a raster before calling,
-#'   \item or use the returned \code{pooled_bias_df} to merge back into your
-#'         data.frame by coordinates.
-#' }
-#'
 #' @family niche functions
-#' @importFrom terra rast vect resample values as.data.frame rasterize app nlyr as.list ext res xmin xmax ymin ymax
+#' @importFrom terra rast vect resample values rasterize app nlyr as.list res ext xmin xmax ymin ymax
 #' @export
 set_bias_surface <- function(suitable_env,
                              bias_surface,
                              bias_dir = 1,
-                             out = c("default", "both")) {
+                             out = c("default", "both"),
+                             verbose = TRUE) {
+
+  gc()
 
   out <- match.arg(out)
 
-  # Basic checks -------------------------------------------------------
+  # Basic checks ---------------------------------------------------------------
 
   if (missing(suitable_env) || is.null(suitable_env)) {
     stop("'suitable_env' is required and must be a terra::SpatRaster.")
@@ -76,7 +69,7 @@ set_bias_surface <- function(suitable_env,
     stop("'bias_surface' is required (SpatRaster, SpatVector, path, or list).")
   }
 
-  # Normalize bias_surface into a list ---------------------------------
+  # Normalize bias_surface into a list -----------------------------------------
 
   if (inherits(bias_surface, "list")) {
     bias_list <- bias_surface
@@ -96,15 +89,12 @@ set_bias_surface <- function(suitable_env,
     stop("No bias layers provided.")
   }
 
-  if (!inherits(suitable_env, "SpatRaster")) {
-    stop("'suitable_env' must be a terra::SpatRaster.")
-  }
+  # Template is always the suitability raster ----------------------------------
 
-  # Template is always the suitability raster
-  template_raster <- suitable_env
+  template_raster  <- suitable_env
   is_niche_applied <- TRUE
 
-  # Validate bias_dir --------------------------------------------------
+  # Validate bias_dir ----------------------------------------------------------
 
   if (length(bias_dir) == 1) {
     bias_dir <- rep(bias_dir, length(bias_list))
@@ -117,7 +107,12 @@ set_bias_surface <- function(suitable_env,
     stop("'bias_dir' must only contain values of 1 or -1.")
   }
 
-  # Process, align, and standardize each bias layer --------------------
+  # Process, align, and standardize each bias layer ----------------------------
+
+  if (verbose) {
+    message("Processing and standardizing ", length(bias_list),
+            " bias layer(s) to match the suitability raster...")
+  }
 
   directional_bias_list <- vector("list", length(bias_list))
   dir_message_parts     <- character(length(bias_list))
@@ -174,6 +169,9 @@ set_bias_surface <- function(suitable_env,
     if (!identical(terra::res(bias_raster_raw), terra::res(template_raster)) ||
         !identical(terra::ext(bias_raster_raw), terra::ext(template_raster))) {
 
+      if (verbose) {
+        message("  - Aligning bias layer ", i, " to suitability grid (resample).")
+      }
       bias_raster_aligned <- terra::resample(bias_raster_raw, template_raster, method = "near")
     } else {
       bias_raster_aligned <- bias_raster_raw
@@ -208,74 +206,81 @@ set_bias_surface <- function(suitable_env,
     directional_bias_list[[i]]    <- directional_layer
   }
 
-  # Stack directional layers
+  if (verbose) {
+    message("Finished processing bias layers.")
+  }
+
+  # Stack directional layers ---------------------------------------------------
+
   directional_bias_stack <- if (length(directional_bias_list) == 1) {
     directional_bias_list[[1]]
   } else {
     do.call(c, directional_bias_list)
   }
 
-  # 4. Pool bias layers ---------------------------------------------------
+  # Pool bias layers -----------------------------------------------------------
+
+  if (verbose) {
+    message("Pooling ", terra::nlyr(directional_bias_stack),
+            " bias layer(s) into a single surface...")
+  }
 
   if (terra::nlyr(directional_bias_stack) > 1) {
     pooled_bias_sp <- terra::app(
       directional_bias_stack,
       fun = function(x) {
-        # x is a vector of layer values for a given cell
         prod(x, na.rm = TRUE)
       }
     )
   } else {
     pooled_bias_sp <- directional_bias_stack
   }
-  names(pooled_bias_sp) <- "pooled_bias"
 
-  pooled_bias_df <- terra::as.data.frame(pooled_bias_sp, xy = TRUE, na.rm = TRUE)
-  pooled_bias_df <- pooled_bias_df[pooled_bias_df[["pooled_bias"]] > 0,
-                                   , drop = FALSE]
+  names(pooled_bias_sp) <- "pooled_bias"
 
   combination_formula <- paste0(
     "Bias layers were combined: ",
     paste(dir_message_parts, collapse = " * ")
   )
 
-  # --- 5. Final suitability --------------------------------------------------
+  if (verbose) {
+    message("Finished pooling bias layers.")
+  }
+
+  # Final suitability ----------------------------------------------------------
+
+  if (verbose) {
+    message("Applying pooled bias to suitability raster...")
+  }
 
   final_suitability_sp <- suitable_env * pooled_bias_sp
   names(final_suitability_sp) <- "final_suitability"
 
-  final_suitability_df <- terra::as.data.frame(final_suitability_sp, xy = TRUE, na.rm = TRUE)
-  final_suitability_df <- final_suitability_df[final_suitability_df[["final_suitability"]] > 0,
-                                               , drop = FALSE]
-
-  if (nrow(final_suitability_df) == 0) {
-    warning("No area remains after applying pooled bias to suitability.", call. = FALSE)
+  if (verbose) {
+    message("Finished computing biased suitability surface.")
   }
 
-  # --- 6. Build result object -----------------------------------------------
+  # Build result object --------------------------------------------------------
 
   res <- list(
-    pooled_bias_sp        = pooled_bias_sp,
-    pooled_bias_df        = pooled_bias_df,
-    final_suitability_sp  = final_suitability_sp,
-    final_suitability_df  = final_suitability_df,
-    combination_formula   = combination_formula,
-    is_niche_applied      = is_niche_applied
+    pooled_bias_sp       = pooled_bias_sp,
+    final_suitability_sp = final_suitability_sp,
+    combination_formula  = combination_formula,
+    is_niche_applied     = is_niche_applied
   )
 
   if (identical(tolower(out), "both")) {
-    directional_bias_df <- terra::as.data.frame(directional_bias_stack, xy = TRUE, na.rm = TRUE)
-    bias_cols <- setdiff(names(directional_bias_df), c("x", "y"))
-    directional_bias_df <- directional_bias_df[
-      rowSums(directional_bias_df[, bias_cols, drop = FALSE], na.rm = TRUE) > 0,
-      , drop = FALSE
-    ]
-
     res$directional_bias_stack <- directional_bias_stack
-    res$directional_bias_df    <- directional_bias_df
   }
 
   class(res) <- "biased_suitable_env"
+
+  gc()
+
+  if (verbose) {
+    message("set_bias_surface() completed successfully.")
+  }
+
   return(res)
 }
 
