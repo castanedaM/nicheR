@@ -2,111 +2,81 @@
 % Please edit documentation in R/get_sample_occ.R
 \name{get_sample_occ}
 \alias{get_sample_occ}
-\title{Sample Occurrence Points from a Suitable Environment}
+\title{Sample occurrence points from a suitable environment pool}
 \usage{
 get_sample_occ(
   n_occ,
-  env_bg = NULL,
-  niche,
+  suitable_env,
   method = c("random", "center", "edge"),
   bias_surface = NULL,
-  bias_dir = 1,
-  bias_template = NULL,
-  bias_res = NULL,
-  bias_ext = NULL,
-  suitable_env = NULL,
-  seed = NULL
+  seed = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
 \item{n_occ}{Integer; the number of occurrence points to sample.}
 
-\item{env_bg}{Optional. A \code{terra::SpatRaster}, \code{data.frame}, or
-\code{matrix} of environmental predictor variables. It must contain the
-variables referenced by the \code{niche} object. If a \code{data.frame}
-is used, it should also contain \code{x} and \code{y} columns for spatial
-referencing. Required if \code{suitable_env} is not provided, or if
-\code{bias_surface} is used and no explicit template is given.}
-
-\item{niche}{An object of class \code{ellipsoid} created by
-\code{build_ellipsoid()}.}
-
-\item{method}{A character string specifying the sampling strategy. One of
-\code{"random"}, \code{"center"}, or \code{"edge"}:
+\item{suitable_env}{A precomputed suitability object describing the
+suitable environment pool. May be:
 \itemize{
-  \item \code{"random"}: Samples are drawn with uniform probability from
-    the suitable environmental space.
-  \item \code{"center"}: Sampling probability is inversely proportional to
-    the Mahalanobis distance, favoring points closer to the niche center.
-  \item \code{"edge"}: Sampling probability is proportional to the
-    Mahalanobis distance, favoring points closer to the niche boundary.
+  \item a \code{terra::SpatRaster} or \code{raster::Raster*} with
+        at least one layer containing squared distances
+        (\code{dist_sq}), or
+  \item a \code{data.frame} / \code{matrix} with columns \code{x},
+        \code{y}, and (for non-random methods) \code{dist_sq},
+        typically produced by
+        \code{get_suitable_env(..., out.suit = "data.frame", distances = TRUE)}, or
+  \item a \code{suitable_env} object returned by
+        \code{get_suitable_env(..., out.suit = "both")}.
 }}
 
-\item{bias_surface}{Optional. Either:
+\item{method}{Character; sampling strategy, one of:
 \itemize{
-  \item one or more bias layers (SpatRaster, SpatVector, path, or list)
-        that will be passed to \code{set_bias_surface()}, or
-  \item a precomputed \code{nicheR_bias_surface} object returned by
-        \code{set_bias_surface()}.
-}
-The resulting pooled bias surface is used to modulate sampling weights
-over the suitable pool of environments.}
+  \item \code{"random"}: uniform probability over the suitable pool.
+  \item \code{"center"}: probability inversely proportional to
+        Mahalanobis distance (higher near the niche center).
+  \item \code{"edge"}: probability proportional to Mahalanobis
+        distance (higher near the niche boundary).
+}}
 
-\item{bias_dir}{Optional numeric values of \code{1} or \code{-1} passed
-to \code{set_bias_surface()} when \code{bias_surface} is a raw bias
-input. A length-1 value is recycled across layers.}
+\item{bias_surface}{Optional 1-layer \code{terra::SpatRaster} or
+\code{raster::Raster*} describing sampling bias, scaled to [0, 1]
+on the same grid/CRS as the suitability surface. Bias values are
+extracted at suitable locations and multiplied with the method-
+based weights. Cells with \code{NA} bias are treated as 0 (i.e.,
+not sampled).}
 
-\item{bias_template}{Optional \code{terra::SpatRaster} template to pass to
-\code{set_bias_surface()} (overrides templates inferred from
-\code{env_bg} or \code{suitable_env}).}
+\item{seed}{Optional integer used to set the random number generator
+seed for reproducible results.}
 
-\item{bias_res}{Optional numeric resolution to pass to
-\code{set_bias_surface()} when building a template from \code{ext}.}
-
-\item{bias_ext}{Optional extent object (SpatRaster, SpatVector, or numeric
-\code{c(xmin, xmax, ymin, ymax)}) passed to \code{set_bias_surface()}
-when no template is provided.}
-
-\item{suitable_env}{Optional. A precomputed suitability object describing
-the suitable environment pool. May be:
-\itemize{
-  \item a \code{terra::SpatRaster} or \code{raster::Raster*} already
-        containing suitability and Mahalanobis distances, or
-  \item a \code{data.frame} / \code{matrix} with columns \code{x},
-        \code{y}, and \code{dist_sq}, typically produced by
-        \code{get_suitable_env(..., out = "data.frame", distances = TRUE)}.
-}
-When supplied, \code{get_suitable_env()} is not called internally.}
-
-\item{seed}{An integer used to set the random number generator seed for
-reproducible results.}
+\item{verbose}{Logical. If \code{TRUE}, print progress messages.}
 }
 \value{
 A \code{data.frame} containing \code{n_occ} sampled rows from the
-  suitable environment pool, including the \code{x} and \code{y} coordinates
-  and the environmental predictor values.
+  suitable environment pool, including \code{x}, \code{y}, and any
+  environmental predictor columns. The \code{dist_sq} column is dropped
+  from the returned data.
 }
 \description{
-This function samples occurrence points from a background environmental
-dataset based on a defined ellipsoid niche. Sampling can be biased towards
-the center, the edge, or be purely random. Optionally, a sampling bias
-surface can be supplied to modulate the probability of selecting each
-suitable location.
+This function samples occurrence points from a precomputed pool of
+suitable environments. Sampling can be biased towards the center,
+the edge, or be purely random. Optionally, a 0–1 sampling bias
+surface can be supplied to modulate the probability of selecting
+each suitable location.
 }
 \details{
-The function first obtains a pool of suitable environments either by:
+This function assumes that the suitability / distance calculations
+have already been performed (e.g. via \code{get_suitable_env()}).
+It only handles the sampling step:
 \enumerate{
-  \item calling \code{get_suitable_env()} on \code{env_bg}, or
-  \item using a user-supplied \code{suitable_env} object that already
-        contains suitability and Mahalanobis distances.
+  \item Coerce \code{suitable_env} to a data.frame with \code{x}, \code{y},
+        and (for non-random methods) \code{dist_sq}.
+  \item Compute method-specific weights.
+  \item Optionally multiply weights by a user-supplied 0–1 bias surface.
+  \item Draw \code{n_occ} samples with probability proportional to the
+        final weights.
 }
-
-It then applies a weighting scheme based on \code{method} and, if provided,
-a pooled bias surface (either raw layers via \code{set_bias_surface()} or a
-precomputed \code{nicheR_bias_surface}) to probabilistically select
-\code{n_occ} points from this suitable environment pool.
 }
 \seealso{
-\code{\link{build_ellipsoid}}, \code{\link{get_suitable_env}},
-  \code{\link{set_bias_surface}}
+\code{\link{get_suitable_env}}, \code{\link{set_bias_surface}}
 }

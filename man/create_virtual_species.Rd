@@ -15,7 +15,15 @@ create_virtual_species(
 \item{...}{Named arguments passed to the component functions.
 Arguments are routed by name to the matching formal parameters of
 [build_ellps()], [get_suitable_env()], [set_bias_surface()], and
-[get_sample_occ()]. Unknown names are ignored with a warning.}
+[get_sample_occ()]. Unknown names are ignored with a warning.
+\itemize{
+  \item \strong{build_ellps()}: e.g. `center`, `axes`, `angles`, etc.
+  \item \strong{get_suitable_env()}: e.g. `env_bg`, `out`, `distances`.
+  \item \strong{set_bias_surface()}: e.g. `bias_surface`, `bias_dir`,
+        `template`, `res`, `ext`, `out.bias`.
+  \item \strong{get_sample_occ()}: e.g. `n_occ`, `method`,
+        `bias_surface`, `suitable_env`, `seed`.
+}}
 
 \item{out.file}{Logical. If `TRUE`, save the returned object to an `.rds`
 file in the working directory.}
@@ -29,9 +37,10 @@ file. If `NULL` or empty, a timestamped name is used.}
 A list of class **NicheR_species** with elements:
 \itemize{
   \item \code{niche}: the ellipsoid object returned by [build_ellps()].
-  \item \code{suitability}: suitability surface from [get_suitable_env()].
-  \item \code{bias_surface}: optional \code{nicheR_bias_surface} object
-        returned by [set_bias_surface()] (or \code{NULL} if no bias was used).
+  \item \code{suitability}: suitability object from [get_suitable_env()].
+  \item \code{bias_surface}: either `NULL`, a \code{nicheR_bias_surface}
+        object (if [set_bias_surface()] was used), or a user-supplied
+        single-layer bias raster.
   \item \code{occurrences}: sampled occurrences from [get_sample_occ()].
   \item \code{call_args}: the original `...` captured as a named list.
   \item \code{routed_args}: a list showing which args went to each function.
@@ -40,28 +49,38 @@ A list of class **NicheR_species** with elements:
 }
 \description{
 Orchestrates the full NicheR workflow by routing `...` to
-[build_ellps()], [get_suitable_env()], [set_bias_surface()], and
-[get_sample_occ()]. Returns an S3 object of class **NicheR_species**
-containing the niche object, suitability, (optional) bias surface,
-and sampled occurrences.
+[build_ellps()], [get_suitable_env()], optionally [set_bias_surface()],
+and [get_sample_occ()]. Returns an S3 object of class **NicheR_species**
+containing the niche object, suitability, (optional) bias surface, and
+sampled occurrences.
 }
 \details{
-If any component function requires `env_bg` and it is supplied only at the
-top level, it is forwarded to that function automatically. If a required
-argument (such as `env_bg`) is missing for a component, the function stops
-with an informative error.
+If `env_bg` is supplied only at the top level, it is forwarded to both
+[get_suitable_env()] and [get_sample_occ()] (if those functions accept an
+`env_bg` argument). If a required argument (such as `env_bg`) is missing
+for a component, the function stops with an informative error.
 
-If bias-related arguments (e.g. `bias_surface`, `bias_dir`, `bias_template`,
-`bias_res`, `bias_ext`) are provided, a pooled bias surface is built via
-[set_bias_surface()] and stored in the output. This precomputed bias object
-is also passed into [get_sample_occ()] so that bias is not recomputed.
+\strong{Bias handling:}
+\itemize{
+  \item If the user passes only `bias_surface` (and no `bias_dir`,
+        `template`, `res`, `ext`, or `out.bias`), it is assumed to be a
+        \emph{precomputed single-layer raster} and is passed directly to
+        [get_sample_occ()] (which expects a 0–1 layer).
+  \item If the user passes `bias_surface` \emph{plus} any of the bias
+        construction arguments (`bias_dir`, `template`, `res`, `ext`,
+        `out.bias`), then [set_bias_surface()] is called once, and its
+        pooled bias raster is passed to [get_sample_occ()] as
+        `bias_surface`. The full bias object is stored in the output
+        as `bias_surface`.
+}
 }
 \section{Workflow}{
 
 1. Calls [build_ellps()] to define the ellipsoid in E-space.
 2. Calls [get_suitable_env()] to compute suitability in G-space.
 3. Optionally calls [set_bias_surface()] to build a pooled bias raster
-   when bias arguments are supplied.
+   when bias-construction arguments are supplied (e.g., `bias_dir`,
+   `template`, `res`, `ext`, `out.bias`).
 4. Calls [get_sample_occ()] to sample occurrences from the suitable
    (and optionally biased) environment.
 }

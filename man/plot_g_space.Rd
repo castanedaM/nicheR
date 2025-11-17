@@ -5,37 +5,34 @@
 \title{Plot Geographic Space with Optional Suitability/Distance and Occurrences}
 \usage{
 plot_g_space(
-  env_bg,
+  env_bg = NULL,
   n_bg = 10000,
-  niche = NULL,
-  show.suitable = FALSE,
-  show.distance = FALSE,
+  suitable_env = NULL,
   occ_pts = NULL,
   show.occ.density = FALSE,
   colors = NULL,
   palette = "default",
-  vs = NULL
+  vs = NULL,
+  niche = NULL
 )
 }
 \arguments{
-\item{env_bg}{A background environment object used by
-[get_suitable_env()]. Typically a `terra::SpatRaster` (or `raster::Raster*`)
-providing the environmental layers and extent. If `vs` is supplied and
-`env_bg` is `NULL`, the function will try to use `vs$call_args$env_bg`.}
+\item{env_bg}{Optional background environment object used when
+`suitable_env` is not supplied and suitability must be computed.
+Typically a `terra::SpatRaster` (or `raster::Raster*`).}
 
 \item{n_bg}{Integer (currently unused; reserved for future downsampling of
 the background grid).}
 
-\item{niche}{Optional object of class `"ellipsoid"` (from [build_ellps()]).
-Required when `show.suitable = TRUE` or `show.distance = TRUE`. If `vs`
-is supplied and `niche` is `NULL`, the function will try to use `vs$niche`.}
-
-\item{show.suitable}{Logical. If `TRUE`, fills suitable environments
-(inside the ellipsoid) as tiles.}
-
-\item{show.distance}{Logical. If `TRUE`, fills tiles by squared distance to
-the ellipsoid centroid (`dist_sq`). If both flags are `TRUE`, distance is
-turned off and suitability is shown (with a message).}
+\item{suitable_env}{Optional precomputed suitable environment object. Can be:
+\itemize{
+  \item a `data.frame` with columns `x`, `y`, and optionally `dist_sq`,
+  \item a `"suitable_env"` object returned by [get_suitable_env()]
+        with a `suitable_env_df` component.
+}
+If `dist_sq` is present, a distance panel is also drawn. If you only
+want one surface (e.g., just suitability or just distance), supply only
+that information in `suitable_env`.}
 
 \item{occ_pts}{Optional `data.frame` of occurrences with columns `x`, `y`
 (assumed longitude/latitude, WGS84). Plotted as points if supplied. If
@@ -47,53 +44,30 @@ density panels).}
 
 \item{colors}{Optional named list to override aesthetics. Recognized names:
 `bg` (basemap fill), `suitable_env` (suitable tiles), `occ_fill`,
-`occ_stroke`, and `dist` (RColorBrewer palette name for distance tiles).
-Example: `list(suitable_env = "#66CC99", dist = "YlOrRd")`.}
+`occ_stroke`, and `dist` (RColorBrewer palette name for distance tiles).}
 
 \item{palette}{Character palette key. One of `"default"`, `"palette2"`,
 or `"palette3"`.}
 
 \item{vs}{Optional object of class `"NicheR_species"` created by
-[create_virtual_species()]. When provided, any of `env_bg`, `niche`, and
-`occ_pts` that are `NULL` will be filled from this object if possible.}
+[create_virtual_species()]. When provided, any of `env_bg`, `niche`,
+`occ_pts`, or `suitable_env` that are `NULL` will be filled from this
+object if possible.}
+
+\item{niche}{Optional object of class `"ellipsoid"` (from [build_ellps()]).
+Required when suitability is computed internally (i.e., when
+`suitable_env` is `NULL`).}
 }
 \value{
-A `ggpubr` object produced by [ggpubr::ggarrange()], containing the
-  map panel and a matching legend panel.
+A `ggpubr` object produced by [ggpubr::ggarrange()], containing
+  one or two map panels plus a matching legend panel.
 }
 \description{
-Draws a world basemap and overlays (a) suitable environments as tiles
-derived from a niche ellipsoid, (b) a continuous distance-to-centroid
-surface, and/or (c) occurrence points. A compact custom legend is built
-to match the layers shown. If both `show.suitable` and `show.distance`
-are `TRUE`, the function disables `show.distance` and proceeds with
-`show.suitable = TRUE`.
+Draws a world basemap and overlays (a) suitable environments as tiles,
+(b) an optional continuous distance-to-centroid surface, and/or (c)
+occurrence points. A compact custom legend is built to match the
+discrete layers shown.
 }
-\details{
-The suitability/distance surface is obtained via
-`get_suitable_env(niche, env_bg, out = "data.frame", distances = TRUE)`,
-which returns columns `x`, `y`, and `dist_sq`. When `show.distance = TRUE`,
-a continuous legend is provided by `scale_fill_distiller()`. The custom
-legend on the right reflects only the discrete layers actually drawn
-(background, suitable, occurrences).
-
-If a `NicheR_species` object is provided via `vs`, the function:
-\itemize{
-  \item uses `vs$call_args$env_bg` as `env_bg` when `env_bg` is `NULL`,
-  \item uses `vs$niche` as `niche` when `niche` is `NULL`,
-  \item uses `vs$occurrences` as `occ_pts` when `occ_pts` is `NULL`.
-}
-Explicit arguments always take precedence over values inferred from `vs`.
-}
-\section{Notes}{
-
-- `niche` must be provided (directly or via `vs`) if either `show.suitable`
-  or `show.distance` is `TRUE`.
-- If both `show.suitable` and `show.distance` are `TRUE`, the function sets
-  `show.distance <- FALSE` and informs the user.
-- `occ_pts` must include columns named `x` and `y`.
-}
-
 \seealso{
 [build_ellps()], [get_suitable_env()], [create_virtual_species()]
 

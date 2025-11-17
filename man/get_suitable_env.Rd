@@ -7,7 +7,7 @@
 get_suitable_env(
   niche,
   env_bg,
-  out = c("data.frame", "spatial", "both"),
+  out.suit = c("data.frame", "spatial", "both"),
   distances = FALSE,
   verbose = TRUE
 )
@@ -22,37 +22,60 @@ referenced by the \code{niche} object. If a \code{data.frame} is used and
 spatial output is requested, it should also contain \code{x} and \code{y}
 columns for spatial referencing.}
 
-\item{out}{A character string specifying the desired output format. One of
-\code{"data.frame"}, \code{"spatial"}, or \code{"both"}:
+\item{out.suit}{A character string specifying the desired output format.
+One of \code{"data.frame"}, \code{"spatial"}, or \code{"both"}:
 \itemize{
   \item \code{"data.frame"}: Returns a data frame of all suitable points.
-  \item \code{"spatial"}: Returns a \code{terra::SpatRaster} where suitable
-    cells are marked with 1 and unsuitable with 0. Requires \code{env_bg}
-    to be a \code{terra::SpatRaster}.
-  \item \code{"both"}: Returns a list containing both the spatial raster and
-    the data frame of suitable points.
+  \item \code{"spatial"}: Returns one or more \code{terra::SpatRaster}
+    objects (see Details).
+  \item \code{"both"}: Returns a list containing both the spatial
+    raster output and the data frame of suitable points.
 }}
 
 \item{distances}{Logical; if \code{TRUE}, an additional column named
 \code{dist_sq} is added to the output data frame containing the squared
-Mahalanobis distance for each suitable point.}
+Mahalanobis distance for each suitable point. For spatial output,
+a separate raster of \code{dist_sq} values is also returned.}
 
 \item{verbose}{Logical; if \code{TRUE}, prints basic progress messages.}
 }
 \value{
-The suitable environmental area in the specified format: a
-  \code{data.frame}, a \code{terra::SpatRaster}, or a list containing both.
+Depending on \code{out.suit}:
+\itemize{
+  \item \code{"data.frame"}: a data.frame of suitable points (with optional
+        \code{dist_sq} column).
+  \item \code{"spatial"}: a named list of \code{SpatRaster} objects
+        (e.g. \code{list(suitable = <SpatRaster>, dist_sq = <SpatRaster>)}).
+  \item \code{"both"}: a list with elements
+        \code{suitable_env_sp} (spatial output as above) and
+        \code{suitable_env_df} (data.frame).
+}
 }
 \description{
 This function identifies and extracts environmental grid cells or data
-points that fall within a defined ellipsoid niche based on Mahalanobis distance.
+points that fall within a defined ellipsoid niche based on Mahalanobis
+distance.
 }
 \details{
-The function converts \code{env_bg} (if needed) to a data frame, calculates
-the squared Mahalanobis distance for each point, and then filters for points
-where this distance is less than or equal to 1. This identifies all locations
-that fall within the ellipsoid niche boundary.
+For raster inputs, a size check is performed. If the estimated size of a
+full in-memory data.frame representation of \code{env_bg} exceeds an
+internal threshold (in MB), the function stops and asks the user to supply
+a data.frame instead, recommending \code{as.data.frame.nicheR()} as a
+memory-safe helper.
+
+When \code{out.suit} includes spatial output and \code{distances = TRUE},
+the function returns two separate rasters:
+\itemize{
+  \item \code{suitable}: binary 0/1 raster of the suitable area,
+  \item \code{dist_sq}: raster with squared Mahalanobis distance inside the
+        ellipsoid (NA outside).
+}
+
+When \code{env_bg} is provided as a data.frame, these rasters are
+reconstructed from the \code{x} and \code{y} coordinates using
+\code{terra::rast(..., type = "xyz")}, assuming a regular grid.
 }
 \seealso{
-\code{\link{build_ellipsoid}}, \code{\link{get_sample_occ}}
+\code{\link{build_ellipsoid}}, \code{\link{get_sample_occ}},
+  \code{\link{as.data.frame.nicheR}}
 }
