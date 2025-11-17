@@ -1,55 +1,82 @@
-#' Apply one or more bias surfaces to a suitability raster
+#' Combine one or more bias surfaces into a pooled bias raster
 #'
-#' This function combines one or more bias layers (sampling probability
-#' surfaces) and applies them to a suitability raster. Each bias layer is:
+#' This helper function combines one or more sampling bias layers into a single
+#' pooled bias surface. Each bias layer is:
 #' \itemize{
-#'   \item aligned to the suitability raster,
+#'   \item aligned to a common template grid,
 #'   \item scaled to \eqn{[0, 1]},
 #'   \item optionally reversed via \eqn{1 - x},
 #'   \item multiplied with other bias layers to form a pooled bias surface.
 #' }
-#' The pooled bias is then multiplied with the ecological suitability raster to
-#' obtain a biased suitability surface.
 #'
-#' All operations are performed with \pkg{terra} objects; no data.frame
-#' conversion is used internally to keep memory usage manageable.
+#' The resulting pooled bias raster can then be used elsewhere in NicheR to
+#' modulate sampling or suitability, but this function itself only handles
+#' combination of bias layers.
 #'
-#' @param suitable_env A required \code{terra::SpatRaster} representing the
-#'   ecological suitability surface (values typically 0–1).
 #' @param bias_surface One or more bias layers which may be:
 #'   \itemize{
 #'     \item a \code{terra::SpatRaster} (single layer or multi-layer),
-#'     \item a \code{terra::SpatVector} (rasterized to match
-#'           \code{suitable_env}),
+#'     \item a \code{terra::SpatVector} (rasterized to a template grid),
 #'     \item a character path to a raster or vector file,
 #'     \item a \code{list} of any of the above.
 #'   }
 #' @param bias_dir Numeric values of \code{1} or \code{-1} controlling
 #'   directionality. A length 1 value is recycled across all layers. A value
 #'   of \code{-1} applies \code{1 - layer} after scaling to \eqn{[0, 1]}.
+#' @param template Optional \code{terra::SpatRaster} used as the template grid
+#'   (resolution, extent, and CRS) to which all bias layers will be aligned.
+#'   If \code{NULL}, the template is inferred from the first layer in
+#'   \code{bias_surface} (see Details).
+#' @param res Optional numeric resolution used to build a template raster when
+#'   no \code{template} is provided and only vector inputs are available, or
+#'   when \code{ext} is provided. Ignored if \code{template} is supplied.
+#' @param ext Optional spatial extent defining the template grid when no
+#'   \code{template} is provided. Can be:
+#'   \itemize{
+#'     \item a \code{terra::SpatRaster} or \code{terra::SpatVector}, in which
+#'           case \code{terra::ext()} is used, or
+#'     \item a numeric vector \code{c(xmin, xmax, ymin, ymax)}.
+#'   }
+#'   Must be used together with \code{res} if no \code{template} is given.
 #' @param out Character, one of \code{"default"} or \code{"both"}, determining
-#'   whether to return only the pooled bias and final suitability
-#'   (\code{"default"}) or also the individual standardized, direction-adjusted
-#'   bias layers (\code{"both"}).
+#'   whether to return only the pooled bias surface (\code{"default"}) or also
+#'   the individual standardized, direction-adjusted bias layers
+#'   (\code{"both"}).
 #' @param verbose Logical. If \code{TRUE}, prints progress messages before and
 #'   after major processing steps.
 #'
-#' @return A list of class \code{"biased_suitable_env"} containing:
+#' @return A list of class \code{"nicheR_bias_surface"} containing:
 #'   \item{pooled_bias_sp}{Pooled bias raster (scaled 0–1; \code{SpatRaster}).}
-#'   \item{final_suitability_sp}{Suitability * pooled bias (\code{SpatRaster}).}
 #'   \item{directional_bias_stack}{(If \code{out = "both"}) stack of all
 #'         standardized, direction-corrected bias layers (\code{SpatRaster}).}
 #'   \item{combination_formula}{String describing how layers were combined
 #'         (e.g., \code{"Bias layers were combined: bias_1 * (1-bias_2)"}).}
-#'   \item{is_niche_applied}{Logical, always \code{TRUE} for this function
-#'         (reserved for potential future use).}
 #'
-#' @family niche functions
-#' @importFrom terra rast vect resample values rasterize app nlyr as.list res ext xmin xmax ymin ymax
+#' @details
+#' Template selection follows this order:
+#' \enumerate{
+#'   \item If \code{template} is provided, it is used directly.
+#'   \item Otherwise, if \code{ext} and \code{res} are provided, a new template
+#'         raster is created from these.
+#'   \item Otherwise, the first element of \code{bias_surface} is used:
+#'     \itemize{
+#'       \item If it is a \code{SpatRaster}, that raster becomes the template.
+#'       \item If it is a \code{SpatVector}, a template is created from its
+#'             extent and \code{res}. In this case, \code{res} must not be
+#'             \code{NULL}.
+#'     }
+#' }
+#'
+#' All subsequent bias layers are resampled or rasterized to match this
+#' template grid.
+#'
+#' @importFrom terra rast vect resample values rasterize app nlyr as.list ext res xmin xmax ymin ymax
 #' @export
-set_bias_surface <- function(suitable_env,
-                             bias_surface,
+set_bias_surface <- function(bias_surface,
                              bias_dir = 1,
+                             template = NULL,
+                             res = NULL,
+                             ext = NULL,
                              out = c("default", "both"),
                              verbose = TRUE) {
 
@@ -59,12 +86,6 @@ set_bias_surface <- function(suitable_env,
 
   # Basic checks ---------------------------------------------------------------
 
-  if (missing(suitable_env) || is.null(suitable_env)) {
-    stop("'suitable_env' is required and must be a terra::SpatRaster.")
-  }
-  if (!inherits(suitable_env, "SpatRaster")) {
-    stop("'suitable_env' must be a terra::SpatRaster.")
-  }
   if (missing(bias_surface) || is.null(bias_surface)) {
     stop("'bias_surface' is required (SpatRaster, SpatVector, path, or list).")
   }
@@ -89,10 +110,74 @@ set_bias_surface <- function(suitable_env,
     stop("No bias layers provided.")
   }
 
-  # Template is always the suitability raster ----------------------------------
+  # ---------------------------------------------------------------------------
+  # Determine template raster
+  # ---------------------------------------------------------------------------
 
-  template_raster  <- suitable_env
-  is_niche_applied <- TRUE
+  if (!is.null(template)) {
+    if (!inherits(template, "SpatRaster")) {
+      stop("'template' must be a terra::SpatRaster if provided.")
+    }
+    template_raster <- template
+
+    if (verbose) {
+      message("Using user-supplied template raster.")
+    }
+
+  } else if (!is.null(ext) && !is.null(res)) {
+
+    # ext can be SpatRaster, SpatVector, or numeric vector
+    if (inherits(ext, c("SpatRaster", "SpatVector"))) {
+      ext_obj <- terra::ext(ext)
+    } else if (is.numeric(ext) && length(ext) == 4) {
+      ext_obj <- terra::ext(ext[1], ext[2], ext[3], ext[4])
+    } else {
+      stop("'ext' must be a SpatRaster, SpatVector, or numeric c(xmin, xmax, ymin, ymax).")
+    }
+
+    template_raster <- terra::rast(ext = ext_obj, resolution = res)
+
+    if (verbose) {
+      message("Created template raster from provided extent and resolution.")
+    }
+
+  } else {
+    # Infer template from first bias layer
+    first_bias_obj <- bias_list[[1]]
+
+    if (inherits(first_bias_obj, "character")) {
+      first_bias_obj <- tryCatch(
+        terra::rast(first_bias_obj),
+        error = function(e) {
+          tryCatch(
+            terra::vect(first_bias_obj),
+            error = function(e2) {
+              stop("Could not load first bias layer to infer template: ", e2$message)
+            }
+          )
+        }
+      )
+    }
+
+    if (inherits(first_bias_obj, "SpatRaster")) {
+      template_raster <- first_bias_obj
+      if (verbose) {
+        message("Using first bias raster as template.")
+      }
+    } else if (inherits(first_bias_obj, "SpatVector")) {
+      if (is.null(res)) {
+        stop("First bias layer is a SpatVector and no 'res' was provided. ",
+             "Please supply 'res' (resolution) or an explicit 'template'.")
+      }
+      ext_obj <- terra::ext(first_bias_obj)
+      template_raster <- terra::rast(ext = ext_obj, resolution = res)
+      if (verbose) {
+        message("First bias layer is a vector; created template from its extent and 'res'.")
+      }
+    } else {
+      stop("Could not determine template from first bias layer.")
+    }
+  }
 
   # Validate bias_dir ----------------------------------------------------------
 
@@ -111,7 +196,7 @@ set_bias_surface <- function(suitable_env,
 
   if (verbose) {
     message("Processing and standardizing ", length(bias_list),
-            " bias layer(s) to match the suitability raster...")
+            " bias layer(s) on the template grid...")
   }
 
   directional_bias_list <- vector("list", length(bias_list))
@@ -170,7 +255,7 @@ set_bias_surface <- function(suitable_env,
         !identical(terra::ext(bias_raster_raw), terra::ext(template_raster))) {
 
       if (verbose) {
-        message("  - Aligning bias layer ", i, " to suitability grid (resample).")
+        message("  - Aligning bias layer ", i, " to template grid (resample).")
       }
       bias_raster_aligned <- terra::resample(bias_raster_raw, template_raster, method = "near")
     } else {
@@ -247,33 +332,18 @@ set_bias_surface <- function(suitable_env,
     message("Finished pooling bias layers.")
   }
 
-  # Final suitability ----------------------------------------------------------
-
-  if (verbose) {
-    message("Applying pooled bias to suitability raster...")
-  }
-
-  final_suitability_sp <- suitable_env * pooled_bias_sp
-  names(final_suitability_sp) <- "final_suitability"
-
-  if (verbose) {
-    message("Finished computing biased suitability surface.")
-  }
-
   # Build result object --------------------------------------------------------
 
   res <- list(
-    pooled_bias_sp       = pooled_bias_sp,
-    final_suitability_sp = final_suitability_sp,
-    combination_formula  = combination_formula,
-    is_niche_applied     = is_niche_applied
+    pooled_bias_sp      = pooled_bias_sp,
+    combination_formula = combination_formula
   )
 
   if (identical(tolower(out), "both")) {
     res$directional_bias_stack <- directional_bias_stack
   }
 
-  class(res) <- "biased_suitable_env"
+  class(res) <- "nicheR_bias_surface"
 
   gc()
 
@@ -285,15 +355,17 @@ set_bias_surface <- function(suitable_env,
 }
 
 #' @export
-print.biased_suitable_env <- function(x, ...) {
+print.nicheR_bias_surface <- function(x, ...) {
   if (!is.null(x$combination_formula)) {
     cat(x$combination_formula, "\n")
   }
 
-  if (isTRUE(x$is_niche_applied)) {
-    cat("Ecological suitability provided: final suitability = Suitability * Pooled Bias.\n")
-  } else {
-    cat("Ecological suitability is NULL (this should not occur for set_bias_surface()).\n")
+  if (!is.null(x$pooled_bias_sp)) {
+    cat("Pooled bias surface available as a terra::SpatRaster (pooled_bias_sp).\n")
+  }
+
+  if (!is.null(x$directional_bias_stack)) {
+    cat("Directional (standardized, direction-adjusted) bias stack is also stored.\n")
   }
 
   invisible(x)
