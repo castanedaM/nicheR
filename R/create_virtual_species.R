@@ -1,84 +1,55 @@
 #' Create a virtual species end to end
 #'
-#' Orchestrates the full NicheR workflow by routing \code{...} to
-#' \code{\link{build_ellps}}, \code{\link{get_suitable_env}}, and
-#' \code{\link{get_sample_occ}}. Returns an S3 object of class
-#' \code{"NicheR_species"} containing the niche object, suitability, and
-#' sampled occurrences.
+#' Orchestrates the full NicheR workflow by routing `...` to
+#' [build_ellps()], [get_suitable_env()], [set_bias_surface()], and
+#' [get_sample_occ()]. Returns an S3 object of class **NicheR_species**
+#' containing the niche object, suitability, (optional) bias surface,
+#' and sampled occurrences.
 #'
 #' @section Workflow:
-#' \enumerate{
-#'   \item Calls \code{build_ellps()} to define the ellipsoid in E-space.
-#'   \item Calls \code{get_suitable_env()} to compute the suitable environment
-#'         in G-space (always requesting distances and a data.frame output).
-#'   \item Calls \code{get_sample_occ()} to sample occurrences from the
-#'         suitable environment pool, passing \code{suitable_env} automatically
-#'         unless the user has supplied it explicitly.
-#' }
+#' 1. Calls [build_ellps()] to define the ellipsoid in E-space.
+#' 2. Calls [get_suitable_env()] to compute suitability in G-space.
+#' 3. Optionally calls [set_bias_surface()] to build a pooled bias raster
+#'    when bias arguments are supplied.
+#' 4. Calls [get_sample_occ()] to sample occurrences from the suitable
+#'    (and optionally biased) environment.
 #'
 #' @param ... Named arguments passed to the component functions.
 #'   Arguments are routed by name to the matching formal parameters of
-#'   \code{build_ellps()}, \code{get_suitable_env()}, and
-#'   \code{get_sample_occ()}. Unknown names are ignored with a warning.
-#' @param out.file Logical. If \code{TRUE}, save the returned object to an
-#'   \code{.rds} file in the working directory.
+#'   [build_ellps()], [get_suitable_env()], [set_bias_surface()], and
+#'   [get_sample_occ()]. Unknown names are ignored with a warning.
+#' @param out.file Logical. If `TRUE`, save the returned object to an `.rds`
+#'   file in the working directory.
 #' @param out.file.name Optional base name (without extension) for the saved
-#'   file. If \code{NULL} or empty, a timestamped name is used.
-#' @param verbose Logical. If \code{TRUE}, print progress messages.
+#'   file. If `NULL` or empty, a timestamped name is used.
+#' @param verbose Logical. If `TRUE`, print progress messages.
 #'
 #' @details
-#' Each low-level function (\code{build_ellps()}, \code{get_suitable_env()},
-#' \code{get_sample_occ()}) can be used independently. This wrapper function
-#' simply wires them together and standardizes a few details:
-#' \itemize{
-#'   \item \code{get_suitable_env()} is always called with
-#'         \code{distances = TRUE}.
-#'   \item If \code{out} is not supplied for \code{get_suitable_env()}, it
-#'         defaults to \code{"both"} so that both a raster and a data.frame
-#'         are available.
-#'   \item The resulting suitable environment data.frame is passed to
-#'         \code{get_sample_occ()} as \code{suitable_env} if the user did not
-#'         already supply one.
-#'   \item If \code{env_bg} is supplied only at the top level, it is forwarded
-#'         to \code{get_suitable_env()} (and to \code{get_sample_occ()}
-#'         only if the user routed it explicitly).
-#' }
+#' If any component function requires `env_bg` and it is supplied only at the
+#' top level, it is forwarded to that function automatically. If a required
+#' argument (such as `env_bg`) is missing for a component, the function stops
+#' with an informative error.
+#'
+#' If bias-related arguments (e.g. `bias_surface`, `bias_dir`, `bias_template`,
+#' `bias_res`, `bias_ext`) are provided, a pooled bias surface is built via
+#' [set_bias_surface()] and stored in the output. This precomputed bias object
+#' is also passed into [get_sample_occ()] so that bias is not recomputed.
 #'
 #' @return
-#' A list of class \code{"NicheR_species"} with elements:
+#' A list of class **NicheR_species** with elements:
 #' \itemize{
-#'   \item \code{niche}: the ellipsoid object returned by \code{build_ellps()}.
-#'   \item \code{suitability}: the object returned by \code{get_suitable_env()}
-#'         (data.frame, SpatRaster, or \code{"suitable_env"} list depending
-#'         on \code{out}).
-#'   \item \code{occurrences}: sampled occurrences returned by
-#'         \code{get_sample_occ()}.
-#'   \item \code{call_args}: the original \code{...} captured as a named list.
+#'   \item \code{niche}: the ellipsoid object returned by [build_ellps()].
+#'   \item \code{suitability}: suitability surface from [get_suitable_env()].
+#'   \item \code{bias_surface}: optional \code{nicheR_bias_surface} object
+#'         returned by [set_bias_surface()] (or \code{NULL} if no bias was used).
+#'   \item \code{occurrences}: sampled occurrences from [get_sample_occ()].
+#'   \item \code{call_args}: the original `...` captured as a named list.
 #'   \item \code{routed_args}: a list showing which args went to each function.
-#'   \item \code{save_path}: file path if \code{out.file = TRUE}, otherwise
-#'         \code{NULL}.
+#'   \item \code{save_path}: file path if \code{out.file = TRUE}, otherwise `NULL`.
 #' }
 #'
-#' @seealso \code{\link{build_ellps}}, \code{\link{get_suitable_env}},
-#'   \code{\link{get_sample_occ}}
-#'
-#' @examples
-#' \dontrun{
-#' vs <- create_virtual_species(
-#'   # build_ellps() args
-#'   center = c(temp = 20, precip = 140, seas = 25),
-#'   axes   = c(8, 45, 6.5),
-#'
-#'   # get_suitable_env() args
-#'   env_bg = my_env_spatraster,   # SpatRaster of predictors
-#'
-#'   # get_sample_occ() args
-#'   n_occ        = 500,
-#'   method       = "center",
-#'   bias_surface = my_bias_raster  # optional
-#' )
-#' print(vs)
-#' }
+#' @seealso [build_ellps()], [get_suitable_env()], [set_bias_surface()],
+#'   [get_sample_occ()]
 #'
 #' @export
 create_virtual_species <- function(...,
@@ -90,59 +61,46 @@ create_virtual_species <- function(...,
   args <- list(...)
 
   # ensure required functions exist
-  needed_funs <- c("build_ellps", "get_suitable_env", "get_sample_occ")
+  needed_funs <- c("build_ellps", "get_suitable_env",
+                   "set_bias_surface", "get_sample_occ")
   missing_funs <- needed_funs[!vapply(needed_funs, exists, logical(1), mode = "function")]
 
   if (length(missing_funs)) {
-    stop(
-      "These functions are not available in the current environment: ",
-      paste(missing_funs, collapse = ", ")
-    )
+    stop("These functions are not available in the current environment: ",
+         paste(missing_funs, collapse = ", "))
   }
 
   # pull formals for routing
   f_build <- names(formals(build_ellps))
   f_suit  <- names(formals(get_suitable_env))
+  f_bias  <- names(formals(set_bias_surface))
   f_occ   <- names(formals(get_sample_occ))
 
   # split args by target function
   args_build <- args[names(args) %in% f_build]
   args_suit  <- args[names(args) %in% f_suit]
+  # bias is special – we mostly care about its arguments, but
+  # we won't call set_bias_surface() purely from these; instead
+  # we use them together with env_bg.
+  args_bias  <- args[names(args) %in% f_bias]
   args_occ   <- args[names(args) %in% f_occ]
 
-  # pass env_bg through to get_suitable_env if supplied top-level
-  if ("env_bg" %in% names(args) &&
-      !("env_bg" %in% names(args_suit)) &&
-      ("env_bg" %in% f_suit)) {
-
-    args_suit$env_bg <- args$env_bg
+  # pass env_bg through if user supplied it at top level but it was not routed
+  if ("env_bg" %in% names(args)) {
+    if (!("env_bg" %in% names(args_suit)) && ("env_bg" %in% f_suit)) {
+      args_suit$env_bg <- args$env_bg
+    }
+    if (!("env_bg" %in% names(args_occ)) && ("env_bg" %in% f_occ)) {
+      args_occ$env_bg <- args$env_bg
+    }
   }
 
-  # check that env_bg will be available for get_suitable_env
+  # check that env_bg will be available when needed for suitability
   if (("env_bg" %in% f_suit) && !("env_bg" %in% names(args_suit))) {
     stop("env_bg is required by get_suitable_env but was not supplied.")
   }
 
-  # --- normalize get_suitable_env control args (out, distances) --------------
-
-  # force distances = TRUE (warn if user tried FALSE)
-  if ("distances" %in% names(args_suit)) {
-    if (isFALSE(args_suit$distances)) {
-      warning(
-        "create_virtual_species() requires distances = TRUE for get_suitable_env(); ",
-        "overriding user-supplied distances = FALSE."
-      )
-    }
-  }
-  args_suit$distances <- TRUE
-
-  # default out = "both" if user did not specify
-  if (!"out" %in% names(args_suit)) {
-    args_suit$out <- "both"
-  }
-
-  # --- build ellipsoid niche --------------------------------------------------
-
+  # build ellipsoid niche
   niche_obj <- tryCatch(
     do.call(build_ellps, args_build),
     error = function(e) stop("build_ellps failed: ", e$message)
@@ -150,8 +108,7 @@ create_virtual_species <- function(...,
 
   if (verbose) message("Built niche object.")
 
-  # --- compute suitable environment ------------------------------------------
-
+  # suitability in G space
   suit_env <- tryCatch(
     do.call(get_suitable_env, c(list(niche = niche_obj), args_suit)),
     error = function(e) stop("get_suitable_env failed: ", e$message)
@@ -159,42 +116,72 @@ create_virtual_species <- function(...,
 
   if (verbose) message("Computed suitable environments.")
 
-  # Extract a suitable_env data.frame for get_sample_occ if needed
-  suitable_df <- NULL
+  # Optionally build bias surface once, if bias args were supplied -----------
+  bias_obj <- NULL
 
-  if (inherits(suit_env, "suitable_env") &&
-      is.list(suit_env) &&
-      "suitable_env_df" %in% names(suit_env)) {
+  # We treat presence of 'bias_surface' in either args_bias or args_occ as the signal
+  # that the user wants a bias surface.
+  has_bias_surface <- "bias_surface" %in% c(names(args_bias), names(args_occ))
 
-    suitable_df <- suit_env$suitable_env_df
+  if (has_bias_surface) {
 
-  } else if (is.data.frame(suit_env)) {
+    # Reconstruct a bias call using the shared arguments:
+    # priority: explicit args_bias first, then fall back to args_occ
+    combined_bias_args <- list()
+    for (nm in f_bias) {
+      if (nm %in% names(args_bias)) {
+        combined_bias_args[[nm]] <- args_bias[[nm]]
+      } else if (nm %in% names(args_occ)) {
+        # map get_sample_occ names to set_bias_surface names where appropriate
+        if (nm == "bias_surface") {
+          combined_bias_args[[nm]] <- args_occ[["bias_surface"]]
+        } else if (nm == "bias_dir" && "bias_dir" %in% names(args_occ)) {
+          combined_bias_args[[nm]] <- args_occ[["bias_dir"]]
+        } else if (nm == "template" && "bias_template" %in% names(args_occ)) {
+          combined_bias_args[[nm]] <- args_occ[["bias_template"]]
+        } else if (nm == "res" && "bias_res" %in% names(args_occ)) {
+          combined_bias_args[[nm]] <- args_occ[["bias_res"]]
+        } else if (nm == "ext" && "bias_ext" %in% names(args_occ)) {
+          combined_bias_args[[nm]] <- args_occ[["bias_ext"]]
+        }
+      }
+    }
 
-    suitable_df <- suit_env
+    # If no explicit template/res/ext are supplied, try to infer from env_bg
+    if (!("template" %in% names(combined_bias_args)) ||
+        is.null(combined_bias_args$template)) {
 
-  } else if (inherits(suit_env, "SpatRaster")) {
+      if ("env_bg" %in% names(args_suit) &&
+          inherits(args_suit$env_bg, c("SpatRaster", "Raster"))) {
 
-    # last resort: convert raster to df; must contain dist_sq already
-    suitable_df <- as.data.frame.nicheR(suit_env)
-  }
+        combined_bias_args$template <- if (inherits(args_suit$env_bg, "Raster")) {
+          terra::rast(args_suit$env_bg)
+        } else {
+          args_suit$env_bg
+        }
 
-  if (!is.null(suitable_df)) {
-    if (!all(c("x", "y", "dist_sq") %in% names(suitable_df))) {
-      stop(
-        "Suitable environment returned by get_suitable_env() does not contain ",
-        "the required columns 'x', 'y', and 'dist_sq'. ",
-        "Ensure get_suitable_env(..., distances = TRUE, out = 'data.frame' or 'both')."
+      }
+    }
+
+    if (!"bias_surface" %in% names(combined_bias_args) ||
+        is.null(combined_bias_args$bias_surface)) {
+      warning("Bias arguments were detected but 'bias_surface' is missing; ",
+              "skipping bias surface construction.", call. = FALSE)
+    } else {
+
+      bias_obj <- tryCatch(
+        do.call(set_bias_surface, combined_bias_args),
+        error = function(e) stop("set_bias_surface failed: ", e$message)
       )
+
+      if (verbose) message("Constructed pooled bias surface.")
+
+      # Now, ensure get_sample_occ uses this precomputed bias object
+      args_occ$bias_surface <- bias_obj
     }
   }
 
-  # --- wire suitable_env into get_sample_occ if user did not supply it -------
-
-  if (!"suitable_env" %in% names(args_occ) && !is.null(suitable_df)) {
-    args_occ$suitable_env <- suitable_df
-  }
-
-  # always force the same niche into get_sample_occ, even if user passed another
+  # sample occurrences --------------------------------------------------------
   occ <- tryCatch(
     do.call(get_sample_occ, c(list(niche = niche_obj), args_occ)),
     error = function(e) stop("get_sample_occ failed: ", e$message)
@@ -205,34 +192,33 @@ create_virtual_species <- function(...,
   # warn on unused args
   used_names <- union(
     names(args_build),
-    union(names(args_suit), names(args_occ))
+    union(names(args_suit), union(names(args_occ), names(args_bias)))
   )
   unused <- setdiff(names(args), used_names)
   if (length(unused) && verbose) {
-    warning(
-      "These arguments did not match any target function and were ignored: ",
-      paste(unused, collapse = ", ")
-    )
+    warning("These arguments did not match any target function and were ignored: ",
+            paste(unused, collapse = ", "))
   }
 
   # assemble S3 object
   out <- list(
-    niche       = niche_obj,
-    suitability = suit_env,
-    occurrences = occ,
-    call_args   = args,
-    routed_args = list(
+    niche        = niche_obj,
+    suitability  = suit_env,
+    bias_surface = bias_obj,
+    occurrences  = occ,
+    call_args    = args,
+    routed_args  = list(
       build_ellps      = args_build,
       get_suitable_env = args_suit,
+      set_bias_surface = args_bias,
       get_sample_occ   = args_occ
     ),
-    save_path   = NULL
+    save_path    = NULL
   )
 
   class(out) <- c("NicheR_species", class(out))
 
-  # ---- Saving logic ----------------------------------------------------------
-
+  # ---- Saving logic ----
   if (isTRUE(out.file)) {
 
     dir_path <- getwd()
@@ -250,7 +236,7 @@ create_virtual_species <- function(...,
     out$save_path <- save_path
 
   } else if (verbose) {
-    message("out.file = FALSE: object not saved to disk.")
+    message("`out.file = FALSE`: object not saved to disk.")
   }
 
   return(out)
@@ -265,8 +251,10 @@ create_virtual_species <- function(...,
 #' @export
 print.NicheR_species <- function(x, ...) {
   cat("NicheR virtual species components:\n")
-  cat("  niche:       ", paste(class(x$niche), collapse = "/"), "\n", sep = "")
-  cat("  suitability: ", paste(class(x$suitability), collapse = "/"), "\n", sep = "")
-  cat("  occurrences: ", paste(class(x$occurrences), collapse = "/"), "\n", sep = "")
+  cat("  niche:        ", paste(class(x$niche), collapse = "/"), "\n", sep = "")
+  cat("  suitability:  ", paste(class(x$suitability), collapse = "/"), "\n", sep = "")
+  cat("  bias_surface: ", if (is.null(x$bias_surface)) "NULL" else
+    paste(class(x$bias_surface), collapse = "/"), "\n", sep = "")
+  cat("  occurrences:  ", paste(class(x$occurrences), collapse = "/"), "\n", sep = "")
   invisible(x)
 }

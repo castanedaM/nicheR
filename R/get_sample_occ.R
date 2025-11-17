@@ -12,7 +12,7 @@
 #'   variables referenced by the \code{niche} object. If a \code{data.frame}
 #'   is used, it should also contain \code{x} and \code{y} columns for spatial
 #'   referencing. Required if \code{suitable_env} is not provided, or if
-#'   \code{bias_surface} is used.
+#'   \code{bias_surface} is used and no explicit template is given.
 #' @param niche An object of class \code{ellipsoid} created by
 #'   \code{build_ellipsoid()}.
 #' @param method A character string specifying the sampling strategy. One of
@@ -25,18 +25,26 @@
 #'     \item \code{"edge"}: Sampling probability is proportional to the
 #'       Mahalanobis distance, favoring points closer to the niche boundary.
 #'   }
-#' @param bias_surface Optional. One or more bias layers describing sampling
-#'   bias. Passed to \code{set_bias_surface()} using either \code{env_bg} or
-#'   \code{suitable_env} as the raster template. Can be:
+#' @param bias_surface Optional. Either:
 #'   \itemize{
-#'     \item a \code{terra::SpatRaster} (single or multi layer),
-#'     \item a \code{terra::SpatVector},
-#'     \item a character path to a raster or vector file,
-#'     \item a \code{list} of any of the above.
+#'     \item one or more bias layers (SpatRaster, SpatVector, path, or list)
+#'           that will be passed to \code{set_bias_surface()}, or
+#'     \item a precomputed \code{nicheR_bias_surface} object returned by
+#'           \code{set_bias_surface()}.
 #'   }
 #'   The resulting pooled bias surface is used to modulate sampling weights
-#'   over the suitable pool of environments. Only supported when at least one
-#'   of \code{env_bg} or \code{suitable_env} is a raster object.
+#'   over the suitable pool of environments.
+#' @param bias_dir Optional numeric values of \code{1} or \code{-1} passed
+#'   to \code{set_bias_surface()} when \code{bias_surface} is a raw bias
+#'   input. A length-1 value is recycled across layers.
+#' @param bias_template Optional \code{terra::SpatRaster} template to pass to
+#'   \code{set_bias_surface()} (overrides templates inferred from
+#'   \code{env_bg} or \code{suitable_env}).
+#' @param bias_res Optional numeric resolution to pass to
+#'   \code{set_bias_surface()} when building a template from \code{ext}.
+#' @param bias_ext Optional extent object (SpatRaster, SpatVector, or numeric
+#'   \code{c(xmin, xmax, ymin, ymax)}) passed to \code{set_bias_surface()}
+#'   when no template is provided.
 #' @param suitable_env Optional. A precomputed suitability object describing
 #'   the suitable environment pool. May be:
 #'   \itemize{
@@ -63,8 +71,9 @@
 #' }
 #'
 #' It then applies a weighting scheme based on \code{method} and, if provided,
-#' a pooled bias surface from \code{set_bias_surface()} to probabilistically
-#' select \code{n_occ} points from this suitable environment pool.
+#' a pooled bias surface (either raw layers via \code{set_bias_surface()} or a
+#' precomputed \code{nicheR_bias_surface}) to probabilistically select
+#' \code{n_occ} points from this suitable environment pool.
 #'
 #' @seealso \code{\link{build_ellipsoid}}, \code{\link{get_suitable_env}},
 #'   \code{\link{set_bias_surface}}
@@ -75,6 +84,10 @@ get_sample_occ <- function(n_occ,
                            niche,
                            method = c("random", "center", "edge"),
                            bias_surface = NULL,
+                           bias_dir = 1,
+                           bias_template = NULL,
+                           bias_res = NULL,
+                           bias_ext = NULL,
                            suitable_env = NULL,
                            seed = NULL) {
 
@@ -156,10 +169,10 @@ get_sample_occ <- function(n_occ,
 
   } else {
 
-    # keep raster version (if any) for potential bias template
     if (inherits(suitable_env, "Raster")) {
       suitable_env <- terra::rast(suitable_env)
     }
+
     if (inherits(suitable_env, "SpatRaster")) {
       suitable_env_rast <- suitable_env
       suitable_pool <- as.data.frame.nicheR(suitable_env_rast)
@@ -196,33 +209,55 @@ get_sample_occ <- function(n_occ,
 
   if (!is.null(bias_surface)) {
 
-    # Choose template: prefer env_bg_rast, otherwise suitable_env_rast
-    template_rast <- if (!is.null(env_bg_rast)) {
-      env_bg_rast
+    # Case 1: user already passed a nicheR_bias_surface object
+    if (inherits(bias_surface, "nicheR_bias_surface")) {
+
+      if (is.null(bias_surface$pooled_bias_sp)) {
+        stop("Provided 'nicheR_bias_surface' object does not contain 'pooled_bias_sp'.")
+      }
+
+      pooled_bias_sp <- bias_surface$pooled_bias_sp
+
     } else {
-      suitable_env_rast
-    }
 
-    if (is.null(template_rast)) {
-      stop(
-        "A 'bias_surface' was supplied, but neither 'env_bg' nor 'suitable_env' ",
-        "is a spatial raster object.\n",
-        "Bias layers can only be applied when 'env_bg' or 'suitable_env' is a SpatRaster, ",
-        "so they can be aligned and extracted at occurrence locations."
+      # Case 2: raw bias layers, call set_bias_surface()
+      # Choose template automatically if user did not supply one
+      template_rast <- bias_template
+      if (is.null(template_rast)) {
+        template_rast <- if (!is.null(env_bg_rast)) {
+          env_bg_rast
+        } else {
+          suitable_env_rast
+        }
+      }
+
+      if (is.null(template_rast) && is.null(bias_ext)) {
+        stop(
+          "A 'bias_surface' was supplied, but no raster template (env_bg/suitable_env) ",
+          "or 'bias_ext' was available.\n",
+          "Provide 'env_bg' or 'suitable_env' as a SpatRaster, or specify ",
+          "'bias_template' or ('bias_ext' + 'bias_res')."
+        )
+      }
+
+      bias_res_obj <- set_bias_surface(
+        bias_surface = bias_surface,
+        bias_dir     = bias_dir,
+        template     = template_rast,
+        res          = bias_res,
+        ext          = bias_ext,
+        out          = "default",
+        verbose      = FALSE
       )
+
+      pooled_bias_sp <- bias_res_obj$pooled_bias_sp
     }
 
-    bias_res <- set_bias_surface(
-      bias_surface = bias_surface,
-      template     = template_rast,
-      out          = "default",
-      verbose      = FALSE
-    )
-
-    pooled_bias_sp <- bias_res$pooled_bias_sp
-
+    # Extract bias values at the coordinates of the suitable pool
     coords  <- cbind(suitable_pool$x, suitable_pool$y)
     ext_df  <- terra::extract(pooled_bias_sp, coords)
+
+    # ext_df: first column is ID, second is 'pooled_bias'
     bias_values <- ext_df[, 2]
     bias_values[is.na(bias_values)] <- 0
   }

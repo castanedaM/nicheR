@@ -241,7 +241,7 @@ set_bias_surface <- function(bias_surface,
         bias_obj,
         template_raster,
         fun        = "max",
-        background = 0,
+        background = NA,
         field      = field_to_use
       )
     } else if (inherits(bias_obj, "SpatRaster")) {
@@ -314,12 +314,17 @@ set_bias_surface <- function(bias_surface,
     pooled_bias_sp <- terra::app(
       directional_bias_stack,
       fun = function(x) {
-        prod(x, na.rm = TRUE)
+        if (all(is.na(x))) {
+          NA_real_           # keep fully-missing cells as NA
+        } else {
+          prod(x, na.rm = TRUE)
+        }
       }
     )
   } else {
     pooled_bias_sp <- directional_bias_stack
   }
+
 
   names(pooled_bias_sp) <- "pooled_bias"
 
