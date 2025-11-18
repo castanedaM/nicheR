@@ -48,7 +48,7 @@ as.data.frame.nicheR <- function(raster_stack,
                                  chunk_height      = 500,
                                  keep_sql          = FALSE,
                                  write_rdata       = FALSE,
-                                 verbose           = TRUE,
+                                 verbose           = FALSE,
                                  size_threshold_mb = 5000,
                                  use_cache         = FALSE) {
 

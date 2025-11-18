@@ -5,15 +5,18 @@
 #' of pairwise scatterplots with projected ellipse boundaries. In 3D mode, it
 #' returns an interactive \code{plotly} scatterplot.
 #'
-#' @param env_bg A \code{data.frame} of background environments with at least three
-#'   numeric predictor columns. These columns must contain the variables
-#'   referenced by \code{x}, \code{y}, and \code{z}. If \code{NULL}, a
-#'   \code{NicheR_species} object supplied via \code{vs} can be used to infer
-#'   \code{env_bg} from its \code{suitability} slot (either a data.frame or a
-#'   SpatRaster that will be converted).
+#' @param env_bg A \code{data.frame} (or coercible object) of background environments
+#'   with at least three numeric predictor columns. These columns must contain
+#'   the variables referenced by \code{x}, \code{y}, and \code{z}. If \code{env_bg}
+#'   is a \code{terra::SpatRaster} or \code{raster::Raster*}, it is converted with
+#'   \code{as.data.frame.nicheR()}. If \code{NULL}, a \code{NicheR_species} object
+#'   supplied via \code{vs} can be used to infer \code{env_bg} from its
+#'   \code{suitability} slot.
 #' @param x,y,z Column specifications for the three predictors to display. Each may
 #'   be a single column name (character string) or a single 1-based integer index
-#'   into \code{env_bg}.
+#'   into \code{env_bg}. If any of \code{x}, \code{y}, or \code{z} are omitted,
+#'   the function attempts to infer them from the predictor columns in \code{env_bg}
+#'   (excluding \code{"x"} and \code{"y"} coordinate columns if present).
 #' @param labels Character vector of length 3 giving axis labels for the x, y,
 #'   and z variables in display order. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.
 #' @param n_bg Positive integer giving the maximum number of background rows to plot.
@@ -21,7 +24,7 @@
 #'   \code{n_bg} is drawn. Using a large \code{n_bg} may slow plotting.
 #' @param niche Optional object of class \code{ellipsoid} describing the niche. If
 #'   provided, its boundary and center will be plotted. For 2D plots, the
-#'   object must contain \code{niche$angles}. If \code{NULL} and a
+#'   object should contain \code{niche$angles}. If \code{NULL} and a
 #'   \code{NicheR_species} object is supplied via \code{vs}, \code{niche} is
 #'   filled from \code{vs$niche}.
 #' @param suitable_env Optional suitable environment object (data.frame,
@@ -74,6 +77,12 @@ plot_e_space <- function(env_bg,
                          palette = "default",
                          vs = NULL) {
 
+  # Track whether x,y,z were auto-inferred
+  x_missing <- missing(x)
+  y_missing <- missing(y)
+  z_missing <- missing(z)
+  auto_inferred <- x_missing || y_missing || z_missing
+
   # --- 0. Optionally fill from NicheR_species object -------------------------
 
   if (!is.null(vs)) {
@@ -106,46 +115,81 @@ plot_e_space <- function(env_bg,
     }
   }
 
-  # Helper to resolve column names (numeric or character)
-  resolve_col <- function(df, col_spec) {
-    if (is.numeric(col_spec)) {
-      nm <- names(df)[col_spec]
-    } else {
-      nm <- col_spec
-    }
-    if (!nm %in% names(df)) {
-      stop("Column '", nm, "' not found in env_bg.")
-    }
-    nm
+  if (missing(env_bg) || is.null(env_bg)) {
+    stop("'env_bg' must be supplied, or inferable from 'vs$suitability'.")
   }
 
-  # --- 1. Validate core arguments --------------------------------------------
+  # --- 0.1 Coerce env_bg to data.frame --------------------------------------
 
-  validate_plot_e_space_args(env_bg, x, y, z,
-                             labels, n_bg, niche,
-                             occ_pts, show.occ.density)
+  if (inherits(env_bg, "tbl_df")) {
+    env_bg <- as.data.frame(env_bg)
+  }
+  if (inherits(env_bg, "Raster")) {
+    env_bg <- terra::rast(env_bg)
+  }
+  if (inherits(env_bg, "SpatRaster")) {
+    env_bg <- as.data.frame.nicheR(env_bg)
+  }
+  if (!is.data.frame(env_bg)) {
+    stop("'env_bg' must be a data.frame or coercible to one.")
+  }
 
-  # Resolve column names up front
-  x_col <- resolve_col(env_bg, x)
-  y_col <- resolve_col(env_bg, y)
-  z_col <- resolve_col(env_bg, z)
+  # --- 0.2 Auto-infer x,y,z from env_bg if needed ---------------------------
 
-  # Coerce occ_pts and ensure it has needed columns ---------------------------
+  if (auto_inferred) {
 
+    if (all(c("x", "y") %in% names(env_bg))) {
+      candidate_vars <- setdiff(names(env_bg), c("x", "y"))
+    } else {
+      candidate_vars <- names(env_bg)
+    }
+
+    if (length(candidate_vars) < 3) {
+      stop(
+        "Could not infer x, y, z from 'env_bg' (fewer than 3 predictor columns after ",
+        "removing any 'x'/'y' coordinates). Please provide x, y, and z explicitly."
+      )
+    }
+
+    # Use first 3 predictor columns as x,y,z
+    inferred <- candidate_vars[seq_len(3)]
+    x <- inferred[1]
+    y <- inferred[2]
+    z <- inferred[3]
+
+    message(
+      "No complete x, y, z specification provided. Using predictor columns inferred from 'env_bg': ",
+      paste(inferred, collapse = ", ")
+    )
+  }
+
+  # --- 1. Validate core arguments and resolve predictor names ----------------
+
+  v <- validate_plot_e_space_args(
+    env_bg, x, y, z,
+    labels, n_bg,
+    niche,
+    occ_pts, show.occ.density
+  )
+
+  col_x <- v$col_names[1]
+  col_y <- v$col_names[2]
+  col_z <- v$col_names[3]
+
+  # If user did provide x,y,z but as indices/variants, still nice to tell them
+  if (auto_inferred) {
+    message(
+      "Using predictor columns: ",
+      paste(v$col_names, collapse = ", ")
+    )
+  }
+
+  # Coerce occ_pts to data.frame (structure already checked in validator)
   if (!is.null(occ_pts)) {
     occ_pts <- as.data.frame(occ_pts)
-    missing_occ <- setdiff(c(x_col, y_col, z_col), names(occ_pts))
-    if (length(missing_occ) > 0) {
-      warning(
-        "occ_pts is missing the following environmental columns: ",
-        paste(missing_occ, collapse = ", "),
-        ".\nOccurrences will not be plotted in E-space."
-      )
-      occ_pts <- NULL
-    }
   }
 
-  # Coerce suitable_env to a data.frame if provided ---------------------------
+  # --- 2. Coerce suitable_env to a data.frame of inside points (if given) ----
 
   pts_in <- NULL
   if (!is.null(suitable_env)) {
@@ -170,13 +214,11 @@ plot_e_space <- function(env_bg,
                    length(sp) > 0 &&
                    all(vapply(sp, inherits, logical(1), "SpatRaster"))) {
 
-          # prefer 'suitable' if present, else first raster
           if ("suitable" %in% names(sp)) {
             pts_in <- as.data.frame.nicheR(sp[["suitable"]])
           } else {
             pts_in <- as.data.frame.nicheR(sp[[1]])
           }
-
         }
       }
 
@@ -193,18 +235,17 @@ plot_e_space <- function(env_bg,
     }
 
     if (!is.null(pts_in)) {
-      # make sure it has the required columns; if not, drop it silently
-      if (!all(c(x_col, y_col, z_col) %in% names(pts_in))) {
+      if (!all(c(col_x, col_y, col_z) %in% names(pts_in))) {
         warning(
-          "suitable_env does not contain all of x, y, z columns; ",
-          "suitable points will not be plotted."
+          "suitable_env does not contain all of x, y, z predictor columns; ",
+          "suitable points will not be plotted in E-space."
         )
         pts_in <- NULL
       }
     }
   }
 
-  # --- 2. Colors / palette ---------------------------------------------------
+  # --- 3. Colors / palette ---------------------------------------------------
 
   palettes <- list(
     default = list(
@@ -374,9 +415,9 @@ plot_e_space <- function(env_bg,
 
     p3 <- plotly::plot_ly(
       data = env_bg,
-      x    = env_bg[[x_col]],
-      y    = env_bg[[y_col]],
-      z    = env_bg[[z_col]],
+      x    = env_bg[[col_x]],
+      y    = env_bg[[col_y]],
+      z    = env_bg[[col_z]],
       type = "scatter3d",
       mode = "markers",
       marker = list(color = colors[["bg"]], size = 2),
@@ -392,7 +433,7 @@ plot_e_space <- function(env_bg,
         legend = list(x = 0.05, y = 0.95)
       )
 
-    # Ellipsoid surface + centroid
+    # Ellipsoid surface + centroid (if present)
     if (!is.null(niche) && !is.null(niche$surface)) {
 
       surf <- as.data.frame(niche$surface)
@@ -426,9 +467,9 @@ plot_e_space <- function(env_bg,
         p3 <- p3 %>%
           plotly::add_markers(
             data = pts_in,
-            x    = pts_in[[x_col]],
-            y    = pts_in[[y_col]],
-            z    = pts_in[[z_col]],
+            x    = pts_in[[col_x]],
+            y    = pts_in[[col_y]],
+            z    = pts_in[[col_z]],
             marker = list(color = colors[["suitable_env"]], size = 3),
             name   = "Suitable Environments",
             inherit = FALSE
@@ -441,9 +482,9 @@ plot_e_space <- function(env_bg,
       p3 <- p3 %>%
         plotly::add_markers(
           data = occ_pts,
-          x    = occ_pts[[x_col]],
-          y    = occ_pts[[y_col]],
-          z    = occ_pts[[z_col]],
+          x    = occ_pts[[col_x]],
+          y    = occ_pts[[col_y]],
+          z    = occ_pts[[col_z]],
           marker = list(color = colors[["occ"]], size = 3),
           name   = "Sampled Occurrences",
           inherit = FALSE
@@ -463,7 +504,7 @@ plot_e_space <- function(env_bg,
 
   p_main_y_x <- ggplot2::ggplot(
     env_bg,
-    ggplot2::aes(x = .data[[y_col]], y = .data[[x_col]])
+    ggplot2::aes(x = .data[[col_y]], y = .data[[col_x]])
   ) +
     ggplot2::geom_point(alpha = 0.5, color = colors[["bg"]], pch = ".") +
     ggplot2::theme_bw() +
@@ -471,7 +512,7 @@ plot_e_space <- function(env_bg,
 
   p_main_z_x <- ggplot2::ggplot(
     env_bg,
-    ggplot2::aes(x = .data[[z_col]], y = .data[[x_col]])
+    ggplot2::aes(x = .data[[col_z]], y = .data[[col_x]])
   ) +
     ggplot2::geom_point(alpha = 0.5, color = colors[["bg"]], pch = ".") +
     ggplot2::theme_bw() +
@@ -479,7 +520,7 @@ plot_e_space <- function(env_bg,
 
   p_main_z_y <- ggplot2::ggplot(
     env_bg,
-    ggplot2::aes(x = .data[[z_col]], y = .data[[y_col]])
+    ggplot2::aes(x = .data[[col_z]], y = .data[[col_y]])
   ) +
     ggplot2::geom_point(alpha = 0.5, color = colors[["bg"]], pch = ".") +
     ggplot2::theme_bw() +
@@ -508,7 +549,6 @@ plot_e_space <- function(env_bg,
 
   if (!is.null(niche)) {
 
-    # Build 2D ellipses from 3D center/axes/angles
     center_y_x <- c(niche$center[2], niche$center[1])
     axes_y_x   <- c(niche$axes[2],   niche$axes[1])
     angle_y_x  <- c(niche$angles[2], niche$angles[1])
@@ -547,8 +587,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = pts_in,
           ggplot2::aes(
-            x = .data[[y_col]],
-            y = .data[[x_col]]
+            x = .data[[col_y]],
+            y = .data[[col_x]]
           ),
           color = colors[["suitable_env"]],
           size  = 0.5
@@ -558,8 +598,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = pts_in,
           ggplot2::aes(
-            x = .data[[z_col]],
-            y = .data[[x_col]]
+            x = .data[[col_z]],
+            y = .data[[col_x]]
           ),
           color = colors[["suitable_env"]],
           size  = 0.5
@@ -569,8 +609,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = pts_in,
           ggplot2::aes(
-            x = .data[[z_col]],
-            y = .data[[y_col]]
+            x = .data[[col_z]],
+            y = .data[[col_y]]
           ),
           color = colors[["suitable_env"]],
           size  = 0.5
@@ -583,8 +623,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = occ_pts,
           ggplot2::aes(
-            x = .data[[y_col]],
-            y = .data[[x_col]]
+            x = .data[[col_y]],
+            y = .data[[col_x]]
           ),
           color = colors[["occ"]],
           size  = 0.5
@@ -594,8 +634,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = occ_pts,
           ggplot2::aes(
-            x = .data[[z_col]],
-            y = .data[[x_col]]
+            x = .data[[col_z]],
+            y = .data[[col_x]]
           ),
           color = colors[["occ"]],
           size  = 0.5
@@ -605,8 +645,8 @@ plot_e_space <- function(env_bg,
         ggplot2::geom_point(
           data = occ_pts,
           ggplot2::aes(
-            x = .data[[z_col]],
-            y = .data[[y_col]]
+            x = .data[[col_z]],
+            y = .data[[col_y]]
           ),
           color = colors[["occ"]],
           size  = 0.5
@@ -729,11 +769,11 @@ plot_e_space <- function(env_bg,
 
     if (isTRUE(show.occ.density) && !is.null(occ_pts)) {
 
-      rng_z <- range(env_bg[[z_col]], na.rm = TRUE)
-      rng_y <- range(env_bg[[y_col]], na.rm = TRUE)
-      rng_x <- range(env_bg[[x_col]], na.rm = TRUE)
+      rng_z <- range(env_bg[[col_z]], na.rm = TRUE)
+      rng_y <- range(env_bg[[col_y]], na.rm = TRUE)
+      rng_x <- range(env_bg[[col_x]], na.rm = TRUE)
 
-      env_z_top <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[z_col]])) +
+      env_z_top <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_z]])) +
         ggplot2::geom_density(fill = colors[["occ"]], alpha = 0.6) +
         ggplot2::scale_x_continuous(limits = rng_z) +
         ggplot2::scale_y_continuous(n.breaks = 3) +
@@ -745,7 +785,7 @@ plot_e_space <- function(env_bg,
           axis.text.y  = ggplot2::element_text(size = 5)
         )
 
-      env_y_top <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[y_col]])) +
+      env_y_top <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_y]])) +
         ggplot2::geom_density(fill = colors[["occ"]], alpha = 0.6) +
         ggplot2::scale_x_continuous(limits = rng_y) +
         ggplot2::scale_y_continuous(n.breaks = 3) +
@@ -757,7 +797,7 @@ plot_e_space <- function(env_bg,
           axis.text.y  = ggplot2::element_text(size = 5)
         )
 
-      env_x_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[x_col]])) +
+      env_x_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_x]])) +
         ggplot2::geom_density(fill = colors[["occ"]], alpha = 0.6) +
         ggplot2::scale_x_continuous(limits = rng_x) +
         ggplot2::coord_flip() +
@@ -770,7 +810,7 @@ plot_e_space <- function(env_bg,
           axis.text.x  = ggplot2::element_text(size = 5)
         )
 
-      env_y_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[y_col]])) +
+      env_y_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_y]])) +
         ggplot2::geom_density(fill = colors[["occ"]], alpha = 0.6) +
         ggplot2::scale_x_continuous(limits = rng_y) +
         ggplot2::coord_flip() +
