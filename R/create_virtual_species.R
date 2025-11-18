@@ -93,6 +93,10 @@ create_virtual_species <- function(...,
                                    out.file.name = NULL,
                                    verbose = TRUE) {
 
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Starting virtual species workflow.")
+  }
+
   # capture all args once
   args <- list(...)
 
@@ -138,40 +142,57 @@ create_virtual_species <- function(...,
   if ("out.suit" %in% f_suit && !("out.suit" %in% names(args_suit))) {
     args_suit$out.suit <- "both"
     if (isTRUE(verbose)) {
-      message("get_suitable_env(): 'out.suit' not supplied; using 'both'.")
+      message("[create_virtual_species] get_suitable_env(): 'out.suit' not supplied; using 'both'.")
     }
   }
   if ("distances" %in% f_suit && !("distances" %in% names(args_suit))) {
     args_suit$distances <- TRUE
     if (isTRUE(verbose)) {
-      message("get_suitable_env(): 'distances' not supplied; computing distances = TRUE.")
+      message("[create_virtual_species] get_suitable_env(): 'distances' not supplied; computing distances = TRUE.")
     }
   }
+
+  # force inner functions to be quiet if they have a 'verbose' argument
+  if ("verbose" %in% f_build) args_build$verbose <- FALSE
+  if ("verbose" %in% f_suit)  args_suit$verbose  <- FALSE
+  if ("verbose" %in% f_bias)  args_bias$verbose  <- FALSE
+  if ("verbose" %in% f_occ)   args_occ$verbose   <- FALSE
 
   # ---------------------------------------------------------------------------
   # 1) build ellipsoid niche
   # ---------------------------------------------------------------------------
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Running build_ellps()...")
+  }
   niche_obj <- tryCatch(
     do.call(build_ellps, args_build),
     error = function(e) stop("build_ellps failed: ", e$message)
   )
-
-  if (verbose) message("Built niche object.")
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Finished build_ellps().")
+  }
 
   # ---------------------------------------------------------------------------
   # 2) suitability in G space
   # ---------------------------------------------------------------------------
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Running get_suitable_env()...")
+  }
   suit_env <- tryCatch(
     do.call(get_suitable_env, c(list(niche = niche_obj), args_suit)),
     error = function(e) stop("get_suitable_env failed: ", e$message)
   )
-
-  if (verbose) message("Computed suitable environments.")
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Finished get_suitable_env().")
+  }
 
   # If get_sample_occ has a 'suitable_env' arg and user didn't set it,
   # wire through the suitability object from get_suitable_env().
   if ("suitable_env" %in% f_occ && !("suitable_env" %in% names(args_occ))) {
     args_occ$suitable_env <- suit_env
+    if (isTRUE(verbose)) {
+      message("[create_virtual_species] get_sample_occ(): using suitability from get_suitable_env() as 'suitable_env'.")
+    }
   }
 
   # ---------------------------------------------------------------------------
@@ -179,7 +200,7 @@ create_virtual_species <- function(...,
   # ---------------------------------------------------------------------------
   bias_obj <- NULL
 
-  # We treat bias as "in play" if user provided bias_surface at all
+  # "Bias in play" if user provided bias_surface at all (in top-level args).
   has_any_bias_arg <- "bias_surface" %in% names(args)
 
   if (has_any_bias_arg) {
@@ -195,6 +216,9 @@ create_virtual_species <- function(...,
 
     if (wants_bias_build) {
       # We will build a bias surface with set_bias_surface()
+      if (isTRUE(verbose)) {
+        message("[create_virtual_species] Running set_bias_surface()...")
+      }
 
       bias_call_args <- args_bias
 
@@ -204,12 +228,19 @@ create_virtual_species <- function(...,
         bias_call_args$suitable_env <- suit_env
       }
 
+      # make sure inner verbose is FALSE
+      if ("verbose" %in% f_bias) {
+        bias_call_args$verbose <- FALSE
+      }
+
       bias_obj <- tryCatch(
         do.call(set_bias_surface, bias_call_args),
         error = function(e) stop("set_bias_surface failed: ", e$message)
       )
 
-      if (verbose) message("Constructed pooled bias surface via set_bias_surface().")
+      if (isTRUE(verbose)) {
+        message("[create_virtual_species] Finished set_bias_surface().")
+      }
 
       # get_sample_occ() expects a single-layer bias raster;
       # pass the pooled layer if present.
@@ -228,22 +259,28 @@ create_virtual_species <- function(...,
       if ("bias_surface" %in% names(args)) {
         args_occ$bias_surface <- args$bias_surface
         bias_obj <- args$bias_surface  # store in output for transparency
-        if (verbose) {
-          message("Using user-supplied 'bias_surface' directly in get_sample_occ().")
+        if (isTRUE(verbose)) {
+          message("[create_virtual_species] Using user-supplied 'bias_surface' directly in get_sample_occ().")
         }
       }
     }
+  } else if (isTRUE(verbose)) {
+    message("[create_virtual_species] No 'bias_surface' supplied; skipping bias construction.")
   }
 
   # ---------------------------------------------------------------------------
   # 4) sample occurrences
   # ---------------------------------------------------------------------------
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Running get_sample_occ()...")
+  }
   occ <- tryCatch(
     do.call(get_sample_occ, args_occ),
     error = function(e) stop("get_sample_occ failed: ", e$message)
   )
-
-  if (verbose) message("Sampled occurrences.")
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Finished get_sample_occ().")
+  }
 
   # ---------------------------------------------------------------------------
   # 5) warn on unused args
@@ -254,7 +291,7 @@ create_virtual_species <- function(...,
   )
   unused <- setdiff(names(args), used_names)
   if (length(unused) && verbose) {
-    warning("These arguments did not match any target function and were ignored: ",
+    warning("[create_virtual_species] These arguments did not match any target function and were ignored: ",
             paste(unused, collapse = ", "))
   }
 
@@ -291,12 +328,17 @@ create_virtual_species <- function(...,
     save_path <- file.path(dir_path, paste0(out.file.name, ".rds"))
     saveRDS(out, save_path)
 
-    if (verbose) message("Virtual species saved to: ", normalizePath(save_path))
+    if (verbose) message("[create_virtual_species] Virtual species saved to: ",
+                         normalizePath(save_path))
 
     out$save_path <- save_path
 
   } else if (verbose) {
-    message("`out.file = FALSE`: object not saved to disk.")
+    message("[create_virtual_species] out.file = FALSE: object not saved to disk.")
+  }
+
+  if (isTRUE(verbose)) {
+    message("[create_virtual_species] Workflow completed.")
   }
 
   return(out)
