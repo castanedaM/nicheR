@@ -25,11 +25,11 @@ rasters before standardization.}
 directionality. A length 1 value is recycled across all layers. A value
 of \code{-1} applies \code{1 - layer} after scaling to \eqn{[0, 1]}.}
 
-\item{suitable_env}{Optional \code{terra::SpatRaster} used as a mask and
-template. Typically this is a binary or continuous suitability raster.
-Masking is applied after standardization so that bias is only defined
-where the species is suitable. Required when \code{out.bias} is
-\code{"biased"} or \code{"both"}.}
+\item{suitable_env}{Optional \code{terra::SpatRaster} or related object used
+as a mask and template. Typically this is a binary or continuous
+suitability raster or a \code{suitable_env} object. Masking is applied
+after standardization so that bias is only defined where the species is
+suitable. Required when \code{out.bias} is \code{"biased"} or \code{"both"}.}
 
 \item{out.bias}{Character, one of \code{"biased"}, \code{"standardized"},
 or \code{"both"}:
@@ -42,7 +42,7 @@ or \code{"both"}:
     standardized stack. Requires \code{suitable_env}.
 }}
 
-\item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
+\item{verbose}{Logical. If \code{TRUE}, prints basic progress messages.}
 }
 \value{
 A list of class \code{"nicheR_bias_surface"} containing some or all

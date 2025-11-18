@@ -12,7 +12,7 @@ plot_e_space(
   labels = c("ENV 1", "ENV 2", "ENV 3"),
   n_bg = 10000,
   niche = NULL,
-  show.pts.in = FALSE,
+  suitable_env = NULL,
   occ_pts = NULL,
   rand_seed = 1234,
   show.occ.density = FALSE,
@@ -23,76 +23,76 @@ plot_e_space(
 )
 }
 \arguments{
-\item{env_bg}{A `data.frame` of background environments with at least three
+\item{env_bg}{A \code{data.frame} of background environments with at least three
 numeric predictor columns. These columns must contain the variables
-referenced by `x`, `y`, and `z`. If `NULL`, a `NicheR_species` object
-supplied via `vs` can be used to infer `env_bg` from its `suitability`
-slot (either a data.frame or a SpatRaster that will be converted).}
+referenced by \code{x}, \code{y}, and \code{z}. If \code{NULL}, a
+\code{NicheR_species} object supplied via \code{vs} can be used to infer
+\code{env_bg} from its \code{suitability} slot (either a data.frame or a
+SpatRaster that will be converted).}
 
 \item{x, y, z}{Column specifications for the three predictors to display. Each may
 be a single column name (character string) or a single 1-based integer index
-into `env_bg`.}
+into \code{env_bg}.}
 
 \item{labels}{Character vector of length 3 giving axis labels for the x, y,
-and z variables in display order. Defaults to `c("ENV 1", "ENV 2", "ENV 3")`.}
+and z variables in display order. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.}
 
 \item{n_bg}{Positive integer giving the maximum number of background rows to plot.
-If `nrow(env_bg)` is greater than `n_bg`, a random subset of size `n_bg` is
-drawn. Using a large `n_bg` may slow plotting.}
+If \code{nrow(env_bg)} is greater than \code{n_bg}, a random subset of size
+\code{n_bg} is drawn. Using a large \code{n_bg} may slow plotting.}
 
-\item{niche}{Optional object of class `ellipsoid` describing the niche. If
+\item{niche}{Optional object of class \code{ellipsoid} describing the niche. If
 provided, its boundary and center will be plotted. For 2D plots, the
-object must contain `niche$angles`. If `NULL` and a `NicheR_species` object
-is supplied via `vs`, `niche` is filled from `vs$niche`.}
+object must contain \code{niche$angles}. If \code{NULL} and a
+\code{NicheR_species} object is supplied via \code{vs}, \code{niche} is
+filled from \code{vs$niche}.}
 
-\item{show.pts.in}{Logical. If `TRUE` and `niche` is provided, points from
-`env_bg` that fall inside the ellipsoid are highlighted.}
+\item{suitable_env}{Optional suitable environment object (data.frame,
+\code{suitable_env} list, or SpatRaster), typically produced by
+\code{\link{get_suitable_env}}. When provided, points inside the ellipsoid
+are plotted in E space.}
 
-\item{occ_pts}{Optional `data.frame` of occurrence points that includes the
-same predictor columns used for `x`, `y`, and `z`. These are overplotted
-if supplied. If `NULL` and a `NicheR_species` object is supplied via `vs`,
-this is filled from `vs$occurrences` when available.}
+\item{occ_pts}{Optional \code{data.frame} of occurrence points that includes the
+same predictor columns used for \code{x}, \code{y}, and \code{z}. These are
+overplotted if supplied. If \code{NULL} and a \code{NicheR_species} object
+is supplied via \code{vs}, this is filled from \code{vs$occurrences} when available.}
 
 \item{rand_seed}{Integer used to set the random number generator seed for
 reproducible background downsampling.}
 
-\item{show.occ.density}{Logical. If `TRUE` and `occ_pts` is provided, this
-adds marginal density panels for each variable. This is only supported in
-2D plots (`plot.3d = FALSE`).}
+\item{show.occ.density}{Logical. If \code{TRUE} and \code{occ_pts} is provided,
+adds marginal density panels for each variable (2D plots only;
+\code{plot.3d = FALSE}).}
 
-\item{plot.3d}{Logical. If `TRUE`, returns an interactive `plotly` 3D scatter
-plot. If `FALSE` (the default), returns a static `ggpubr` grid of 2D panels.}
+\item{plot.3d}{Logical. If \code{TRUE}, returns an interactive \code{plotly} 3D scatter
+plot. If \code{FALSE} (the default), returns a static \code{ggpubr} grid of 2D panels.}
 
 \item{colors}{Optional named list of colors to override the default palette.
-Valid names are: `bg`, `ellipsoid`, `centroid`, `tolerance`,
-`suitable_env`, `occ`.}
+Valid names are: \code{bg}, \code{ellipsoid}, \code{centroid}, \code{tolerance},
+\code{suitable_env}, \code{occ}.}
 
 \item{palette}{Character name of the internal palette to use.
-One of `"default"`, `"palette2"`, ..., `"palette6"`.}
+One of \code{"default"}, \code{"palette2"}, ..., \code{"palette6"}.}
 
-\item{vs}{Optional `NicheR_species` object returned by
-[create_virtual_species()]. If provided, `niche`, `occ_pts`, and `env_bg`
-are auto-filled from this object when they are not supplied explicitly.}
+\item{vs}{Optional \code{NicheR_species} object returned by
+\code{\link{create_virtual_species}}. If provided, \code{niche},
+\code{occ_pts}, \code{env_bg}, and \code{suitable_env} are auto-filled from
+this object when they are not supplied explicitly.}
 }
 \value{
-- If `plot.3d = TRUE`: A `plotly` object.
-- If `plot.3d = FALSE`: A `ggpubr` object containing arranged `ggplot2` panels.
+If \code{plot.3d = TRUE}, a \code{plotly} object.
+If \code{plot.3d = FALSE}, a \code{ggpubr} object containing arranged
+\code{ggplot2} panels.
 }
 \description{
 Produces pairwise views of a 3D environmental space with optional overlays of a
 virtual niche ellipsoid and occurrence points. In 2D mode, it returns a grid
 of pairwise scatterplots with projected ellipse boundaries. In 3D mode, it
-returns an interactive `plotly` scatterplot.
-}
-\details{
-This function is a visualization tool for understanding the
-  relationship between a species' niche, its occurrences, and the available
-  environmental space. The 2D views are especially useful for publication-
-  quality figures, while the 3D interactive plot is useful for exploration.
+returns an interactive \code{plotly} scatterplot.
 }
 \seealso{
-[validate_plot_e_space_args()], [build_ellps()],
-  [get_suitable_env()], [create_virtual_species()]
+\code{\link{validate_plot_e_space_args}}, \code{\link{build_ellps}},
+  \code{\link{get_suitable_env}}, \code{\link{create_virtual_species}}
 
 Other plotting functions: 
 \code{\link{plot_g_space}()}
