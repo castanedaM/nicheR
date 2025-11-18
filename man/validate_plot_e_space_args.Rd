@@ -12,7 +12,6 @@ validate_plot_e_space_args(
   labels,
   n_bg,
   niche,
-  show.pts.in,
   occ_pts,
   show.occ.density
 )
@@ -27,26 +26,26 @@ in the same order used to define the niche/ellipsoid.}
 
 \item{n_bg}{Positive number of background rows to plot at most.}
 
-\item{niche}{Optional list with elements \code{center} (numeric length 3)
-and \code{axes} (numeric length 3). If `niche` is provided, it must also
-contain an `angles` element (numeric length 3) for 2D projections to work
-correctly in `plot_e_space`.}
-
-\item{show.pts.in}{Logical. If TRUE, expects \code{niche} to be provided.}
+\item{niche}{Optional list/object with elements \code{center} (numeric length 3)
+and \code{axes} (numeric length 3). If \code{niche} is provided and
+2D projections will be drawn in \code{plot_e_space}, it is recommended that
+\code{niche} also contain an \code{angles} element (numeric length 3) so
+projected ellipses are correctly oriented.}
 
 \item{occ_pts}{Optional data.frame with the same predictor columns present.}
 
-\item{show.occ.density}{Logical. If TRUE, expects \code{occ_pts}.}
+\item{show.occ.density}{Logical. If \code{TRUE}, expects \code{occ_pts} to
+be provided; otherwise density panels are skipped with a warning.}
 }
 \value{
 An invisible list with \code{col_names}, the resolved predictor names
-  in the order `c(x, y, z)`.
+  in the order \code{c(x, y, z)}.
 }
 \description{
 Performs input checks for \code{plot_e_space} and emits informative errors
 or warnings. Ensures required columns exist and are numeric, labels are correctly
 specified, sampling size is valid, and optional objects have the needed structure.
-This function is designed for internal use within the `NicheR` package
+This function is designed for internal use within the \code{NicheR} package
 to ensure robust input handling for plotting functions.
 }
 \seealso{

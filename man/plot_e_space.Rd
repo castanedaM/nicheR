@@ -23,16 +23,19 @@ plot_e_space(
 )
 }
 \arguments{
-\item{env_bg}{A \code{data.frame} of background environments with at least three
-numeric predictor columns. These columns must contain the variables
-referenced by \code{x}, \code{y}, and \code{z}. If \code{NULL}, a
-\code{NicheR_species} object supplied via \code{vs} can be used to infer
-\code{env_bg} from its \code{suitability} slot (either a data.frame or a
-SpatRaster that will be converted).}
+\item{env_bg}{A \code{data.frame} (or coercible object) of background environments
+with at least three numeric predictor columns. These columns must contain
+the variables referenced by \code{x}, \code{y}, and \code{z}. If \code{env_bg}
+is a \code{terra::SpatRaster} or \code{raster::Raster*}, it is converted with
+\code{as.data.frame.nicheR()}. If \code{NULL}, a \code{NicheR_species} object
+supplied via \code{vs} can be used to infer \code{env_bg} from its
+\code{suitability} slot.}
 
 \item{x, y, z}{Column specifications for the three predictors to display. Each may
 be a single column name (character string) or a single 1-based integer index
-into \code{env_bg}.}
+into \code{env_bg}. If any of \code{x}, \code{y}, or \code{z} are omitted,
+the function attempts to infer them from the predictor columns in \code{env_bg}
+(excluding \code{"x"} and \code{"y"} coordinate columns if present).}
 
 \item{labels}{Character vector of length 3 giving axis labels for the x, y,
 and z variables in display order. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.}
@@ -43,7 +46,7 @@ If \code{nrow(env_bg)} is greater than \code{n_bg}, a random subset of size
 
 \item{niche}{Optional object of class \code{ellipsoid} describing the niche. If
 provided, its boundary and center will be plotted. For 2D plots, the
-object must contain \code{niche$angles}. If \code{NULL} and a
+object should contain \code{niche$angles}. If \code{NULL} and a
 \code{NicheR_species} object is supplied via \code{vs}, \code{niche} is
 filled from \code{vs$niche}.}
 
