@@ -101,6 +101,7 @@ plot_e_space <- function(env_bg,
     }
 
     # Fill env_bg if missing, using suitability slot
+    # BUG! Have to read as list incage of "both"
     if (missing(env_bg) || is.null(env_bg)) {
       if (inherits(vs$suitability, "SpatRaster")) {
         env_bg <- as.data.frame.nicheR(vs$suitability)

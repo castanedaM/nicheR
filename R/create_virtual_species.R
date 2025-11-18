@@ -94,7 +94,7 @@ create_virtual_species <- function(...,
                                    verbose = TRUE) {
 
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Starting virtual species workflow.")
+    message("Starting virtual species workflow.")
   }
 
   # capture all args once
@@ -142,13 +142,13 @@ create_virtual_species <- function(...,
   if ("out.suit" %in% f_suit && !("out.suit" %in% names(args_suit))) {
     args_suit$out.suit <- "both"
     if (isTRUE(verbose)) {
-      message("[create_virtual_species] get_suitable_env(): 'out.suit' not supplied; using 'both'.")
+      message("get_suitable_env(): 'out.suit' not supplied; using 'both'.")
     }
   }
   if ("distances" %in% f_suit && !("distances" %in% names(args_suit))) {
     args_suit$distances <- TRUE
     if (isTRUE(verbose)) {
-      message("[create_virtual_species] get_suitable_env(): 'distances' not supplied; computing distances = TRUE.")
+      message("get_suitable_env(): 'distances' not supplied; computing distances = TRUE.")
     }
   }
 
@@ -162,28 +162,28 @@ create_virtual_species <- function(...,
   # 1) build ellipsoid niche
   # ---------------------------------------------------------------------------
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Running build_ellps()...")
+    message("Running build_ellps()...")
   }
   niche_obj <- tryCatch(
     do.call(build_ellps, args_build),
     error = function(e) stop("build_ellps failed: ", e$message)
   )
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Finished build_ellps().")
+    message("Finished build_ellps().")
   }
 
   # ---------------------------------------------------------------------------
   # 2) suitability in G space
   # ---------------------------------------------------------------------------
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Running get_suitable_env()...")
+    message("Running get_suitable_env()...")
   }
   suit_env <- tryCatch(
     do.call(get_suitable_env, c(list(niche = niche_obj), args_suit)),
     error = function(e) stop("get_suitable_env failed: ", e$message)
   )
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Finished get_suitable_env().")
+    message("Finished get_suitable_env().")
   }
 
   # If get_sample_occ has a 'suitable_env' arg and user didn't set it,
@@ -191,7 +191,7 @@ create_virtual_species <- function(...,
   if ("suitable_env" %in% f_occ && !("suitable_env" %in% names(args_occ))) {
     args_occ$suitable_env <- suit_env
     if (isTRUE(verbose)) {
-      message("[create_virtual_species] get_sample_occ(): using suitability from get_suitable_env() as 'suitable_env'.")
+      message("get_sample_occ() will be using suitability from get_suitable_env() as 'suitable_env'.")
     }
   }
 
@@ -217,7 +217,7 @@ create_virtual_species <- function(...,
     if (wants_bias_build) {
       # We will build a bias surface with set_bias_surface()
       if (isTRUE(verbose)) {
-        message("[create_virtual_species] Running set_bias_surface()...")
+        message("Running set_bias_surface()...")
       }
 
       bias_call_args <- args_bias
@@ -239,7 +239,7 @@ create_virtual_species <- function(...,
       )
 
       if (isTRUE(verbose)) {
-        message("[create_virtual_species] Finished set_bias_surface().")
+        message("Finished set_bias_surface().")
       }
 
       # get_sample_occ() expects a single-layer bias raster;
@@ -252,34 +252,23 @@ create_virtual_species <- function(...,
                 call. = FALSE)
       }
 
-    } else {
-      # No extra set_bias_surface args: assume the user passed a precomputed
-      # 0–1 bias raster as 'bias_surface' that should go straight into
-      # get_sample_occ().
-      if ("bias_surface" %in% names(args)) {
-        args_occ$bias_surface <- args$bias_surface
-        bias_obj <- args$bias_surface  # store in output for transparency
-        if (isTRUE(verbose)) {
-          message("[create_virtual_species] Using user-supplied 'bias_surface' directly in get_sample_occ().")
-        }
-      }
     }
   } else if (isTRUE(verbose)) {
-    message("[create_virtual_species] No 'bias_surface' supplied; skipping bias construction.")
+    message("No 'bias_surface' supplied; skipping bias construction.")
   }
 
   # ---------------------------------------------------------------------------
   # 4) sample occurrences
   # ---------------------------------------------------------------------------
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Running get_sample_occ()...")
+    message("Running get_sample_occ()...")
   }
   occ <- tryCatch(
     do.call(get_sample_occ, args_occ),
     error = function(e) stop("get_sample_occ failed: ", e$message)
   )
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Finished get_sample_occ().")
+    message("Finished get_sample_occ().")
   }
 
   # ---------------------------------------------------------------------------
@@ -291,7 +280,7 @@ create_virtual_species <- function(...,
   )
   unused <- setdiff(names(args), used_names)
   if (length(unused) && verbose) {
-    warning("[create_virtual_species] These arguments did not match any target function and were ignored: ",
+    warning("These arguments did not match any target function and were ignored: ",
             paste(unused, collapse = ", "))
   }
 
@@ -328,17 +317,17 @@ create_virtual_species <- function(...,
     save_path <- file.path(dir_path, paste0(out.file.name, ".rds"))
     saveRDS(out, save_path)
 
-    if (verbose) message("[create_virtual_species] Virtual species saved to: ",
+    if (verbose) message("Virtual species saved to: ",
                          normalizePath(save_path))
 
     out$save_path <- save_path
 
   } else if (verbose) {
-    message("[create_virtual_species] out.file = FALSE: object not saved to disk.")
+    message("out.file = FALSE: object not saved to disk.")
   }
 
   if (isTRUE(verbose)) {
-    message("[create_virtual_species] Workflow completed.")
+    message("Workflow completed.")
   }
 
   return(out)
