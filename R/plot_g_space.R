@@ -92,7 +92,7 @@ plot_g_space <- function(env_bg = NULL,
       bg           = "#F0F0F0FF",
       suitable_env = "#FED789FF",
       occ_fill     = "#B4BF3AFF",
-      occ_stroke   = "black",
+      occ_stroke   = "#B4BF3AFF",
       dist         = "YlOrRd"   # brewer palette name
     ),
     palette2 = list(

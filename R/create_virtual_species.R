@@ -190,9 +190,9 @@ create_virtual_species <- function(...,
   # wire through the suitability object from get_suitable_env().
   if ("suitable_env" %in% f_occ && !("suitable_env" %in% names(args_occ))) {
     args_occ$suitable_env <- suit_env
-    if (isTRUE(verbose)) {
-      message("get_sample_occ() will be using suitability from get_suitable_env() as 'suitable_env'.")
-    }
+    # if (isTRUE(verbose)) {
+    #   message("get_sample_occ() will be using suitability from get_suitable_env() as 'suitable_env'.")
+    # }
   }
 
   # ---------------------------------------------------------------------------
@@ -307,6 +307,7 @@ create_virtual_species <- function(...,
   # ---- Saving logic ----
   if (isTRUE(out.file)) {
 
+    if (verbose) message("Saving NicheR virtual species object")
     dir_path <- getwd()
 
     if (is.null(out.file.name) || out.file.name == "") {
