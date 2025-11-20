@@ -296,6 +296,7 @@ vs_small <- create_virtual_species(env_bg = env_stack_small,
                                    distances = TRUE,
                                    out.file = TRUE)
 
+plot_e_space(env_bg  = env_stack_small, vs = vs_small)
 plot_e_space(vs = vs_small)
 
 plot_g_space(vs = vs_small, surface = "both")

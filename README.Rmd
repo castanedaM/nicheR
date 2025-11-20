@@ -128,7 +128,7 @@ You can immediately visualize the virtual species in E-space and G-space:
 ```{r fig.height=6, fig.width=7}
 env_df <- as.data.frame.nicheR(env_stack)
 
-plot_e_space(env_bg = env_df, vs = vs)
+plot_e_space(vs = vs)
 
 ```
 
@@ -675,8 +675,8 @@ You can select a palette by name:
 plot_e_space(
   env_bg   = env_df,
   x        = "mean_temp",
-  y        = "temp_seasonality",
-  z        = "annual_precip",
+  z        = "temp_seasonality",
+  y        = "annual_precip",
   niche    = my_niche,
   occ_pts  = occ_center,
   palette  = "palette4"

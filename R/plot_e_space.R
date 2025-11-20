@@ -74,28 +74,35 @@
 
 #' Helper: Get suitable-env points as data.frame for E-space plotting
 #'
+#' For E-space we only use data.frame-based suitability. If no
+#' data.frame is available (e.g., only rasters are stored), suitable
+#' points are not plotted to avoid unexpected large conversions.
+#'
 #' @keywords internal
 .pe_get_suitable_pts <- function(suitable_env) {
 
   if (is.null(suitable_env)) return(NULL)
 
-  # Try using nr_get_suitable_df
+  # 1) Try via nr_get_suitable_df() (works on vs, suitable_env objects, etc.)
   df <- suppressWarnings(nr_get_suitable_df(suitable_env))
   if (!is.null(df)) return(df)
 
-  # Maybe spatial-only output
-  sp_all <- suppressWarnings(nr_get_suitable_all(suitable_env))
-  if (!is.null(sp_all)) {
-    if (inherits(sp_all, "SpatRaster")) {
-      return(as.data.frame.nicheR(sp_all))
-    }
+  # 2) If user directly passed a df / matrix, use that
+  if (is.data.frame(suitable_env) || is.matrix(suitable_env)) {
+    return(as.data.frame(suitable_env))
   }
 
-  # Maybe it's already a df
-  if (is.data.frame(suitable_env)) return(suitable_env)
+  # 3) Otherwise, do NOT try to create a df from rasters here
+  #    (avoid big implicit conversions in E-space).
+  message(
+    "No suitable_env data.frame found; suitable environments will not be ",
+    "plotted in E-space. If you want them, re-run get_suitable_env() with ",
+    "out.suit = 'both' (or 'data.frame') and pass that object."
+  )
 
   return(NULL)
 }
+
 
 #' Helper: Extract occurrence points (df)
 #'
@@ -201,7 +208,7 @@ plot_e_space <- function(env_bg = NULL,
 
     # suitable_env
     if (is.null(suitable_env))
-      suitable_env <- nr_get_suitable(vs)
+      suitable_env <- nr_get_suitable_df(vs)
 
     # occurrences
     if (is.null(occ_pts))
