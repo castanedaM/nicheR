@@ -259,14 +259,47 @@ plot_e_space <- function(env_bg = NULL,
   ## 4. Colors and palettes
   ## -------------------------------------------------------------------------
   palettes <- list(
-    default = list(
-      bg           = "#9093A2FF",
-      ellipsoid    = "#2A363BFF",
-      centroid     = "#D72000FF",
-      tolerance    = "#EE6100FF",
-      suitable_env = "#FED789FF",
-      occ          = "#B4BF3AFF"
-    )
+    default = list( bg           = "#9093A2FF",
+                    ellipsoid    = "#2A363BFF",
+                    centroid     = "#D72000FF",
+                    tolerance    = "#EE6100FF",
+                    suitable_env = "#FED789FF",
+                    occ          = "#B4BF3AFF"),
+
+    palette2 = list( bg           = "#9CA9BAFF",
+                     ellipsoid    = "#3D619DFF",
+                     centroid     = "#345084FF",
+                     tolerance    = "#693829FF",
+                     suitable_env = "#CFB267FF",
+                     occ          = "#A56A3EFF"),
+
+    palette3 = list( bg           = "#C8CCC6FF",
+                     ellipsoid    = "#023743FF",
+                     centroid     = "#72874EFF",
+                     tolerance    = "#476F84FF",
+                     suitable_env = "#FED789FF",
+                     occ          = "#A4BED5FF"),
+
+    palette4 = list( bg           = "#C0D1CEFF",
+                     ellipsoid    = "#859B6CFF",
+                     centroid     = "#B74954FF",
+                     tolerance    = "#A99364FF",
+                     suitable_env = "#C2DDB2FF",
+                     occ          = "#EBA49EFF"),
+
+    palette5 = list( bg           = "#A89F8EFF",
+                     ellipsoid    = "#7887A4FF",
+                     centroid     = "#A8CDECFF",
+                     tolerance    = "#682C37FF",
+                     suitable_env = "#F6955EFF",
+                     occ          = "#9B6981FF"),
+
+    palette6 = list( bg           = "#D3D4D8FF",
+                     ellipsoid    = "#731A12FF",
+                     centroid     = "#F2D43DFF",
+                     tolerance    = "#3F858CFF",
+                     suitable_env = "#D9814EFF",
+                     occ          = "#707322FF")
   )
 
   if (!palette %in% names(palettes))
