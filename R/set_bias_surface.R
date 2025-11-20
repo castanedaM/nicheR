@@ -88,7 +88,7 @@
 #' \code{\link{get_sample_occ}} – uses pooled bias surfaces for sampling
 #'
 #' @export
-set_bias_surface_new <- function(bias_surface,
+set_bias_surface <- function(bias_surface,
                                  bias_dir = 1,
                                  suitable_env = NULL,
                                  out.bias = c("biased", "standardized", "both"),

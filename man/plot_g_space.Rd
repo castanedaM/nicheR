@@ -79,8 +79,5 @@ finally from \code{occ_pts}, always with a small buffer where needed.
 \seealso{
 \code{\link{build_ellps}}, \code{\link{get_suitable_env}},
   \code{\link{create_virtual_species}}
-
-Other plotting functions: 
-\code{\link{plot_e_space}()}
 }
 \concept{plotting functions}

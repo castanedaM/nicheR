@@ -2,72 +2,107 @@
 % Please edit documentation in R/set_bias_surface.R
 \name{set_bias_surface}
 \alias{set_bias_surface}
-\title{Combine one or more bias surfaces into a pooled bias raster}
+\title{Construct and Combine Sampling Bias Surfaces (Optimized, nr_get-integrated)}
 \usage{
 set_bias_surface(
   bias_surface,
   bias_dir = 1,
   suitable_env = NULL,
   out.bias = c("biased", "standardized", "both"),
-  verbose = TRUE
+  verbose = TRUE,
+  crop_to_suitable = TRUE
 )
 }
 \arguments{
-\item{bias_surface}{One or more bias layers which must be:
+\item{bias_surface}{A \code{SpatRaster} or a list of \code{SpatRaster}
+objects. Multi-layer rasters are split internally into individual
+single-layer bias surfaces.}
+
+\item{bias_dir}{Numeric vector of \code{1} (use layer as-is) or \code{-1}
+(invert layer via \eqn{1 - x}). A single value is recycled to match
+the number of bias layers.}
+
+\item{suitable_env}{Optional. A suitability object, \code{NicheR_species}
+object, or any structure containing a suitable environment raster.
+When \code{out.bias} includes \code{"biased"}, a suitable raster is
+required and is extracted automatically using \code{nr_get()}.}
+
+\item{out.bias}{Character. Controls which bias outputs are returned:
 \itemize{
-  \item a \code{terra::SpatRaster} (single or multi-layer), or
-  \item a \code{list} of \code{terra::SpatRaster} objects.
-}
-Any multi-layer \code{SpatRaster} is internally split into single-layer
-rasters before standardization.}
-
-\item{bias_dir}{Numeric values of \code{1} or \code{-1} controlling
-directionality. A length 1 value is recycled across all layers. A value
-of \code{-1} applies \code{1 - layer} after scaling to \eqn{[0, 1]}.}
-
-\item{suitable_env}{Optional \code{terra::SpatRaster} or related object used
-as a mask and template. Typically this is a binary or continuous
-suitability raster or a \code{suitable_env} object. Masking is applied
-after standardization so that bias is only defined where the species is
-suitable. Required when \code{out.bias} is \code{"biased"} or \code{"both"}.}
-
-\item{out.bias}{Character, one of \code{"biased"}, \code{"standardized"},
-or \code{"both"}:
-\itemize{
-  \item \code{"standardized"}: returns only the standardized,
-    direction-adjusted bias stack.
-  \item \code{"biased"}: returns only the pooled bias surface, masked by
-    \code{suitable_env}. Requires \code{suitable_env}.
-  \item \code{"both"}: returns both the pooled bias surface and the
-    standardized stack. Requires \code{suitable_env}.
+  \item \code{"standardized"} – only directional standardized layers,
+  \item \code{"biased"} – only the pooled bias surface,
+  \item \code{"both"} – return both types of output.
 }}
 
-\item{verbose}{Logical. If \code{TRUE}, prints basic progress messages.}
+\item{verbose}{Logical. If \code{TRUE}, print progress information.}
+
+\item{crop_to_suitable}{Logical. If \code{TRUE} (default), each bias layer
+is cropped to match the extent of the suitable environment before
+resampling. This provides substantial speed improvements.}
 }
 \value{
-A list of class \code{"nicheR_bias_surface"} containing some or all
-  of:
-  \item{pooled_bias_sp}{Pooled bias raster (scaled 0–1; \code{SpatRaster}),
-        masked by \code{suitable_env} when supplied. Present only when
-        \code{out.bias} is \code{"biased"} or \code{"both"}.}
-  \item{directional_bias_stack}{Stack of standardized, direction-corrected
-        bias layers (\code{SpatRaster}). Present only when
-        \code{out.bias} is \code{"standardized"} or \code{"both"}.}
-  \item{combination_formula}{String describing how layers were combined
-        (e.g., \code{"bias_1 * (1-bias_2)"}).}
+A list of class \code{nicheR_bias_surface} with elements:
+\itemize{
+  \item \code{pooled_bias_sp} – a single \code{SpatRaster} (if requested),
+  \item \code{directional_bias_stack} – multilayer raster stack of all
+         standardized + directional layers (if requested),
+  \item \code{combination_formula} – a character string showing how layers
+         were multiplied, e.g. \code{"roads * (1-pop_density) * protected"}.
+}
 }
 \description{
-This helper function combines one or more sampling bias layers into a single
-pooled bias surface. Each bias layer is:
-\itemize{
-  \item aligned to a common template grid,
-  \item scaled to \eqn{[0, 1]},
-  \item optionally reversed via \eqn{1 - x},
-  \item multiplied with other bias layers to form a pooled bias surface.
-}
+This function ingests one or more user-provided bias layers and produces
+standardized, optionally directional, and pooled sampling-bias surfaces.
+It is designed for use within the NicheR virtual-species workflow and is
+fully compatible with any NicheR object structure through the internal
+accessor helper \code{nr_get()}.
 }
 \details{
-The resulting pooled bias raster can then be used elsewhere in NicheR to
-modulate sampling or suitability. Optionally, the function can also return
-the standardized bias layers as a raster stack.
+The function performs several optimized steps:
+\enumerate{
+  \item Crops each bias layer to the extent of the suitable environment
+        (if provided) — a major performance improvement.
+  \item Resamples each layer to match the resolution, extent, and grid of
+        the template raster.
+  \item Standardizes each raster to the \eqn{[0, 1]} range using
+        \code{terra::minmax()}.
+  \item Optionally inverts layers when \code{bias_dir = -1}.
+  \item Combines all directional layers multiplicatively to form a pooled
+        bias surface.
+  \item Optionally masks outputs to the suitable environment extent.
+}
+
+This procedure produces bias surfaces suitable for passed directly to
+\code{\link{get_sample_occ}}, or for standalone inspection within the
+NicheR workflow.
+
+
+The pooled bias raster is always masked to the suitable environment when
+\code{suitable_env} is provided. Standardized layers are also masked unless
+\code{crop_to_suitable = FALSE}.
+
+All raster alignment uses \code{terra::resample()} with a nearest-neighbor
+method to preserve sharp edges typical of bias layers (e.g., distances,
+road networks).
+}
+\section{Integration with NicheR}{
+
+Unlike older versions, this function does not try to decode nested object
+structures manually. Instead, it uses \code{nr_get()} internally to extract
+a template raster from any of the following:
+\itemize{
+  \item suitability objects returned by \code{\link{get_suitable_env}},
+  \item full \code{NicheR_species} objects from
+        \code{\link{create_virtual_species}},
+  \item lists containing SpatRasters,
+  \item direct SpatRaster input.
+}
+This ensures compatibility across all internal and user-facing NicheR
+functions.
+}
+
+\seealso{
+\code{\link{nr_get}} – universal accessor for NicheR structures
+\code{\link{create_virtual_species}} – full virtual species pipeline
+\code{\link{get_sample_occ}} – uses pooled bias surfaces for sampling
 }
