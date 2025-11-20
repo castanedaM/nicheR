@@ -295,13 +295,17 @@ vs_small <- create_virtual_species(env_bg = env_stack_small,
                                    out.bias = "both",
                                    distances = TRUE,
                                    out.file = TRUE)
-
-plot_e_space(env_bg  = env_stack_small, vs = vs_small)
 plot_e_space(vs = vs_small)
+plot_e_space(env_bg  = env_stack_small, vs = vs_small)
 
 plot_g_space(vs = vs_small, surface = "both")
 
 plot_g_space(env_bg = env_stack_small)
+
+plot_g_space(env_bg = nr_get_env(vs),
+             # occ_pts = nr_get_occ(vs),
+             suitable_env = nr_get_dist_sq(vs),
+             surface = "dist")
 
 
 # Explore virtual species object

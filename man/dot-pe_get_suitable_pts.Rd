@@ -7,6 +7,8 @@
 .pe_get_suitable_pts(suitable_env)
 }
 \description{
-Helper: Get suitable-env points as data.frame for E-space plotting
+For E-space we only use data.frame-based suitability. If no
+data.frame is available (e.g., only rasters are stored), suitable
+points are not plotted to avoid unexpected large conversions.
 }
 \keyword{internal}
