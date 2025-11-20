@@ -122,17 +122,18 @@ G-space:
 ``` r
 env_df <- as.data.frame.nicheR(env_stack)
 
-plot_e_space(env_bg = env_df, vs = vs)
-#> No complete x, y, z specification provided. Using predictor columns inferred from 'env_bg': mean_temp, annual_precip, temp_seasonality
-#> Using predictor columns: mean_temp, annual_precip, temp_seasonality
-#> Sampling 10000 of 310771 rows from 'suitable_env' for plotting.
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+plot_e_space(vs = vs)
+#> Using env_bg from NicheR_species object via nr_get_env().
+#> Auto-inferring x,y,z from first 3 predictor columns: mean_temp, annual_precip, temp_seasonality
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 ``` r
-plot_g_space(vs = vs)
+plot_g_space(vs = vs, surface = "both")
+#> Using env_bg retrieved from 'vs' via nr_get_env().
+#> Using 'vs' as suitable_env source via nr_get_*().
+#> Extent derived from env_bg raster.
 #> Coordinate system already present.
 #> ℹ Adding new coordinate system, which will replace the existing one.
 #> Coordinate system already present.
@@ -241,9 +242,8 @@ my_niche
 
 plot_e_space(env_bg = env_stack,
              niche = my_niche)
-#> No complete x, y, z specification provided. Using predictor columns inferred from 'env_bg': mean_temp, annual_precip, temp_seasonality
-#> Using predictor columns: mean_temp, annual_precip, temp_seasonality
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+#> Using user-supplied env_bg.
+#> Auto-inferring x,y,z from first 3 predictor columns: mean_temp, annual_precip, temp_seasonality
 ```
 
 ## <img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
@@ -346,10 +346,8 @@ suitable_both <- get_suitable_env(
 plot_e_space(env_bg = env_stack,
              niche = my_niche, 
              suitable_env = suitable_both)
-#> No complete x, y, z specification provided. Using predictor columns inferred from 'env_bg': mean_temp, annual_precip, temp_seasonality
-#> Using predictor columns: mean_temp, annual_precip, temp_seasonality
-#> Sampling 10000 of 378965 rows from 'suitable_env' for plotting.
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+#> Using user-supplied env_bg.
+#> Auto-inferring x,y,z from first 3 predictor columns: mean_temp, annual_precip, temp_seasonality
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
@@ -400,16 +398,16 @@ bias_obj <- set_bias_surface(
   out.bias     = "both"
 )
 #> Starting set_bias_surface()...
-#> bias_surface provided as SpatRaster. Splitting into single layers...
-#> Using 'suitable_env' raster as template and mask.
-#> Processing and standardizing 2 bias layer(s) on the template grid...
-#>   - Aligning bias layer 1 (sp_richness) to template grid (resample).
-#>   - Aligning bias layer 2 (nighttime) to template grid (resample).
-#> Finished processing bias layers.
-#> Pooling 2 bias layer(s) into a single surface...
-#> Finished pooling bias layers.
+#> bias_surface is SpatRaster → splitting into layers...
+#> Using suitable_env (via nr_get) as template/mask.
+#> Processing 2 bias layers...
+#>   • Cropping sp_richness to suitable_env extent...
+#>   • Resampling sp_richness...
+#>   • Cropping nighttime to suitable_env extent...
+#>   • Resampling nighttime...
+#> Pooling directional layers...
 #> |---------|---------|---------|---------|=========================================                                          
-#> set_bias_surface() completed successfully.
+#> Completed set_bias_surface().
 
 names(bias_obj)
 #> [1] "pooled_bias_sp"         "directional_bias_stack" "combination_formula"
@@ -558,8 +556,7 @@ plot_e_space(
   niche    = my_niche,
   suitable_env = suitable_both
 )
-#> Sampling 10000 of 378965 rows from 'suitable_env' for plotting.
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+#> Using user-supplied env_bg.
 ```
 
 <img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
@@ -619,10 +616,7 @@ plot_g_space(
   niche         = my_niche,
   occ_pts       = occ_center
 )
-#> Suitability was not supplied; computed internally via get_suitable_env().
-#> For repeated plots, consider calling get_suitable_env() once and passing the result to `suitable_env`.
-#> Coordinate system already present.
-#> ℹ Adding new coordinate system, which will replace the existing one.
+#> Extent derived from env_bg raster.
 #> Coordinate system already present.
 #> ℹ Adding new coordinate system, which will replace the existing one.
 ```
@@ -738,13 +732,13 @@ You can select a palette by name:
 plot_e_space(
   env_bg   = env_df,
   x        = "mean_temp",
-  y        = "temp_seasonality",
-  z        = "annual_precip",
+  z        = "temp_seasonality",
+  y        = "annual_precip",
   niche    = my_niche,
   occ_pts  = occ_center,
   palette  = "palette4"
 )
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+#> Using user-supplied env_bg.
 ```
 
 <img src="man/figures/README-unnamed-chunk-17-1.png" width="100%" />
@@ -764,10 +758,8 @@ plot_e_space(
     occ          = "purple4"
   )
 )
-#> No complete x, y, z specification provided. Using predictor columns inferred from 'env_bg': mean_temp, annual_precip, temp_seasonality
-#> Using predictor columns: mean_temp, annual_precip, temp_seasonality
-#> Sampling 10000 of 310771 rows from 'suitable_env' for plotting.
-#> Sampling 10000 of 12412229 rows from 'env_bg' for plotting.
+#> Using user-supplied env_bg.
+#> Auto-inferring x,y,z from first 3 predictor columns: mean_temp, annual_precip, temp_seasonality
 ```
 
 <img src="man/figures/README-unnamed-chunk-18-1.png" width="100%" />
