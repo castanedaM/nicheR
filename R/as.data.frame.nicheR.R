@@ -152,6 +152,7 @@ as.data.frame.nicheR <- function(raster_stack,
   }
 
   env_df <- DBI::dbReadTable(conn, "raster_table")
+  DBI::dbDisconnect(conn)
 
   if (write_rdata) {
     if (verbose) message("Saving RData file: ", rdata_file)
