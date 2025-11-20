@@ -105,9 +105,8 @@ suitable_area_t4 <- get_suitable_env(niche = my_niche_small,
 
 # TEST 3: Suitable Plotting -----------------------------------------------
 
-plot_e_space(env_bg = env_df_small,
-             niche = my_niche_small,
-             suitable_env = suitable_area_t1,
+plot_e_space(niche = my_niche_small,
+             suitable_env = suitable_area_t4,
              plot.3d = FALSE)
 
 plot_g_space(suitable_env = suitable_area_t1)
@@ -290,16 +289,19 @@ vs_small <- create_virtual_species(env_bg = env_stack_small,
                                    center = niche_center,
                                    axes = niche_axes,
                                    n_occ = 75,
-                                   bias_surface = c(sp_rich, nighttime),
-                                   bias_dir = c(1, -1),
+                                   # bias_surface = c(sp_rich, nighttime),
+                                   # bias_dir = c(1, -1),
                                    out.suit = "both",
                                    out.bias = "both",
                                    distances = TRUE,
                                    out.file = TRUE)
 
-plot_e_space(env_bg = env_stack_small, vs = vs_small)
-plot_g_space(env_bg = env_stack_small,
-             vs = vs_small, surface = "suit")
+plot_e_space(vs = vs_small)
+
+plot_g_space(vs = vs_small, surface = "both")
+
+plot_g_space(env_bg = env_stack_small)
+
 
 # Explore virtual species object
 vs_small
@@ -338,16 +340,17 @@ env_df_db <- as.data.frame.nicheR(raster_stack = env_stack_large,
                                   verbose = TRUE, use_cache = TRUE)
 proc.time() - ptm
 
-ptm <- proc.time()
+gc()
 
+ptm <- proc.time()
 vs_large <- create_virtual_species(env_bg = env_df_db,
                                    center = niche_center,
                                    axes = niche_axes,
                                    out.suit = "both",
                                    n_occ = 75,
-                                   # bias_surface = c(sp_rich, nighttime),
-                                   # bias_dir = c(1, -1),
-                                   # out.bias = "both",
+                                   bias_surface = c(sp_rich, nighttime),
+                                   bias_dir = c(1, -1),
+                                   out.bias = "both",
                                    distances = TRUE,
                                    out.file = FALSE)
 proc.time() - ptm
