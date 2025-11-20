@@ -118,8 +118,10 @@ The `what` argument controls which component is returned:
   \item{\code{"dist_sq"}}{Raster of squared Mahalanobis distance from the
   niche centroid (inside the ellipsoid), if present.}
 
-  \item{\code{"all_suitable"}}{All spatial suitability rasters (list of
-  SpatRasters).}
+  \item{\code{"all_suitable"}}{The full suitability object stored in the input:
+    for a \code{suitable_env} this returns the entire object; for a
+    \code{NicheR_species} this returns the \code{$suitability} slot; for
+    lists or \code{SpatRaster} inputs it returns the object itself.}
 
   \item{\code{"df"}}{Data frame of suitable points, if stored.}
 
