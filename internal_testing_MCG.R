@@ -360,7 +360,9 @@ vs_large <- create_virtual_species(env_bg = env_df_db,
                                    out.file = FALSE)
 proc.time() - ptm
 
-plot_e_space(env_bg = env_df_db, vs = vs_large)
+plot_e_space(env_bg = env_df_db)
+
+plot_e_space(vs = vs_large)
 
 plot_g_space(env_bg = env_df_db, vs = vs_large)
 

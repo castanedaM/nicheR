@@ -169,14 +169,136 @@
 
 
 
-#' Plot niche and environments in E-space (2D or 3D)
+#' Plot ellipsoid niche and environments in E-space
 #'
-#' Automatically retrieves:
-#'  - env_bg (environmental background),
-#'  - suitable_env (inside ellipsoid),
-#'  - occurrences,
-#'  - x,y,z predictors
-#' from: user args → vs → nr_get().
+#' `plot_e_space()` visualizes an ellipsoid niche and its environments in
+#' environmental space (E-space). It can:
+#' \itemize{
+#'   \item show background environments,
+#'   \item highlight suitable environments (inside the ellipsoid),
+#'   \item overlay occurrence points,
+#'   \item draw 2D pairwise projections of the ellipsoid,
+#'   \item or render a 3D interactive view of the niche and points.
+#' }
+#'
+#' The function is designed to work flexibly with:
+#' \itemize{
+#'   \item user-supplied objects (\code{env_bg}, \code{niche},
+#'         \code{suitable_env}, \code{occ_pts}), or
+#'   \item a full \code{\link{NicheR_species}} object via \code{vs}, from which
+#'         it will automatically pull the niche, suitability, and occurrences
+#'         using the \code{nr_get_*()} helpers.
+#' }
+#'
+#' @param env_bg Environmental background used to define the E-space cloud.
+#'   Can be:
+#'   \itemize{
+#'     \item a \code{terra::SpatRaster} or \code{raster::Raster*} of predictors,
+#'     \item a \code{data.frame} / tibble with predictor columns and optionally
+#'           \code{x}, \code{y} coordinates.
+#'   }
+#'   If \code{NULL}, the function tries to retrieve it from \code{vs} via
+#'   \code{\link{nr_get_env}} or, if needed, approximate it from
+#'   \code{suitable_env} or the ellipsoid bounding box.
+#'
+#' @param x,y,z Character names of the three environmental predictors to use
+#'   as axes in E-space. If omitted, they are auto-inferred from the columns of
+#'   \code{env_bg} (excluding any \code{x}/\code{y} columns), using the first
+#'   three predictor columns.
+#'
+#' @param labels Character vector of length three giving the axis labels for
+#'   the three environmental dimensions, in the order \code{x}, \code{y},
+#'   \code{z}. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.
+#'
+#' @param n_bg Integer; maximum number of background points to plot. Background
+#'   rows are randomly subsampled when \code{env_bg} is very large to avoid
+#'   overplotting and memory issues. Suitable points are also downsampled to
+#'   at most \code{n_bg / 2}.
+#'
+#' @param niche Optional ellipsoid object of class \code{"ellipsoid"} created
+#'   by \code{\link{build_ellps}}. If provided, the function draws the niche
+#'   boundary, centroid, and tolerance (axes) in the 2D panels, and optionally
+#'   the 3D surface when \code{plot.3d = TRUE}. If \code{NULL} and \code{vs}
+#'   is supplied, it is retrieved via \code{\link{nr_get_niche}}.
+#'
+#' @param suitable_env Optional suitable-environment object. Can be:
+#'   \itemize{
+#'     \item the full object returned by \code{\link{get_suitable_env}},
+#'     \item a list of rasters or a \code{SpatRaster},
+#'     \item a \code{data.frame} of suitable points.
+#'   }
+#'   Internally, the function uses \code{\link{nr_get_suitable_df}} to obtain
+#'   a data frame of inside-ellipsoid points. If \code{NULL} and \code{vs} is
+#'   supplied, suitability is pulled from \code{vs} via \code{nr_get_suitable_df}.
+#'
+#' @param occ_pts Optional occurrence data as a \code{data.frame} with at least
+#'   the predictor columns referenced by \code{x}, \code{y}, \code{z}.
+#'   Points are overlaid on the background and suitable environments. If
+#'   \code{NULL} and \code{vs} is supplied, occurrences are retrieved via
+#'   \code{\link{nr_get_occ}}.
+#'
+#' @param rand_seed Integer random seed used when subsampling background and
+#'   suitable points for plotting (\code{n_bg}). Set for reproducible plots.
+#'
+#' @param show.occ.density Logical; if \code{TRUE}, adds marginal density
+#'   plots for occurrences along each environmental axis in a 4x4 layout
+#'   (Option A). If \code{FALSE}, only the main 3x3 scatter/ellipsoid grid is
+#'   returned.
+#'
+#' @param plot.3d Logical; if \code{TRUE}, returns an interactive 3D plotly
+#'   object showing background, suitable points, occurrences, and (optionally)
+#'   the ellipsoid surface in three dimensions. If \code{FALSE}, returns a
+#'   static ggplot-based panel layout.
+#'
+#' @param colors Optional named list to override the default color scheme.
+#'   Recognized elements are:
+#'   \code{bg}, \code{ellipsoid}, \code{centroid}, \code{tolerance},
+#'   \code{suitable_env}, and \code{occ}. Any missing entries fall back to
+#'   the selected \code{palette}.
+#'
+#' @param palette Character name of the built-in color palette to use.
+#'   One of:
+#'   \code{"default"}, \code{"palette2"}, \code{"palette3"},
+#'   \code{"palette4"}, \code{"palette5"}, \code{"palette6"}.
+#'
+#' @param vs Optional object of class \code{"NicheR_species"} created by
+#'   \code{\link{create_virtual_species}}. When provided, any missing
+#'   \code{niche}, \code{suitable_env}, \code{occ_pts}, or \code{env_bg} are
+#'   retrieved via the \code{nr_get_*()} helper functions.
+#'
+#' @return
+#' If \code{plot.3d = FALSE}, a \code{ggpubr} object (assembled via
+#' \code{\link[ggpubr]{ggarrange}}) containing:
+#' \itemize{
+#'   \item a 3x3 grid of pairwise 2D projections,
+#'   \item optionally, a 4x4 layout with marginal densities when
+#'         \code{show.occ.density = TRUE}.
+#' }
+#' If \code{plot.3d = TRUE}, an interactive \code{plotly} object is returned.
+#'
+#' @details
+#' Internally, the function:
+#' \enumerate{
+#'   \item resolves \code{env_bg} from user input or \code{vs}, coercing
+#'         rasters to a data frame with \code{\link{as.data.frame.nicheR}},
+#'   \item determines \code{x}, \code{y}, \code{z} from the background
+#'         predictors (if not supplied),
+#'   \item extracts suitable points and occurrences (if available),
+#'   \item builds a legend that reflects which components are present,
+#'   \item constructs either a 2D grid of ggplots or a 3D plotly view.
+#' }
+#'
+#' This function is intended mainly as a visualization and diagnostic tool for
+#' ellipsoid-based niche models created with NicheR.
+#'
+#' @seealso
+#' \code{\link{build_ellps}},
+#' \code{\link{get_suitable_env}},
+#' \code{\link{create_virtual_species}},
+#' \code{\link{nr_get_env}},
+#' \code{\link{nr_get_suitable_df}},
+#' \code{\link{nr_get_niche}},
+#' \code{\link{nr_get_occ}}
 #'
 #' @export
 plot_e_space <- function(env_bg = NULL,
@@ -193,9 +315,9 @@ plot_e_space <- function(env_bg = NULL,
                          palette = "default",
                          vs = NULL) {
 
-  ## -------------------------------------------------------------------------
+
   ## 0. Pull information from vs if provided
-  ## -------------------------------------------------------------------------
+
 
   if (!is.null(vs)) {
 
@@ -215,9 +337,9 @@ plot_e_space <- function(env_bg = NULL,
       occ_pts <- nr_get_occ(vs)
   }
 
-  ## -------------------------------------------------------------------------
+
   ## 1. Resolve environmental background correctly
-  ## -------------------------------------------------------------------------
+
   env_bg <- .pe_get_env_bg(env_bg, vs, suitable_env, niche)
 
   # Coerce tibble
@@ -243,21 +365,21 @@ plot_e_space <- function(env_bg = NULL,
   if (!is.data.frame(env_bg))
     stop("'env_bg' must be coercible to a data.frame.")
 
-  ## -------------------------------------------------------------------------
+
   ## 2. Resolve predictor columns x,y,z
-  ## -------------------------------------------------------------------------
+
   xyz <- .pe_resolve_xyz(env_bg, x, y, z)
   col_x <- xyz[1]; col_y <- xyz[2]; col_z <- xyz[3]
 
-  ## -------------------------------------------------------------------------
+
   ## 3. Retrieve inside points and occurrences
-  ## -------------------------------------------------------------------------
+
   pts_in <- .pe_get_suitable_pts(suitable_env)
   occ_pts <- .pe_get_occ_pts(occ_pts, vs)
 
-  ## -------------------------------------------------------------------------
+
   ## 4. Colors and palettes
-  ## -------------------------------------------------------------------------
+
   palettes <- list(
     default = list( bg           = "#9093A2FF",
                     ellipsoid    = "#2A363BFF",
@@ -314,9 +436,9 @@ plot_e_space <- function(env_bg = NULL,
     colors <- utils::modifyList(base_colors, colors)
   }
 
-  ## -------------------------------------------------------------------------
+
   ## 5. Legend metadata
-  ## -------------------------------------------------------------------------
+
 
   # background label changes depending on source
   bg_label <- "Background environments"
@@ -405,17 +527,24 @@ plot_e_space <- function(env_bg = NULL,
       ggplot2::scale_linetype_identity()
   }
 
-  ## -------------------------------------------------------------------------
-  ## 6. Downsample environmental background
-  ## -------------------------------------------------------------------------
-  if (nrow(env_bg) > n_bg) {
-    set.seed(rand_seed)
-    env_bg <- env_bg[sample.int(nrow(env_bg), n_bg), ]
+
+  ## 6. Downsample environmental background and suitable env.
+
+  if(!is.null(env_bg)){
+    if (nrow(env_bg) > n_bg) {
+      set.seed(rand_seed)
+      env_bg <- env_bg[sample.int(nrow(env_bg), n_bg), ]
+    }
   }
 
-  ## -------------------------------------------------------------------------
+  if(!is.null(pts_in)){
+    if (nrow(pts_in) > n_bg) {
+      set.seed(rand_seed)
+      pts_in <- pts_in[sample.int(nrow(pts_in), n_bg/2), ]
+    }
+  }
+
   ## 7. 3D PLOTTING BRANCH
-  ## -------------------------------------------------------------------------
   if (plot.3d) {
 
     p3 <- plotly::plot_ly(
@@ -485,9 +614,9 @@ plot_e_space <- function(env_bg = NULL,
     return(p3)
   }
 
-  ## -------------------------------------------------------------------------
+
   ## 8. BUILD GRID OF MAIN 2D PANELS
-  ## -------------------------------------------------------------------------
+
 
   make_scatter <- function(df, xcol, ycol, color) {
     ggplot2::ggplot(df, aes(x=.data[[xcol]], y=.data[[ycol]])) +
@@ -508,9 +637,9 @@ plot_e_space <- function(env_bg = NULL,
   z_name <- ggplot2::ggplot() + ggplot2::theme_void() +
     ggplot2::geom_text(aes(0,0,label=labels[3]), fontface="bold")
 
-  ## -------------------------------------------------------------------------
+
   ## 9. Add ellipsoid + suitable + occurrences
-  ## -------------------------------------------------------------------------
+
 
   if (!is.null(niche)) {
 
@@ -558,9 +687,9 @@ plot_e_space <- function(env_bg = NULL,
     p_zy <- add_ell(p_zy, ell2d$z_y)
   }
 
-  ## -------------------------------------------------------------------------
+
   ## 10. Assemble the main 3x3 grid
-  ## -------------------------------------------------------------------------
+
   main_plot <- ggpubr::ggarrange(
     x_name,     p_yx,       p_zx,
     legend_plot,y_name,     p_zy,
@@ -570,9 +699,9 @@ plot_e_space <- function(env_bg = NULL,
     heights = c(0.44,0.44,0.12)
   )
 
-  ## -------------------------------------------------------------------------
+
   ## OPTIONAL: DENSITY PANELS (Option A)
-  ## -------------------------------------------------------------------------
+
   if (show.occ.density && !is.null(occ_pts)) {
 
     rngx <- range(env_bg[[col_x]], na.rm=TRUE)
