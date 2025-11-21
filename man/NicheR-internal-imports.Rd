@@ -4,7 +4,7 @@
 \alias{NicheR-internal-imports}
 \title{Internal imports for NicheR}
 \description{
-Centralized roxygen imports to keep NAMESPACE tidy.
-Nothing in this file is exported.
+This file collects roxygen2 @import directives so the NAMESPACE
+remains clean. Nothing here is exported.
 }
 \keyword{internal}

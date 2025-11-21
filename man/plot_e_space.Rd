@@ -5,24 +5,30 @@
 \title{Plot ellipsoid niche and environments in E-space}
 \usage{
 plot_e_space(
+  vs = NULL,
   env_bg = NULL,
-  x,
-  y,
-  z,
-  labels = c("ENV 1", "ENV 2", "ENV 3"),
-  n_bg = 10000,
   niche = NULL,
   suitable_env = NULL,
   occ_pts = NULL,
-  rand_seed = 1234,
+  x,
+  y,
+  z,
+  show.in.plot = NULL,
   show.occ.density = FALSE,
   plot.3d = FALSE,
+  labels = c("ENV 1", "ENV 2", "ENV 3"),
+  n_bg = 1e+06,
+  rand_seed = 1234,
   colors = NULL,
-  palette = "default",
-  vs = NULL
+  palette = "default"
 )
 }
 \arguments{
+\item{vs}{Optional object of class \code{"NicheR_species"} created by
+\code{\link{create_virtual_species}}. When provided, any missing
+\code{niche}, \code{suitable_env}, \code{occ_pts}, or \code{env_bg} are
+retrieved via the \code{nr_get_*()} helper functions.}
+
 \item{env_bg}{Environmental background used to define the E-space cloud.
 Can be:
 \itemize{
@@ -33,20 +39,6 @@ Can be:
 If \code{NULL}, the function tries to retrieve it from \code{vs} via
 \code{\link{nr_get_env}} or, if needed, approximate it from
 \code{suitable_env} or the ellipsoid bounding box.}
-
-\item{x, y, z}{Character names of the three environmental predictors to use
-as axes in E-space. If omitted, they are auto-inferred from the columns of
-\code{env_bg} (excluding any \code{x}/\code{y} columns), using the first
-three predictor columns.}
-
-\item{labels}{Character vector of length three giving the axis labels for
-the three environmental dimensions, in the order \code{x}, \code{y},
-\code{z}. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.}
-
-\item{n_bg}{Integer; maximum number of background points to plot. Background
-rows are randomly subsampled when \code{env_bg} is very large to avoid
-overplotting and memory issues. Suitable points are also downsampled to
-at most \code{n_bg / 2}.}
 
 \item{niche}{Optional ellipsoid object of class \code{"ellipsoid"} created
 by \code{\link{build_ellps}}. If provided, the function draws the niche
@@ -70,18 +62,56 @@ Points are overlaid on the background and suitable environments. If
 \code{NULL} and \code{vs} is supplied, occurrences are retrieved via
 \code{\link{nr_get_occ}}.}
 
-\item{rand_seed}{Integer random seed used when subsampling background and
-suitable points for plotting (\code{n_bg}). Set for reproducible plots.}
+\item{x, y, z}{Character names of the three environmental predictors to use
+as axes in E-space. If omitted, they are auto-inferred from the columns of
+\code{env_bg} (excluding any \code{x}/\code{y} columns), using the first
+three predictor columns.}
+
+\item{show.in.plot}{Optional character vector controlling which elements
+  are drawn in E-space. Tokens (case-insensitive) can be:
+  \itemize{
+    \item \code{"bg"} or \code{"background"}: background environments,
+    \item \code{"suit"} or \code{"suitable"}: suitable environments,
+    \item \code{"occ"} or \code{"occurrences"}: occurrence points
+          (and, if requested, densities),
+    \item \code{"niche"}, \code{"ell"}, or \code{"ellipsoid"}:
+          ellipsoid boundary, centroid, and tolerance axes.
+  }
+
+  You can pass any combination, e.g.:
+  \code{show.in.plot = c("bg", "suit", "occ")},
+  \code{show.in.plot = c("suit", "niche")},
+  or abbreviations like \code{c("occ", "ell")}.
+
+  If \code{show.in.plot = NULL} (default), all available components are
+  shown: background, suitable environments, occurrences, and niche
+  geometry (when present).
+
+  A short message is printed indicating the active display mode and how to
+  modify it using \code{show.in.plot}.}
 
 \item{show.occ.density}{Logical; if \code{TRUE}, adds marginal density
 plots for occurrences along each environmental axis in a 4x4 layout
-(Option A). If \code{FALSE}, only the main 3x3 scatter/ellipsoid grid is
-returned.}
+(Option A). Only has an effect when occurrences are included in
+\code{show.in.plot}. If \code{FALSE}, only the main 3x3 scatter/ellipsoid
+grid is returned.}
 
 \item{plot.3d}{Logical; if \code{TRUE}, returns an interactive 3D plotly
 object showing background, suitable points, occurrences, and (optionally)
 the ellipsoid surface in three dimensions. If \code{FALSE}, returns a
 static ggplot-based panel layout.}
+
+\item{labels}{Character vector of length three giving the axis labels for
+the three environmental dimensions, in the order \code{x}, \code{y},
+\code{z}. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.}
+
+\item{n_bg}{Integer; maximum number of background points to plot. Background
+rows are randomly subsampled when \code{env_bg} is very large to avoid
+overplotting and memory issues. Suitable points are also downsampled to
+at most \code{n_bg / 2}.}
+
+\item{rand_seed}{Integer random seed used when subsampling background and
+suitable points for plotting (\code{n_bg}). Set for reproducible plots.}
 
 \item{colors}{Optional named list to override the default color scheme.
 Recognized elements are:
@@ -93,11 +123,6 @@ the selected \code{palette}.}
 One of:
 \code{"default"}, \code{"palette2"}, \code{"palette3"},
 \code{"palette4"}, \code{"palette5"}, \code{"palette6"}.}
-
-\item{vs}{Optional object of class \code{"NicheR_species"} created by
-\code{\link{create_virtual_species}}. When provided, any missing
-\code{niche}, \code{suitable_env}, \code{occ_pts}, or \code{env_bg} are
-retrieved via the \code{nr_get_*()} helper functions.}
 }
 \value{
 If \code{plot.3d = FALSE}, a \code{ggpubr} object (assembled via
@@ -105,7 +130,7 @@ If \code{plot.3d = FALSE}, a \code{ggpubr} object (assembled via
 \itemize{
   \item a 3x3 grid of pairwise 2D projections,
   \item optionally, a 4x4 layout with marginal densities when
-        \code{show.occ.density = TRUE}.
+        \code{show.occ.density = TRUE} and occurrences are shown.
 }
 If \code{plot.3d = TRUE}, an interactive \code{plotly} object is returned.
 }
@@ -138,6 +163,7 @@ Internally, the function:
   \item determines \code{x}, \code{y}, \code{z} from the background
         predictors (if not supplied),
   \item extracts suitable points and occurrences (if available),
+  \item interprets \code{show.in.plot} to decide which layers to render,
   \item builds a legend that reflects which components are present,
   \item constructs either a 2D grid of ggplots or a 3D plotly view.
 }

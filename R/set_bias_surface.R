@@ -100,9 +100,9 @@ set_bias_surface <- function(bias_surface,
 
   if (isTRUE(verbose)) message("Starting set_bias_surface()...")
 
-  # -------------------------------------------------------
+
   # 0. Input checks
-  # -------------------------------------------------------
+
   if (missing(bias_surface) || is.null(bias_surface))
     stop("'bias_surface' must be a SpatRaster or list of SpatRasters.")
 
@@ -124,9 +124,9 @@ set_bias_surface <- function(bias_surface,
   if (length(bias_list) == 0)
     stop("No usable bias layers provided.")
 
-  # -------------------------------------------------------
+
   # 1. Determine mask / template raster using nr_get()
-  # -------------------------------------------------------
+
   mask_ras <- NULL
 
   if (out.bias %in% c("biased", "both")) {
@@ -139,9 +139,9 @@ set_bias_surface <- function(bias_surface,
 
   template_raster <- if (!is.null(mask_ras)) mask_ras else bias_list[[1]]
 
-  # -------------------------------------------------------
+
   # 2. Prepare bias_dir
-  # -------------------------------------------------------
+
   if (length(bias_dir) == 1) bias_dir <- rep(bias_dir, length(bias_list))
   if (!all(bias_dir %in% c(1, -1)))
     stop("bias_dir must contain only 1 or -1.")
@@ -151,9 +151,9 @@ set_bias_surface <- function(bias_surface,
 
   if (verbose) message("Processing ", length(bias_list), " bias layers...")
 
-  # -------------------------------------------------------
+
   # 3. Process each layer: crop → resample → scale → invert
-  # -------------------------------------------------------
+
   for (i in seq_along(bias_list)) {
 
     raw <- bias_list[[i]]
@@ -209,9 +209,9 @@ set_bias_surface <- function(bias_surface,
   else
     do.call(c, directional_bias_list)
 
-  # -------------------------------------------------------
+
   # 4. Combine layers (product)
-  # -------------------------------------------------------
+
   pooled_bias_sp <- NULL
 
   if (out.bias %in% c("biased", "both")) {
@@ -234,9 +234,9 @@ set_bias_surface <- function(bias_surface,
   if (!is.null(mask_ras))
     directional_bias_stack <- terra::mask(directional_bias_stack, mask_ras)
 
-  # -------------------------------------------------------
+
   # 5. Build result
-  # -------------------------------------------------------
+
   res <- list(
     pooled_bias_sp         = if (out.bias %in% c("biased", "both")) pooled_bias_sp else NULL,
     directional_bias_stack = if (out.bias %in% c("standardized", "both")) directional_bias_stack else NULL,

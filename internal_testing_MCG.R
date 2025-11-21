@@ -296,25 +296,32 @@ vs_small <- create_virtual_species(env_bg = env_stack_small,
                                    distances = TRUE,
                                    out.file = TRUE)
 plot_e_space(vs = vs_small)
+
 plot_e_space(env_bg  = env_stack_small, vs = vs_small)
 
 plot_g_space(vs = vs_small)
 
-plot_g_space(vs = vs_small, surface = "suit")
+plot_g_space(vs = vs_small,
+             show.in.plot = c("suit", "dist", "occ"))
+
+plot_g_space(vs = vs_small,
+             show.in.plot = c(c("suit", "dist")))
+
+plot_g_space(vs = vs_small,
+             show.in.plot = c("suit", "occ"))
 
 plot_g_space(env_bg = env_stack_small,
              suitable_env = nr_get_suitable_df(vs_small),
-             surface = "suit")
+             show.in.plot = "suit")
 
 plot_g_space(env_bg = nr_get_env(vs_small),
              occ_pts = nr_get_occ(vs_small),
              suitable_env = nr_get_suitable_df(vs_small),
-             surface = "dist")
+             show.in.plot = "dist")
 
 plot_g_space(env_bg = nr_get_env(vs_small),
              occ_pts = nr_get_occ(vs_small),
-             suitable_env = nr_get_suitable_all(vs_small),
-             surface = "both")
+             suitable_env = nr_get_suitable_all(vs_small))
 
 # Explore virtual species object
 vs_small

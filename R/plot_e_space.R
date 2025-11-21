@@ -19,6 +19,11 @@
 #'         using the \code{nr_get_*()} helpers.
 #' }
 #'
+#' @param vs Optional object of class \code{"NicheR_species"} created by
+#'   \code{\link{create_virtual_species}}. When provided, any missing
+#'   \code{niche}, \code{suitable_env}, \code{occ_pts}, or \code{env_bg} are
+#'   retrieved via the \code{nr_get_*()} helper functions.
+#'
 #' @param env_bg Environmental background used to define the E-space cloud.
 #'   Can be:
 #'   \itemize{
@@ -29,20 +34,6 @@
 #'   If \code{NULL}, the function tries to retrieve it from \code{vs} via
 #'   \code{\link{nr_get_env}} or, if needed, approximate it from
 #'   \code{suitable_env} or the ellipsoid bounding box.
-#'
-#' @param x,y,z Character names of the three environmental predictors to use
-#'   as axes in E-space. If omitted, they are auto-inferred from the columns of
-#'   \code{env_bg} (excluding any \code{x}/\code{y} columns), using the first
-#'   three predictor columns.
-#'
-#' @param labels Character vector of length three giving the axis labels for
-#'   the three environmental dimensions, in the order \code{x}, \code{y},
-#'   \code{z}. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.
-#'
-#' @param n_bg Integer; maximum number of background points to plot. Background
-#'   rows are randomly subsampled when \code{env_bg} is very large to avoid
-#'   overplotting and memory issues. Suitable points are also downsampled to
-#'   at most \code{n_bg / 2}.
 #'
 #' @param niche Optional ellipsoid object of class \code{"ellipsoid"} created
 #'   by \code{\link{build_ellps}}. If provided, the function draws the niche
@@ -66,18 +57,56 @@
 #'   \code{NULL} and \code{vs} is supplied, occurrences are retrieved via
 #'   \code{\link{nr_get_occ}}.
 #'
-#' @param rand_seed Integer random seed used when subsampling background and
-#'   suitable points for plotting (\code{n_bg}). Set for reproducible plots.
+#' @param x,y,z Character names of the three environmental predictors to use
+#'   as axes in E-space. If omitted, they are auto-inferred from the columns of
+#'   \code{env_bg} (excluding any \code{x}/\code{y} columns), using the first
+#'   three predictor columns.
+#'
+#' @param show.in.plot Optional character vector controlling which elements
+#'   are drawn in E-space. Tokens (case-insensitive) can be:
+#'   \itemize{
+#'     \item \code{"bg"} or \code{"background"}: background environments,
+#'     \item \code{"suit"} or \code{"suitable"}: suitable environments,
+#'     \item \code{"occ"} or \code{"occurrences"}: occurrence points
+#'           (and, if requested, densities),
+#'     \item \code{"niche"}, \code{"ell"}, or \code{"ellipsoid"}:
+#'           ellipsoid boundary, centroid, and tolerance axes.
+#'   }
+#'
+#'   You can pass any combination, e.g.:
+#'   \code{show.in.plot = c("bg", "suit", "occ")},
+#'   \code{show.in.plot = c("suit", "niche")},
+#'   or abbreviations like \code{c("occ", "ell")}.
+#'
+#'   If \code{show.in.plot = NULL} (default), all available components are
+#'   shown: background, suitable environments, occurrences, and niche
+#'   geometry (when present).
+#'
+#'   A short message is printed indicating the active display mode and how to
+#'   modify it using \code{show.in.plot}.
 #'
 #' @param show.occ.density Logical; if \code{TRUE}, adds marginal density
 #'   plots for occurrences along each environmental axis in a 4x4 layout
-#'   (Option A). If \code{FALSE}, only the main 3x3 scatter/ellipsoid grid is
-#'   returned.
+#'   (Option A). Only has an effect when occurrences are included in
+#'   \code{show.in.plot}. If \code{FALSE}, only the main 3x3 scatter/ellipsoid
+#'   grid is returned.
 #'
 #' @param plot.3d Logical; if \code{TRUE}, returns an interactive 3D plotly
 #'   object showing background, suitable points, occurrences, and (optionally)
 #'   the ellipsoid surface in three dimensions. If \code{FALSE}, returns a
 #'   static ggplot-based panel layout.
+#'
+#' @param labels Character vector of length three giving the axis labels for
+#'   the three environmental dimensions, in the order \code{x}, \code{y},
+#'   \code{z}. Defaults to \code{c("ENV 1", "ENV 2", "ENV 3")}.
+#'
+#' @param n_bg Integer; maximum number of background points to plot. Background
+#'   rows are randomly subsampled when \code{env_bg} is very large to avoid
+#'   overplotting and memory issues. Suitable points are also downsampled to
+#'   at most \code{n_bg / 2}.
+#'
+#' @param rand_seed Integer random seed used when subsampling background and
+#'   suitable points for plotting (\code{n_bg}). Set for reproducible plots.
 #'
 #' @param colors Optional named list to override the default color scheme.
 #'   Recognized elements are:
@@ -90,18 +119,13 @@
 #'   \code{"default"}, \code{"palette2"}, \code{"palette3"},
 #'   \code{"palette4"}, \code{"palette5"}, \code{"palette6"}.
 #'
-#' @param vs Optional object of class \code{"NicheR_species"} created by
-#'   \code{\link{create_virtual_species}}. When provided, any missing
-#'   \code{niche}, \code{suitable_env}, \code{occ_pts}, or \code{env_bg} are
-#'   retrieved via the \code{nr_get_*()} helper functions.
-#'
 #' @return
 #' If \code{plot.3d = FALSE}, a \code{ggpubr} object (assembled via
 #' \code{\link[ggpubr]{ggarrange}}) containing:
 #' \itemize{
 #'   \item a 3x3 grid of pairwise 2D projections,
 #'   \item optionally, a 4x4 layout with marginal densities when
-#'         \code{show.occ.density = TRUE}.
+#'         \code{show.occ.density = TRUE} and occurrences are shown.
 #' }
 #' If \code{plot.3d = TRUE}, an interactive \code{plotly} object is returned.
 #'
@@ -113,6 +137,7 @@
 #'   \item determines \code{x}, \code{y}, \code{z} from the background
 #'         predictors (if not supplied),
 #'   \item extracts suitable points and occurrences (if available),
+#'   \item interprets \code{show.in.plot} to decide which layers to render,
 #'   \item builds a legend that reflects which components are present,
 #'   \item constructs either a 2D grid of ggplots or a 3D plotly view.
 #' }
@@ -142,29 +167,7 @@ plot_e_space <- function(vs            = NULL,  # primary data
                          z,
 
                          # plot behavior
-                         show.occ.density = FALSE,
-                         plot.3d        = FALSE,
-
-                         # plot controls
-                         labels        = c("ENV 1", "ENV 2", "ENV 3"),
-                         n_bg          = 1000000,
-                         rand_seed     = 1234,
-
-                         # styling
-                         colors        = NULL,
-                         palette       = "default") {
-plot_e_space <- function(vs            = NULL,  # primary data
-                         env_bg        = NULL,
-                         niche         = NULL,
-                         suitable_env  = NULL,
-                         occ_pts       = NULL,
-
-                         # required axis mapping
-                         x,
-                         y,
-                         z,
-
-                         # plot behavior
+                         show.in.plot   = NULL,
                          show.occ.density = FALSE,
                          plot.3d        = FALSE,
 
@@ -177,43 +180,32 @@ plot_e_space <- function(vs            = NULL,  # primary data
                          colors        = NULL,
                          palette       = "default") {
 
-
-  ## 0. Pull information from vs if provided
-
-
+  ## 0. Pull information from vs if provided -------------------------------
   if (!is.null(vs)) {
 
     if (!inherits(vs, "NicheR_species"))
       stop("'vs' must be a NicheR_species object produced by create_virtual_species().")
 
-    # niche
     if (is.null(niche))
       niche <- nr_get_niche(vs)
 
-    # suitable_env
     if (is.null(suitable_env))
       suitable_env <- nr_get_suitable_df(vs)
 
-    # occurrences
     if (is.null(occ_pts))
       occ_pts <- nr_get_occ(vs)
   }
 
-
-  ## 1. Resolve environmental background correctly
-
+  ## 1. Resolve environmental background correctly ------------------------
   env_bg <- .pe_get_env_bg(env_bg, vs, suitable_env, niche)
 
-  # Coerce tibble
   if (inherits(env_bg, "tbl_df")) env_bg <- as.data.frame(env_bg)
 
-  # Coerce Raster → SpatRaster → df (with memory check)
   if (inherits(env_bg, "Raster")) env_bg <- terra::rast(env_bg)
 
   if (inherits(env_bg, "SpatRaster")) {
-
-    ncell <- terra::ncell(env_bg)
-    nlyr  <- terra::nlyr(env_bg)
+    ncell  <- terra::ncell(env_bg)
+    nlyr   <- terra::nlyr(env_bg)
     est_mb <- ncell * nlyr * 8 / 1024^2
 
     if (est_mb > 5000) {
@@ -227,21 +219,65 @@ plot_e_space <- function(vs            = NULL,  # primary data
   if (!is.data.frame(env_bg))
     stop("'env_bg' must be coercible to a data.frame.")
 
-
-  ## 2. Resolve predictor columns x,y,z
-
-  xyz <- .pe_resolve_xyz(env_bg, x, y, z)
+  ## 2. Resolve predictor columns x,y,z -----------------------------------
+  xyz   <- .pe_resolve_xyz(env_bg, x, y, z)
   col_x <- xyz[1]; col_y <- xyz[2]; col_z <- xyz[3]
 
-
-  ## 3. Retrieve inside points and occurrences
-
-  pts_in <- .pe_get_suitable_pts(suitable_env)
+  ## 3. Retrieve inside points and occurrences ----------------------------
+  pts_in  <- .pe_get_suitable_pts(suitable_env)
   occ_pts <- .pe_get_occ_pts(occ_pts, vs)
 
+  ## 4. Interpret show.in.plot tokens -------------------------------------
+  # normalize + map synonyms
+  token_map <- c(
+    bg          = "bg",
+    background  = "bg",
+    suit        = "suit",
+    suitable    = "suit",
+    occ         = "occ",
+    occurrences = "occ",
+    niche       = "niche",
+    ell         = "niche",
+    ellipsoid   = "niche"
+  )
 
-  ## 4. Colors and palettes
+  if (is.null(show.in.plot)) {
+    # default: everything that exists
+    show_bg    <- !is.null(env_bg)
+    show_suit  <- !is.null(pts_in)
+    show_occ   <- !is.null(occ_pts)
+    show_niche <- !is.null(niche)
+    mode_desc  <- "bg, suitable, occurrences, niche (default)"
+  } else {
+    raw_tokens <- tolower(unlist(show.in.plot))
+    matched    <- raw_tokens[raw_tokens %in% names(token_map)]
+    if (!length(matched)) {
+      warning(
+        "No valid tokens found in show.in.plot. Using default mode.\n",
+        "Valid tokens: bg/background, suit/suitable, occ/occurrences, niche/ell/ellipsoid."
+      )
+      show_bg    <- !is.null(env_bg)
+      show_suit  <- !is.null(pts_in)
+      show_occ   <- !is.null(occ_pts)
+      show_niche <- !is.null(niche)
+      mode_desc  <- "bg, suitable, occurrences, niche (default)"
+    } else {
+      tokens     <- unique(token_map[matched])
+      show_bg    <- "bg"    %in% tokens
+      show_suit  <- "suit"  %in% tokens && !is.null(pts_in)
+      show_occ   <- "occ"   %in% tokens && !is.null(occ_pts)
+      show_niche <- "niche" %in% tokens && !is.null(niche)
 
+      mode_desc <- paste(tokens, collapse = ", ")
+    }
+  }
+
+  message(
+    "plot_e_space display mode: ", mode_desc,
+    ". Modify using `show.in.plot = c(\"bg\", \"suit\", \"occ\", \"niche\")`."
+  )
+
+  ## 5. Colors and palettes -----------------------------------------------
   palettes <- list(
     default = list( bg           = "#9093A2FF",
                     ellipsoid    = "#2A363BFF",
@@ -298,250 +334,256 @@ plot_e_space <- function(vs            = NULL,  # primary data
     colors <- utils::modifyList(base_colors, colors)
   }
 
+  ## 6. Legend metadata ----------------------------------------------------
+  bg_label <- if (!is.null(vs) && missing(env_bg)) "Background (from vs)" else "Background environments"
 
-  ## 5. Legend metadata
-
-
-  # background label changes depending on source
-  bg_label <- "Background environments"
-  if (missing(env_bg) && !is.null(vs)) {
-    bg_label <- "Background (from vs)"
-  }
-
-  legend_items <- data.frame(
-    id    = c("bg","ell","cen","tol","suit","occ"),
-    type  = c("point","line","point","line","point","point"),
-    label = c(
-      bg_label,
-      "Niche boundary",
-      "Centroid",
-      "Tolerance range",
-      "Suitable environments",
-      "Occurrences"
-    ),
-    color = c(
-      colors$bg,
-      colors$ellipsoid,
-      colors$centroid,
-      colors$tolerance,
-      colors$suitable_env,
-      colors$occ
-    ),
+  legend_items <-
+    data.frame(id    = c("bg","ell","cen","tol","suit","occ"),
+               type  = c("point","line","point","line","point","point"),
+               label = c(
+                 bg_label,
+                 "Niche boundary",
+                 "Centroid",
+                 "Tolerance range",
+                 "Suitable environments",
+                 "Occurrences"),
+    color = c(colors$bg,
+              colors$ellipsoid,
+              colors$centroid,
+              colors$tolerance,
+              colors$suitable_env,
+              colors$occ),
     linetype = c(NA,1,NA,2,NA,NA),
-    stringsAsFactors = FALSE
-  )
+    stringsAsFactors = FALSE)
 
-  # deactivate unavailable parts
-  active <- c(
-    TRUE,
-    !is.null(niche),
-    !is.null(niche),
-    !is.null(niche),
-    !is.null(pts_in),
-    !is.null(occ_pts)
-  )
-  legend_items <- legend_items[active, , drop=FALSE]
+  active <- c(show_bg,
+              show_niche,
+              show_niche,
+              show_niche,
+              show_suit,
+              show_occ)
 
-  # legend plot
-  if (nrow(legend_items)==0) {
+  legend_items <- legend_items[active, , drop = FALSE]
+
+  if (nrow(legend_items) == 0) {
     legend_plot <- ggplot2::ggplot() + ggplot2::theme_void()
   } else {
-
-    top_y <- 2
+    top_y   <- 2
     spacing <- 0.25
 
-    legend_items$y <- top_y - (seq_len(nrow(legend_items))-1)*spacing
+    legend_items$y <- top_y - (seq_len(nrow(legend_items)) - 1) * spacing
 
     legend_plot <- ggplot2::ggplot() +
-      ggplot2::coord_cartesian(xlim=c(-0.5,0.5), ylim=c(0,2.5), clip="off") +
+      ggplot2::coord_cartesian(xlim = c(-0.5,0.5), ylim = c(0,2.5), clip = "off") +
       ggplot2::theme_void()
 
-    # points
-    pt <- legend_items[legend_items$type=="point",]
-    if (nrow(pt)>0) {
+    pt <- legend_items[legend_items$type == "point", ]
+    if (nrow(pt) > 0) {
       legend_plot <- legend_plot +
         ggplot2::geom_point(
-          data=pt,
-          aes(x=0, y=y, colour=color),
-          size=2
+          data = pt,
+          ggplot2::aes(x = 0, y = y, colour = color),
+          size = 2
         )
     }
 
-    # lines
-    ln <- legend_items[legend_items$type=="line",]
-    if (nrow(ln)>0) {
+    ln <- legend_items[legend_items$type == "line", ]
+    if (nrow(ln) > 0) {
       legend_plot <- legend_plot +
         ggplot2::geom_segment(
-          data=ln,
-          aes(x=-0.2, xend=0, y=y, yend=y,
-              colour=color, linetype=linetype),
-          linewidth=0.5
+          data = ln,
+          ggplot2::aes(x = -0.2, xend = 0, y = y, yend = y,
+                       colour = color, linetype = linetype),
+          linewidth = 0.5
         )
     }
 
     legend_plot <- legend_plot +
       ggplot2::geom_text(
-        data=legend_items,
-        aes(x=0.1, y=y, label=label),
-        hjust=0
+        data = legend_items,
+        ggplot2::aes(x = 0.1, y = y, label = label),
+        hjust = 0
       ) +
       ggplot2::scale_colour_identity() +
       ggplot2::scale_linetype_identity()
   }
 
-
-  ## 6. Downsample environmental background and suitable env.
-
-  if(!is.null(env_bg)){
-    if (nrow(env_bg) > n_bg) {
-      set.seed(rand_seed)
-      env_bg <- env_bg[sample.int(nrow(env_bg), n_bg), ]
-    }
+  ## 7. Downsample env + suitable -----------------------------------------
+  if (!is.null(env_bg) && nrow(env_bg) > n_bg) {
+    set.seed(rand_seed)
+    env_bg <- env_bg[sample.int(nrow(env_bg), n_bg), ]
   }
 
-  if(!is.null(pts_in)){
-    if (nrow(pts_in) > n_bg) {
-      set.seed(rand_seed)
-      pts_in <- pts_in[sample.int(nrow(pts_in), n_bg/2), ]
-    }
+  if (!is.null(pts_in) && nrow(pts_in) > n_bg) {
+    set.seed(rand_seed)
+    pts_in <- pts_in[sample.int(nrow(pts_in), n_bg / 2), ]
   }
 
-  ## 7. 3D PLOTTING BRANCH
+  ## 8. 3D branch ----------------------------------------------------------
   if (plot.3d) {
-
+    # background (can hide by not adding markers when show_bg = FALSE)
     p3 <- plotly::plot_ly(
       data = env_bg,
       x = env_bg[[col_x]],
       y = env_bg[[col_y]],
       z = env_bg[[col_z]],
       type = "scatter3d",
-      mode = "markers",
-      marker = list(color=colors$bg, size=2),
-      name="Background"
+      mode = if (show_bg) "markers" else "markers",
+      marker = list(color = if (show_bg) colors$bg else NA, size = 2),
+      name = "Background"
     ) %>%
       plotly::layout(
-        scene=list(
-          xaxis=list(title=labels[1]),
-          yaxis=list(title=labels[2]),
-          zaxis=list(title=labels[3])
+        scene = list(
+          xaxis = list(title = labels[1]),
+          yaxis = list(title = labels[2]),
+          zaxis = list(title = labels[3])
         )
       )
 
-    # Add ellipsoid surface
-    if (!is.null(niche) && !is.null(niche$surface)) {
+    if (show_niche && !is.null(niche) && !is.null(niche$surface)) {
       surf <- as.data.frame(niche$surface)
-      if (ncol(surf)>=3) {
+      if (ncol(surf) >= 3) {
         p3 <- p3 %>%
           plotly::add_trace(
-            data=surf, x=surf[[1]], y=surf[[2]], z=surf[[3]],
-            type="scatter3d", mode="lines",
-            line=list(color=colors$ellipsoid),
-            name="Boundary"
+            data = surf, x = surf[[1]], y = surf[[2]], z = surf[[3]],
+            type = "scatter3d", mode = "lines",
+            line = list(color = colors$ellipsoid),
+            name = "Boundary"
           )
       }
 
-      # centroid
       if (!is.null(niche$center)) {
         p3 <- p3 %>%
           plotly::add_markers(
-            x=niche$center[1], y=niche$center[2], z=niche$center[3],
-            marker=list(size=5, color=colors$centroid),
-            name="Centroid"
+            x = niche$center[1], y = niche$center[2], z = niche$center[3],
+            marker = list(size = 5, color = colors$centroid),
+            name = "Centroid"
           )
       }
 
-      # suitable
-      if (!is.null(pts_in)) {
+      if (show_suit && !is.null(pts_in)) {
         p3 <- p3 %>%
           plotly::add_markers(
-            data=pts_in,
-            x=pts_in[[col_x]], y=pts_in[[col_y]], z=pts_in[[col_z]],
-            marker=list(size=3, color=colors$suitable_env),
-            name="Suitable"
+            data = pts_in,
+            x = pts_in[[col_x]], y = pts_in[[col_y]], z = pts_in[[col_z]],
+            marker = list(size = 3, color = colors$suitable_env),
+            name = "Suitable"
           )
       }
     }
 
-    # occurrences
-    if (!is.null(occ_pts)) {
+    if (show_occ && !is.null(occ_pts)) {
       p3 <- p3 %>%
         plotly::add_markers(
-          data=occ_pts,
-          x=occ_pts[[col_x]], y=occ_pts[[col_y]], z=occ_pts[[col_z]],
-          marker=list(size=4, color=colors$occ),
-          name="Occurrences"
+          data = occ_pts,
+          x = occ_pts[[col_x]], y = occ_pts[[col_y]], z = occ_pts[[col_z]],
+          marker = list(size = 4, color = colors$occ),
+          name = "Occurrences"
         )
     }
 
     return(p3)
   }
 
-
-  ## 8. BUILD GRID OF MAIN 2D PANELS
-
-
-  make_scatter <- function(df, xcol, ycol, color) {
-    ggplot2::ggplot(df, aes(x=.data[[xcol]], y=.data[[ycol]])) +
-      ggplot2::geom_point(alpha=0.5, color=color, pch=".") +
-      ggplot2::theme_bw() +
-      ggplot2::theme(axis.title=element_blank())
+  ## 9. 2D scatter panels --------------------------------------------------
+  make_scatter <- function(df, xcol, ycol, color, draw_points = TRUE) {
+    p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[[xcol]], y = .data[[ycol]]))
+    if (draw_points) {
+      p <- p + ggplot2::geom_point(alpha = 0.5, color = color, pch = ".")
+    }
+    p + ggplot2::theme_bw() +
+      ggplot2::theme(axis.title = ggplot2::element_blank())
   }
 
-  p_yx <- make_scatter(env_bg, col_y, col_x, colors$bg)
-  p_zx <- make_scatter(env_bg, col_z, col_x, colors$bg)
-  p_zy <- make_scatter(env_bg, col_z, col_y, colors$bg)
+  p_yx <- make_scatter(env_bg, col_y, col_x, colors$bg, draw_points = show_bg)
+  p_zx <- make_scatter(env_bg, col_z, col_x, colors$bg, draw_points = show_bg)
+  p_zy <- make_scatter(env_bg, col_z, col_y, colors$bg, draw_points = show_bg)
 
-  # axis labels
   x_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-    ggplot2::geom_text(aes(0,0,label=labels[1]), fontface="bold")
+    ggplot2::geom_text(ggplot2::aes(0,0,label = labels[1]), fontface = "bold")
   y_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-    ggplot2::geom_text(aes(0,0,label=labels[2]), fontface="bold")
+    ggplot2::geom_text(ggplot2::aes(0,0,label = labels[2]), fontface = "bold")
   z_name <- ggplot2::ggplot() + ggplot2::theme_void() +
-    ggplot2::geom_text(aes(0,0,label=labels[3]), fontface="bold")
+    ggplot2::geom_text(ggplot2::aes(0,0,label = labels[3]), fontface = "bold")
 
-
-  ## 9. Add ellipsoid + suitable + occurrences
-
-
-  if (!is.null(niche)) {
+  ## 10. Add ellipsoid + suitable + occurrences ---------------------------
+  if (show_niche && !is.null(niche)) {
 
     ell2d <- .pe_build_ell2d(niche)
 
-    # suitable
-    if (!is.null(pts_in)) {
-      p_yx <- p_yx + geom_point(data=pts_in, aes(x=.data[[col_y]], y=.data[[col_x]]),
-                                color=colors$suitable_env, size = 0.5)
-      p_zx <- p_zx + geom_point(data=pts_in, aes(x=.data[[col_z]], y=.data[[col_x]]),
-                                color=colors$suitable_env, size = 0.5)
-      p_zy <- p_zy + geom_point(data=pts_in, aes(x=.data[[col_z]], y=.data[[col_y]]),
-                                color=colors$suitable_env, size = 0.5)
+    if (show_suit && !is.null(pts_in)) {
+      p_yx <- p_yx + ggplot2::geom_point(
+        data = pts_in,
+        ggplot2::aes(x = .data[[col_y]], y = .data[[col_x]]),
+        color = colors$suitable_env,
+        size  = 0.5
+      )
+      p_zx <- p_zx + ggplot2::geom_point(
+        data = pts_in,
+        ggplot2::aes(x = .data[[col_z]], y = .data[[col_x]]),
+        color = colors$suitable_env,
+        size  = 0.5
+      )
+      p_zy <- p_zy + ggplot2::geom_point(
+        data = pts_in,
+        ggplot2::aes(x = .data[[col_z]], y = .data[[col_y]]),
+        color = colors$suitable_env,
+        size  = 0.5
+      )
     }
 
-    # occurrences
-    if (!is.null(occ_pts)) {
-      p_yx <- p_yx + geom_point(data=occ_pts, aes(x=.data[[col_y]], y=.data[[col_x]]),
-                                color=colors$occ, size = 0.5)
-      p_zx <- p_zx + geom_point(data=occ_pts, aes(x=.data[[col_z]], y=.data[[col_x]]),
-                                color=colors$occ, size = 0.5)
-      p_zy <- p_zy + geom_point(data=occ_pts, aes(x=.data[[col_z]], y=.data[[col_y]]),
-                                color=colors$occ, size = 0.5)
+    if (show_occ && !is.null(occ_pts)) {
+      p_yx <- p_yx + ggplot2::geom_point(
+        data = occ_pts,
+        ggplot2::aes(x = .data[[col_y]], y = .data[[col_x]]),
+        color = colors$occ,
+        size  = 0.5
+      )
+      p_zx <- p_zx + ggplot2::geom_point(
+        data = occ_pts,
+        ggplot2::aes(x = .data[[col_z]], y = .data[[col_x]]),
+        color = colors$occ,
+        size  = 0.5
+      )
+      p_zy <- p_zy + ggplot2::geom_point(
+        data = occ_pts,
+        ggplot2::aes(x = .data[[col_z]], y = .data[[col_y]]),
+        color = colors$occ,
+        size  = 0.5
+      )
     }
 
-    # ellipsoid boundary lines
-    add_ell <- function(p, ell, col1=colors$ellipsoid, col2=colors$tolerance, center_col=colors$centroid) {
+    add_ell <- function(p, ell,
+                        col1 = colors$ellipsoid,
+                        col2 = colors$tolerance,
+                        center_col = colors$centroid) {
 
       p +
-        geom_path(data=ell$surface, aes(x,y), color=col1, linewidth=0.5) +
-        annotate("segment",
-                 x=ell$center[1]-ell$axes[1], xend=ell$center[1]+ell$axes[1],
-                 y=ell$center[2], yend=ell$center[2],
-                 color=col2, linetype="dashed") +
-        annotate("segment",
-                 y=ell$center[2]-ell$axes[2], yend=ell$center[2]+ell$axes[2],
-                 x=ell$center[1], xend=ell$center[1],
-                 color=col2, linetype="dashed") +
-        annotate("point", x=ell$center[1], y=ell$center[2],
-                 color=center_col, size=2)
+        ggplot2::geom_path(
+          data = ell$surface,
+          ggplot2::aes(x, y),
+          color    = col1,
+          linewidth = 0.5
+        ) +
+        ggplot2::annotate(
+          "segment",
+          x = ell$center[1] - ell$axes[1],
+          xend = ell$center[1] + ell$axes[1],
+          y = ell$center[2], yend = ell$center[2],
+          color = col2, linetype = "dashed"
+        ) +
+        ggplot2::annotate(
+          "segment",
+          y = ell$center[2] - ell$axes[2],
+          yend = ell$center[2] + ell$axes[2],
+          x = ell$center[1], xend = ell$center[1],
+          color = col2, linetype = "dashed"
+        ) +
+        ggplot2::annotate(
+          "point",
+          x = ell$center[1], y = ell$center[2],
+          color = center_col, size = 2
+        )
     }
 
     p_yx <- add_ell(p_yx, ell2d$y_x)
@@ -549,68 +591,62 @@ plot_e_space <- function(vs            = NULL,  # primary data
     p_zy <- add_ell(p_zy, ell2d$z_y)
   }
 
-
-  ## 10. Assemble the main 3x3 grid
-
+  ## 11. Assemble main grid & optional densities ---------------------------
   main_plot <- ggpubr::ggarrange(
     x_name,     p_yx,       p_zx,
     legend_plot,y_name,     p_zy,
     NULL,       NULL,       z_name,
-    ncol=3, nrow=3,
-    widths = c(0.12,0.44,0.44),
+    ncol = 3, nrow = 3,
+    widths  = c(0.12,0.44,0.44),
     heights = c(0.44,0.44,0.12)
   )
 
+  if (show.occ.density && show_occ && !is.null(occ_pts)) {
 
-  ## OPTIONAL: DENSITY PANELS (Option A)
+    rngx <- range(env_bg[[col_x]], na.rm = TRUE)
+    rngy <- range(env_bg[[col_y]], na.rm = TRUE)
+    rngz <- range(env_bg[[col_z]], na.rm = TRUE)
 
-  if (show.occ.density && !is.null(occ_pts)) {
+    dens_z <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_z]])) +
+      ggplot2::geom_density(fill = colors$occ, alpha = 0.6) +
+      ggplot2::scale_x_continuous(limits = rngz) +
+      ggplot2::scale_y_continuous(n.breaks = 3) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                     axis.title  = ggplot2::element_blank())
 
-    rngx <- range(env_bg[[col_x]], na.rm=TRUE)
-    rngy <- range(env_bg[[col_y]], na.rm=TRUE)
-    rngz <- range(env_bg[[col_z]], na.rm=TRUE)
+    dens_y <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_y]])) +
+      ggplot2::geom_density(fill = colors$occ, alpha = 0.6) +
+      ggplot2::scale_x_continuous(limits = rngy) +
+      ggplot2::scale_y_continuous(n.breaks = 3) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                     axis.title  = ggplot2::element_blank())
 
-    dens_z <- ggplot2::ggplot(occ_pts, aes(x=.data[[col_z]])) +
-      geom_density(fill=colors$occ, alpha=0.6) +
-      scale_x_continuous(limits=rngz) +
-      scale_y_continuous(n.breaks=3) +
-      theme_minimal() +
-      theme(axis.text.x=element_blank(),
-            axis.title=element_blank())
+    dens_x_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_x]])) +
+      ggplot2::geom_density(fill = colors$occ, alpha = 0.6) +
+      ggplot2::scale_x_continuous(limits = rngx) +
+      ggplot2::coord_flip() +
+      ggplot2::scale_y_continuous(n.breaks = 3) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+                     axis.title  = ggplot2::element_blank())
 
-    dens_y <- ggplot2::ggplot(occ_pts, aes(x=.data[[col_y]])) +
-      geom_density(fill=colors$occ, alpha=0.6) +
-      scale_x_continuous(limits=rngy) +
-      scale_y_continuous(n.breaks=3) +
-      theme_minimal() +
-      theme(axis.text.x=element_blank(),
-            axis.title=element_blank())
+    dens_y_right <- ggplot2::ggplot(occ_pts, ggplot2::aes(x = .data[[col_y]])) +
+      ggplot2::geom_density(fill = colors$occ, alpha = 0.6) +
+      ggplot2::scale_x_continuous(limits = rngy) +
+      ggplot2::coord_flip() +
+      ggplot2::scale_y_continuous(n.breaks = 3) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+                     axis.title  = ggplot2::element_blank())
 
-    dens_x_right <- ggplot2::ggplot(occ_pts, aes(x=.data[[col_x]])) +
-      geom_density(fill=colors$occ, alpha=0.6) +
-      scale_x_continuous(limits=rngx) +
-      coord_flip() +
-      scale_y_continuous(n.breaks=3) +
-      theme_minimal() +
-      theme(axis.text.y=element_blank(),
-            axis.title=element_blank())
-
-    dens_y_right <- ggplot2::ggplot(occ_pts, aes(x=.data[[col_y]])) +
-      geom_density(fill=colors$occ, alpha=0.6) +
-      scale_x_continuous(limits=rngy) +
-      coord_flip() +
-      scale_y_continuous(n.breaks=3) +
-      theme_minimal() +
-      theme(axis.text.y=element_blank(),
-            axis.title=element_blank())
-
-    # layout 4x4
     full_plot <- ggpubr::ggarrange(
       NULL,       dens_y,    dens_z,    NULL,
       x_name,     p_yx,      p_zx,      dens_x_right,
       legend_plot,y_name,    p_zy,      dens_y_right,
       NULL,       NULL,      z_name,    NULL,
-      ncol=4, nrow=4,
+      ncol = 4, nrow = 4,
       widths  = c(0.1,0.4,0.4,0.1),
       heights = c(0.1,0.4,0.4,0.1)
     )
