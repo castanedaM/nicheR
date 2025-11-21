@@ -299,7 +299,12 @@ plot_e_space(vs = vs_small)
 
 plot_e_space(env_bg  = env_stack_small, vs = vs_small)
 
-plot_g_space(vs = vs_small)
+plot_e_space(vs = vs_small,
+             show.in.plot = c("niche", "occ", "suit"))
+
+plot_e_space(vs = vs_small,
+             show.in.plot = c("niche", "bg"))
+
 
 plot_g_space(vs = vs_small,
              show.in.plot = c("suit", "dist", "occ"))
@@ -350,7 +355,6 @@ names(env_stack_large) <- c("pr_sum", "tmmn_min", "tmmx_max")
 niche_center <- c(0.4, 25, 30)
 niche_axes <- c(0.75, 0.75, 0.75) # Semi-axis lengths (breadth)
 
-
 # Bias
 sp_rich <- terra::rast(system.file("extdata", "sr_sp_host_0.05.tif", package = "NicheR"))
 nighttime <- terra::rast(system.file("extdata", "nighttime.tif", package = "NicheR"))
@@ -368,19 +372,48 @@ vs_large <- create_virtual_species(env_bg = env_df_db,
                                    axes = niche_axes,
                                    out.suit = "both",
                                    n_occ = 75,
-                                   bias_surface = c(sp_rich, nighttime),
-                                   bias_dir = c(1, -1),
+                                   # bias_surface = c(sp_rich, nighttime),
+                                   # bias_dir = c(1, -1),
                                    out.bias = "both",
                                    distances = TRUE,
                                    out.file = FALSE)
 proc.time() - ptm
 
-plot_e_space(env_bg = env_df_db)
-
 plot_e_space(vs = vs_large)
 
-plot_g_space(env_bg = env_df_db, vs = vs_large)
+# This one should fail
+plot_e_space(env_bg  = env_stack_large, vs = vs_large)
 
+plot_e_space(env_bg  = env_df_db, vs = vs_large)
+
+plot_e_space(vs = vs_large,
+             show.in.plot = c("niche", "occ", "suit"))
+
+plot_e_space(vs = vs_large,
+             show.in.plot = c("niche", "bg"))
+
+
+plot_g_space(vs = vs_large,
+             show.in.plot = c("suit", "dist", "occ"))
+
+plot_g_space(vs = vs_large,
+             show.in.plot = c(c("suit", "dist")))
+
+plot_g_space(vs = vs_large,
+             show.in.plot = c("suit", "occ"))
+
+plot_g_space(env_bg = env_stack_small,
+             suitable_env = nr_get_suitable_df(vs_large),
+             show.in.plot = "suit")
+
+plot_g_space(env_bg = nr_get_env(vs_large),
+             occ_pts = nr_get_occ(vs_large),
+             suitable_env = nr_get_suitable_df(vs_large),
+             show.in.plot = "dist")
+
+plot_g_space(env_bg = nr_get_env(vs_large),
+             occ_pts = nr_get_occ(vs_large),
+             suitable_env = nr_get_suitable_all(vs_large))
 
 
 
