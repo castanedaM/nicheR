@@ -129,18 +129,9 @@ plot_g_space <- function(env_bg = NULL,
                          vs = NULL,
                          niche = NULL) {
 
-  ## ------------------------------------------------------------------------
-  ## 0. Surface mode
-  ## ------------------------------------------------------------------------
-  surface_mode <- if (is.null(surface)) {
-    "none"     # no suitability/distance, just background + occurrences
-  } else {
-    match.arg(surface, c("both", "suit", "dist"))
-  }
 
-  ## ------------------------------------------------------------------------
   ## 1. Pull components from NicheR_species (using nr_get_*)
-  ## ------------------------------------------------------------------------
+
   if (!is.null(vs)) {
     if (!inherits(vs, "NicheR_species")) {
       stop("'vs' must be an object of class 'NicheR_species' created by create_virtual_species().")
@@ -180,9 +171,23 @@ plot_g_space <- function(env_bg = NULL,
     }
   }
 
-  ## ------------------------------------------------------------------------
+
+  ## 0. Surface mode (after resolving vs / suitable_env)
+  if (is.null(surface)) {
+    if (!is.null(suitable_env)) {
+      # user (or vs) provided suitability, so default to plotting it
+      surface_mode <- "suit"
+    } else {
+      # nothing to plot except background + occurrences
+      surface_mode <- "none"
+    }
+  } else {
+    surface_mode <- match.arg(surface, c("both", "suit", "dist"))
+  }
+
+
   ## 2. Palette / color handling
-  ## ------------------------------------------------------------------------
+
   palettes <- list(
     default = list(
       bg           = "#F0F0F0FF",
@@ -231,20 +236,20 @@ plot_g_space <- function(env_bg = NULL,
     default_colors <- utils::modifyList(base_colors, colors)
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 3. Occurrence points validation
-  ## ------------------------------------------------------------------------
+
   if (!is.null(occ_pts) && !all(c("x", "y") %in% names(occ_pts))) {
     stop("`occ_pts` must have columns named 'x' and 'y'.")
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 4. Standardize suitable_env into a data.frame
   ##    Priority:
   ##    1) direct data.frame / matrix
   ##    2) nr_get_suitable_df()
   ##    3) rasters via nr_get_suitable() / nr_get_dist_sq()
-  ## ------------------------------------------------------------------------
+
   suitable_df   <- NULL
   has_suitable  <- FALSE
   has_distance  <- FALSE
@@ -377,9 +382,9 @@ plot_g_space <- function(env_bg = NULL,
     }
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 5. Legend configuration (with distance note toggle)
-  ## ------------------------------------------------------------------------
+
   opts <- list(
     background_point = TRUE,
     suitable_point   = has_suitable && surface_mode %in% c("both", "suit"),
@@ -441,9 +446,9 @@ plot_g_space <- function(env_bg = NULL,
       ggplot2::scale_colour_identity()
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 6. Compute map extent: env_bg -> suitable_env -> occ_pts
-  ## ------------------------------------------------------------------------
+
   x_lim <- y_lim <- NULL
   extent_source <- NULL
 
@@ -528,9 +533,9 @@ plot_g_space <- function(env_bg = NULL,
     message("Could not infer extent from env_bg, suitable_env, or occ_pts; using global extent.")
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 7. Basemap
-  ## ------------------------------------------------------------------------
+
   world <- ggplot2::map_data("world")
 
   base_map <- ggplot2::ggplot() +
@@ -551,9 +556,9 @@ plot_g_space <- function(env_bg = NULL,
       ggplot2::coord_quickmap()
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 8. Occurrence points (sf)
-  ## ------------------------------------------------------------------------
+
   occ_pts_sp <- NULL
   if (!is.null(occ_pts)) {
     occ_pts_sp <- sf::st_as_sf(
@@ -578,9 +583,9 @@ plot_g_space <- function(env_bg = NULL,
     p
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 9. Build one or two map panels
-  ## ------------------------------------------------------------------------
+
   map_list <- list()
 
   # Panel 1: binary suitable (presence-only tiles)
@@ -621,9 +626,9 @@ plot_g_space <- function(env_bg = NULL,
     return(ggpubr::ggarrange(p_base, legend_plot, widths = c(0.7, 0.3)))
   }
 
-  ## ------------------------------------------------------------------------
+
   ## 10. Arrange panels + legend
-  ## ------------------------------------------------------------------------
+
   if (length(map_list) == 1L) {
     main_panel <- map_list[[1]]
 
