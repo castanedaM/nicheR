@@ -12,59 +12,35 @@
 #'   spatial output is requested, it should also contain \code{x} and \code{y}
 #'   columns for spatial referencing.
 #' @param out.suit A character string specifying the desired output format.
-#'   One of \code{"data.frame"}, \code{"spatial"}, or \code{"both"}:
-#'   \itemize{
-#'     \item \code{"data.frame"}: Returns a data frame of all suitable points.
-#'     \item \code{"spatial"}: Returns one or more \code{terra::SpatRaster}
-#'       objects (see Details).
-#'     \item \code{"both"}: Returns a list containing both the spatial
-#'       raster output and the data frame of suitable points.
-#'   }
+#'   One of \code{"data.frame"}, \code{"spatial"}, or \code{"both"}.
 #' @param distances Logical; if \code{TRUE}, an additional column named
 #'   \code{dist_sq} is added to the output data frame containing the squared
 #'   Mahalanobis distance for each suitable point. For spatial output,
 #'   a separate raster of \code{dist_sq} values is also returned.
+#' @param level Numeric; defines the ellipsoid cutoff used to classify
+#'   environments as suitable.
+#'   \itemize{
+#'     \item \code{level = 1}: geometric ellipsoid boundary (hard limit),
+#'     \item \code{0 < level < 1}: probability contour of a chi square
+#'       distribution (MVN style), e.g. \code{level = 0.95}.
+#'   }
 #' @param verbose Logical; if \code{TRUE}, prints basic progress messages.
 #'
-#' @details
-#' For raster inputs, a size check is performed. If the estimated size of a
-#' full in-memory data.frame representation of \code{env_bg} exceeds an
-#' internal threshold (in MB), the function stops and asks the user to supply
-#' a data.frame instead, recommending \code{as.data.frame.nicheR()} as a
-#' memory-safe helper.
-#'
-#' When \code{out.suit} includes spatial output and \code{distances = TRUE},
-#' the function returns two separate rasters:
-#' \itemize{
-#'   \item \code{suitable}: binary 0/1 raster of the suitable area,
-#'   \item \code{dist_sq}: raster with squared Mahalanobis distance inside the
-#'         ellipsoid (NA outside).
-#' }
-#'
-#' When \code{env_bg} is provided as a data.frame, these rasters are
-#' reconstructed from the \code{x} and \code{y} coordinates using
-#' \code{terra::rast(..., type = "xyz")}, assuming a regular grid.
-#'
-#' @return
-#' Depending on \code{out.suit}:
+#' @return Depending on \code{out.suit}:
 #' \itemize{
 #'   \item \code{"data.frame"}: a data.frame of suitable points (with optional
 #'         \code{dist_sq} column).
-#'   \item \code{"spatial"}: a named list of \code{SpatRaster} objects
-#'         (e.g. \code{list(suitable = <SpatRaster>, dist_sq = <SpatRaster>)}).
-#'   \item \code{"both"}: a list with elements
-#'         \code{suitable_env_sp} (spatial output as above) and
-#'         \code{suitable_env_df} (data.frame).
+#'   \item \code{"spatial"}: a named list of \code{SpatRaster} objects.
+#'   \item \code{"both"}: a list with elements \code{suitable_env_sp} and
+#'         \code{suitable_env_df}.
 #' }
-#'
-#' @seealso \code{\link{build_ellipsoid}}, \code{\link{get_sample_occ}},
-#'   \code{\link{as.data.frame.nicheR}}
 #'
 #' @export
 get_suitable_env <- function(niche,
                              env_bg,
                              out.suit = c("data.frame", "spatial", "both"),
                              distances = FALSE,
+                             level = 1,
                              verbose = TRUE) {
 
   gc()
@@ -98,6 +74,20 @@ get_suitable_env <- function(niche,
     stop("'distances' must be a single logical value.")
   }
 
+  # level validation + cutoff
+  if (!is.numeric(level) || length(level) != 1 || !is.finite(level)) {
+    stop("'level' must be a single finite numeric value.")
+  }
+  if (!(level > 0 && level <= 1)) {
+    stop("'level' must be in the interval (0, 1]. Use level = 1 for a hard geometric boundary.")
+  }
+
+  cutoff <- if (identical(level, 1)) 1 else stats::qchisq(level, df = niche$dimen)
+
+  if (!is.finite(cutoff) || cutoff <= 0) {
+    stop("Computed cutoff is not finite/positive. Check 'level' and 'niche$dimen'.")
+  }
+
   if (missing(env_bg) || is.null(env_bg)) {
     stop("'env_bg' is required and cannot be NULL.")
   }
@@ -108,17 +98,15 @@ get_suitable_env <- function(niche,
     message("Preparing environmental background...")
   }
 
-  # tibble -> data.frame
   if (inherits(env_bg, "tbl_df")) {
     env_bg <- as.data.frame(env_bg)
   }
 
-  # raster::Raster* -> SpatRaster
   if (inherits(env_bg, "Raster")) {
     env_bg <- terra::rast(env_bg)
   }
 
-  env_bg_rast <- NULL
+  env_bg_rast   <- NULL
   env_is_raster <- inherits(env_bg, "SpatRaster")
 
   if (!inherits(env_bg, c("SpatRaster", "data.frame", "matrix"))) {
@@ -126,13 +114,14 @@ get_suitable_env <- function(niche,
   }
 
   if (env_is_raster) {
+
     if (isTRUE(verbose)) {
       message("env_bg is a SpatRaster. Estimating size for data.frame conversion...")
     }
 
     ncell <- terra::ncell(env_bg)
     nlyr  <- terra::nlyr(env_bg)
-    est_mb <- (ncell * nlyr * 8) / 1024^2  # 8 bytes per numeric
+    est_mb <- (ncell * nlyr * 8) / 1024^2
 
     size_threshold_mb <- 5000
 
@@ -156,6 +145,7 @@ get_suitable_env <- function(niche,
     env_bg_df <- as.data.frame.nicheR(env_bg_rast, verbose = verbose, use_cache = TRUE)
 
   } else {
+
     if (isTRUE(verbose)) {
       message("env_bg provided as data.frame or matrix. Coercing to data.frame...")
     }
@@ -213,7 +203,8 @@ get_suitable_env <- function(niche,
   diffs <- sweep(pts, 2, niche$center, "-")
   m_sq  <- rowSums((diffs %*% niche$Sigma_inv) * diffs)
 
-  is_inside_cc <- is.finite(m_sq) & (m_sq <= 1)
+  # inside using chosen cutoff
+  is_inside_cc <- is.finite(m_sq) & (m_sq <= cutoff)
 
   if (!any(is_inside_cc)) {
     stop("No points fall inside the ellipsoid after removing rows with NA predictors.")
@@ -222,7 +213,12 @@ get_suitable_env <- function(niche,
   inside_rows <- which(cc)[is_inside_cc]
 
   if (isTRUE(verbose)) {
-    message(sum(is_inside_cc), " points fall inside the ellipsoid.")
+    if (identical(level, 1)) {
+      message(sum(is_inside_cc), " points fall inside the ellipsoid (geometric cutoff m_sq <= 1).")
+    } else {
+      message(sum(is_inside_cc), " points fall inside the ellipsoid (chi-square cutoff at level = ",
+              level, ", cutoff = ", signif(cutoff, 4), ").")
+    }
   }
 
   return_df <- env_bg_df[inside_rows, , drop = FALSE]
@@ -245,13 +241,11 @@ get_suitable_env <- function(niche,
     }
 
     if (env_is_raster && !is.null(env_bg_rast)) {
-      # Case A: small raster – use it as template
 
       if (isTRUE(verbose)) {
         message("Using original SpatRaster as template for spatial output.")
       }
 
-      # suitable raster (0/1)
       suitable_ras <- env_bg_rast[[1]]
       vals <- terra::values(suitable_ras)
       vals[!is.na(vals)] <- NA_real_
@@ -276,6 +270,7 @@ get_suitable_env <- function(niche,
       suitable_sp_list <- list(suitable = suitable_ras)
 
       if (isTRUE(distances)) {
+
         if (isTRUE(verbose)) {
           message("Also creating distance raster (dist_sq).")
         }
@@ -290,8 +285,7 @@ get_suitable_env <- function(niche,
 
         if (length(dist_vals) != length(inside_cells)) {
           warning(
-            "Length mismatch when assigning distance values to raster cells; ",
-            "using matched subset."
+            "Length mismatch when assigning distance values to raster cells; using matched subset."
           )
           len <- min(length(dist_vals), length(inside_cells))
           dist_vals    <- dist_vals[seq_len(len)]
@@ -305,7 +299,6 @@ get_suitable_env <- function(niche,
       }
 
     } else {
-      # Case B: env_bg was provided as data.frame / matrix
 
       if (isTRUE(verbose)) {
         message("env_bg is not a SpatRaster. Reconstructing rasters from xyz.")
@@ -326,6 +319,7 @@ get_suitable_env <- function(niche,
       suitable_sp_list <- list(suitable = suitable_ras)
 
       if (isTRUE(distances)) {
+
         if (isTRUE(verbose)) {
           message("Also creating distance raster (dist_sq) from xyz grid.")
         }
@@ -351,7 +345,10 @@ get_suitable_env <- function(niche,
     "both"       = {
       tmp <- list(
         suitable_env_sp = suitable_sp_list,
-        suitable_env_df = return_df
+        suitable_env_df = return_df,
+        cutoff          = cutoff,
+        level           = level,
+        dimen           = niche$dimen
       )
       class(tmp) <- c("suitable_env", class(tmp))
       tmp
@@ -365,7 +362,6 @@ get_suitable_env <- function(niche,
   gc()
   return(res)
 }
-
 
 #' @export
 print.suitable_env <- function(x, ...) {

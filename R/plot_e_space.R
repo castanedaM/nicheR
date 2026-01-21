@@ -247,7 +247,12 @@ plot_e_space <- function(vs            = NULL,  # primary data
     show_suit  <- !is.null(pts_in)
     show_occ   <- !is.null(occ_pts)
     show_niche <- !is.null(niche)
-    mode_desc  <- "bg, suitable, occurrences, niche (default)"
+
+    mode_desc  <- paste(c(if (show_bg) "bg",
+                          if (show_suit) "suitable",
+                          if (show_occ) "occurrences",
+                          if (show_niche) "niche"),
+                        collapse = ", ")
   } else {
     raw_tokens <- tolower(unlist(show.in.plot))
     matched    <- raw_tokens[raw_tokens %in% names(token_map)]
@@ -260,7 +265,11 @@ plot_e_space <- function(vs            = NULL,  # primary data
       show_suit  <- !is.null(pts_in)
       show_occ   <- !is.null(occ_pts)
       show_niche <- !is.null(niche)
-      mode_desc  <- "bg, suitable, occurrences, niche (default)"
+      mode_desc  <- paste(c(if (show_bg) "bg",
+                            if (show_suit) "suitable",
+                            if (show_occ) "occurrences",
+                            if (show_niche) "niche"),
+                          collapse = ", ")
     } else {
       tokens     <- unique(token_map[matched])
       show_bg    <- "bg"    %in% tokens
@@ -347,14 +356,14 @@ plot_e_space <- function(vs            = NULL,  # primary data
                  "Tolerance range",
                  "Suitable environments",
                  "Occurrences"),
-    color = c(colors$bg,
-              colors$ellipsoid,
-              colors$centroid,
-              colors$tolerance,
-              colors$suitable_env,
-              colors$occ),
-    linetype = c(NA,1,NA,2,NA,NA),
-    stringsAsFactors = FALSE)
+               color = c(colors$bg,
+                         colors$ellipsoid,
+                         colors$centroid,
+                         colors$tolerance,
+                         colors$suitable_env,
+                         colors$occ),
+               linetype = c(NA,1,NA,2,NA,NA),
+               stringsAsFactors = FALSE)
 
   active <- c(show_bg,
               show_niche,
@@ -428,7 +437,7 @@ plot_e_space <- function(vs            = NULL,  # primary data
       y = env_bg[[col_y]],
       z = env_bg[[col_z]],
       type = "scatter3d",
-      mode = if (show_bg) "markers" else "markers",
+      mode = "markers",
       marker = list(color = if (show_bg) colors$bg else NA, size = 2),
       name = "Background"
     ) %>%
@@ -446,7 +455,8 @@ plot_e_space <- function(vs            = NULL,  # primary data
         p3 <- p3 %>%
           plotly::add_trace(
             data = surf, x = surf[[1]], y = surf[[2]], z = surf[[3]],
-            type = "scatter3d", mode = "lines",
+            type = "scatter3d",
+            mode = "lines",
             line = list(color = colors$ellipsoid),
             name = "Boundary"
           )
