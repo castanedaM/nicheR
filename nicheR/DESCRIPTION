@@ -1,7 +1,7 @@
-Package: NicheR
+Package: nicheR
 Type: Package
 Title: An R package for ellipsoid-based virtual species and niche visualization in E-space and G-space
-Version: 0.1.0
+Version: 0.0.1
 Authors@R: c(
     person(
       "Mariana", "Castaneda-Guzman",
@@ -38,18 +38,4 @@ LazyData: true
 URL: https://github.com/castanedaM/NicheR
 BugReports: https://github.com/castanedaM/NicheR/issues
 RoxygenNote: 7.3.3
-Imports:
-    dplyr,
-    ggplot2,
-    ggpubr,
-    magrittr,
-    plotly,
-    RColorBrewer,
-    terra,
-    raster,
-    sf,
-    DBI,
-    RSQLite,
-    rlang,
-    stats,
-    utils
+Imports: 

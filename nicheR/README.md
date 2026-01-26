@@ -20,7 +20,7 @@ It provides:
   functions.
 
 Inspired by the conceptual foundations of **NicheA** and the scripting
-flexibility of the **virtualspecies** package, **NicheR** provides a
+flexibility of the **virtualspecies** package, **nicheR** provides a
 reproducible, scriptable ecosystem for virtual species simulation and
 niche theory exploration.
 
