@@ -4,6 +4,10 @@
 #' either directly from a dataset or based on normal distribution parameters,
 #' with the ability to expand the resulting ranges by a percentage.
 #'
+#' @usage
+#' ranges_from_data(data, expand_min = NULL, expand_max = NULL)
+#' ranges_from_stats(mean, sd, cl = 95, expand_min = NULL, expand_max = NULL)
+#'
 #' @param data A data.frame of at least two columns. Each column should
 #' contain numeric values.
 #' @param mean A named numeric vector of mean values for each variable.
@@ -31,10 +35,27 @@ NULL
 #'                  expand_max = list(var2 = 20))
 
 ranges_from_data <- function(data, expand_min = NULL, expand_max = NULL) {
-  if (!is.data.frame(data) || ncol(data) < 1) {
-    stop("'data' must be a 'data.frame' with at least one column.")
+  # Initial structural check
+  if (!is.data.frame(data) || ncol(data) < 2) {
+    stop("'data' must be a 'data.frame' with at least two columns.")
   }
 
+  # Error checking: Verify that expansion names match at least one data column
+  col_names <- colnames(data)
+
+  if (!is.null(expand_min)) {
+    if (!any(names(expand_min) %in% col_names)) {
+      stop("None of the names in 'expand_min' match the names in 'data'.")
+    }
+  }
+  
+  if (!is.null(expand_max)) {
+    if (!any(names(expand_max) %in% col_names)) {
+      stop("None of the names in 'expand_max' match the names in 'data'.")
+    }
+  }
+
+  # Compute ranges
   ranges <- sapply(data, range, na.rm = TRUE)
   
   for (col_name in colnames(ranges)) {
@@ -43,10 +64,12 @@ ranges_from_data <- function(data, expand_min = NULL, expand_max = NULL) {
     abs_range <- current_max - current_min
     
     if (!is.null(expand_min) && col_name %in% names(expand_min)) {
-      ranges[1, col_name] <- current_min - (abs_range * expand_min[[col_name]] / 100)
+      ranges[1, col_name] <- current_min - 
+        (abs_range * expand_min[[col_name]] / 100)
     }
     if (!is.null(expand_max) && col_name %in% names(expand_max)) {
-      ranges[2, col_name] <- current_max + (abs_range * expand_max[[col_name]] / 100)
+      ranges[2, col_name] <- current_max + 
+        (abs_range * expand_max[[col_name]] / 100)
     }
   }
 
@@ -66,10 +89,32 @@ ranges_from_data <- function(data, expand_min = NULL, expand_max = NULL) {
 
 ranges_from_stats <- function(mean, sd, cl = 95, expand_min = NULL,
                               expand_max = NULL) {
-  if (!all(names(mean) %in% names(sd)) || length(mean) != length(sd)) {
-    stop("mean and sd must be named vectors of the same length and share the same names.")
+ # Check that mean and sd are numeric
+  if (!is.numeric(mean) || !is.numeric(sd)) {
+    stop("'mean' and 'sd' must be numeric vectors.")
   }
 
+  # Check that mean and sd share names and length
+  if (!all(names(mean) %in% names(sd)) || length(mean) != length(sd)) {
+    stop("'mean' and 'sd' must be named vectors sharing the same length and names.")
+  }
+
+  # Check that at least one name in expand arguments matches names in mean/sd
+  var_names <- names(mean)
+  
+  if (!is.null(expand_min)) {
+    if (!any(names(expand_min) %in% var_names)) {
+      stop("None of the names in 'expand_min' match the names in 'mean'.")
+    }
+  }
+  
+  if (!is.null(expand_max)) {
+    if (!any(names(expand_max) %in% var_names)) {
+      stop("None of the names in 'expand_max' match the names in 'mean'.")
+    }
+  }
+
+  # Compute ranges
   alpha <- 1 - (cl / 100)
   p_lower <- alpha / 2
   p_upper <- 1 - (alpha / 2)
