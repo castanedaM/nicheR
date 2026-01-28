@@ -1,0 +1,232 @@
+#' Predict Mahalanobis distance and suitability from a nicheR ellipsoid
+#'
+#' Computes squared Mahalanobis distance \eqn{D^2} and a monotonic suitability
+#' transform for new environmental data under a probabilistic ellipsoid niche.
+#' The ellipsoid is defined by a multivariate normal (MVN) distribution with
+#' mean vector \eqn{\mu} and inverse covariance matrix \eqn{\Sigma^{-1}} stored
+#' in a \code{nicheR_ellipsoid} object.
+#'
+#' The squared Mahalanobis distance is:
+#' \deqn{
+#' D^2(x) = (x - \mu)^T \Sigma^{-1} (x - \mu)
+#' }
+#'
+#' Suitability is computed as a convenient monotonic transform:
+#' \deqn{
+#' s(x) = \exp\left(-\frac{1}{2} D^2(x)\right)
+#' }
+#'
+#' A point is considered inside the ellipsoid at probability \code{level} when:
+#' \deqn{
+#' D^2(x) \le \chi^2_p(\text{level})
+#' }
+#' where \eqn{p} is the number of predictors.
+#'
+#' When \code{newdata} is a \code{terra::SpatRaster}, computations are performed
+#' per cell and the function returns a multi-layer \code{SpatRaster}. When
+#' \code{newdata} is a \code{data.frame} or \code{matrix}, the function returns a
+#' \code{data.frame} with added output columns.
+#'
+#' @param object A \code{nicheR_ellipsoid} object produced by
+#'   \code{\link{build_ellipsoid}}. Must contain \code{p}, \code{mu}, and
+#'   \code{Sigma_inv}.
+#' @param newdata Environmental data to predict to. Supported inputs are:
+#'   \code{terra::SpatRaster}, \code{raster::RasterLayer},
+#'   \code{raster::RasterStack}, \code{raster::RasterBrick},
+#'   \code{data.frame}, \code{tibble}, or \code{matrix}.
+#'   For tabular inputs, if spatial columns are present they are detected using
+#'   common names (x, y, lat, lon, long, latitude, longitude) and ignored for
+#'   prediction.
+#' @param level Numeric scalar in (0, 1]. Probability level defining the
+#'   chi-square cutoff used for truncated outputs. \code{level = 1} yields an
+#'   infinite cutoff (no truncation by probability; truncated outputs will be
+#'   identical to their non-truncated forms except for the inside/outside mask).
+#' @param include_suitability Logical; if \code{TRUE}, include suitability
+#'   \eqn{s(x)} in the output.
+#' @param suitability_truncated Logical; if \code{TRUE}, include a truncated
+#'   suitability layer/column where values outside the chi-square cutoff are set
+#'   to 0 (and NA values remain NA).
+#' @param include_mahalanobis Logical; if \code{TRUE}, include squared Mahalanobis
+#'   distance \eqn{D^2} in the output.
+#' @param mahalanobis_truncated Logical; if \code{TRUE}, include a binary inside
+#'   mask for Mahalanobis distance at \code{level}. Values are 1 for
+#'   \eqn{D^2 \le \chi^2_p(level)}, 0 otherwise (NA values remain NA).
+#' @param verbose Logical; if \code{TRUE}, print progress messages.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return
+#' If \code{newdata} is a \code{terra::SpatRaster} (or a \code{raster::Raster*}
+#' converted to \code{SpatRaster}), returns a multi-layer \code{SpatRaster}
+#' containing the requested outputs:
+#' \itemize{
+#'   \item \code{mahalanobis}: squared Mahalanobis distance \eqn{D^2} (optional)
+#'   \item \code{suitability}: \eqn{\exp(-0.5 D^2)} (optional)
+#'   \item \code{mahalanobis_trunc}: inside mask (optional)
+#'   \item \code{suitability_trunc}: truncated suitability (optional)
+#' }
+#'
+#' If \code{newdata} is a \code{data.frame} or \code{matrix}, returns a
+#' \code{data.frame} with the same rows and added columns matching the requested
+#' outputs. Rows with missing predictor values receive NA for numeric outputs.
+#'
+#' @details
+#' This function assumes that the predictors in \code{newdata} are in the same
+#' order and have the same meaning as used to fit \code{object}. For raster
+#' inputs, the layers should correspond to the same predictors used to build the
+#' ellipsoid.
+#'
+#' @export
+predict.nicheR_ellipsoid <- function(object,
+                                     newdata,
+                                     level = 0.95,
+                                     include_suitability = TRUE,
+                                     suitability_truncated = FALSE,
+                                     include_mahalanobis = TRUE,
+                                     mahalanobis_truncated = FALSE,
+                                     verbose = FALSE,
+                                     ...) {
+
+
+  # Basic object checks -----------------------------------------------------
+
+  if (!inherits(object, "nicheR_ellipsoid")) {
+    stop("'object' must be a nicheR_ellipsoid produced by build_ellipsoid().")
+  }
+
+  p <- object$p # elliposid dimensions
+  mu <- object$mu
+  Sigma_inv <- object$Sigma_inv
+
+  if (!is.numeric(level) || length(level) != 1 || !is.finite(level) || level <= 0 || level > 1) {
+    stop("'level' must be a single finite number in (0, 1].")
+  }
+
+  cutoff <- stats::qchisq(level, df = p)  # note: level=1 -> Inf
+
+  # Accept raster::Raster* by converting once
+  if (inherits(newdata, c("RasterLayer", "RasterStack", "RasterBrick"))) {
+    if (isTRUE(verbose)) message("Converting raster::Raster* to terra::SpatRaster...")
+    newdata <- terra::rast(newdata)
+  }
+
+
+  # Compute Mahalanobis/Suitability with SpatRaster -------------------------
+
+  if (inherits(newdata, "SpatRaster")) {
+
+    if (isTRUE(verbose)) message("Computing squared Mahalanobis distance per cell...")
+
+    # Terra Loop to compute mahalanobis distance per cell, always computes
+    # regarless of return
+    D2 <- terra::app(newdata, fun = function(v) {
+      if (anyNA(v)) return(NA_real_)
+      d <- v - mu
+      as.numeric(t(d) %*% Sigma_inv %*% d)
+    })
+
+    names(D2) <- "mahalanobis"
+
+    out <- list()
+
+    # Only included in return when asked
+    if (isTRUE(include_mahalanobis)) out$mahalanobis <- D2
+
+    # Truncated can not be calculated if suitbaility is not also true
+    if (isTRUE(include_suitability) || isTRUE(suitability_truncated)) {
+      S <- exp(-0.5 * D2)
+      names(S) <- "suitability"
+      if (isTRUE(include_suitability)) out$suitability <- S
+    }
+
+    if (isTRUE(mahalanobis_truncated)) {
+      Mt <- D2
+
+      Mt <- terra::app(Mt, fun = function(z)
+        ifelse(is.na(z), NA_real_, as.numeric(z <= cutoff)))
+
+      names(Mt) <- "mahalanobis_trunc"
+      out$mahalanobis_trunc <- Mt
+    }
+
+    if (isTRUE(suitability_truncated)) {
+      St <- terra::app(D2, fun = function(z) {
+        ifelse(is.na(z), NA_real_,
+               ifelse(z <= cutoff, exp(-0.5 * z), 0))
+      })
+      names(St) <- "suitability_trunc"
+
+      out$suitability_trunc <- St
+    }
+
+    return(do.call(terra::c, out))
+  }
+
+
+  # Compute Mahalanobis/Suitability with Data.frame -------------------------
+
+
+  #  data.frame / matrix path
+  if (!inherits(newdata, c("data.frame", "matrix", "tbl_df"))) {
+    stop("'newdata' must be a SpatRaster, Raster*, data.frame, tibble, or matrix.")
+  }
+
+  df <- as.data.frame(newdata)
+
+  # Identify spatial columns if present
+
+  sp_col_names <- c("x", "y", "lat", "lon", "long", "latitude", "longitude")
+
+  if (sum(tolower(names(df)) %in% sp_col_names) >= 2) {
+    spatial_cols <- names(df)[tolower(names(df)) %in% sp_col_names]
+    pred_col <- setdiff(names(df), spatial_cols)
+
+    if (isTRUE(verbose)) {
+      message("Spatial columns identified: ",
+              paste(spatial_cols, collapse = ", "))
+    }
+  } else {
+    # No identifiable spatial columns
+    pred_col <- names(df)
+
+    if (isTRUE(verbose)) {
+      message( "No spatial columns identified. ",
+               "All columns will be treated as predictors.")
+    }
+  }
+
+  if (isTRUE(verbose)) {
+    message("Using ", length(pred_col), " predictor columns: ",
+            paste(pred_col, collapse = ", "))
+  }
+
+  cc <- stats::complete.cases(df[, pred_col, drop = FALSE])
+  if (!any(cc)) stop("All rows contain NA in predictor columns.")
+
+  pts   <- as.matrix(df[cc, pred_col, drop = FALSE])
+  diffs <- sweep(pts, 2, mu, "-")
+  D2v   <- rowSums((diffs %*% Sigma_inv) * diffs)
+
+  # Initialize outputs aligned to rows
+  if (isTRUE(include_mahalanobis)) {
+    df$mahalanobis <- NA_real_
+    df$mahalanobis[cc] <- D2v
+  }
+
+  if (isTRUE(include_suitability)) {
+    df$suitability <- NA_real_
+    df$suitability[cc] <- exp(-0.5 * D2v)
+  }
+
+  if (isTRUE(mahalanobis_truncated)) {
+    df$mahalanobis_trunc <- NA_real_
+    df$mahalanobis_trunc[cc] <- as.numeric(D2v <= cutoff)
+  }
+
+  if (isTRUE(suitability_truncated)) {
+    df$suitability_trunc <- NA_real_
+    s <- exp(-0.5 * D2v)
+    df$suitability_trunc[cc] <- ifelse(D2v <= cutoff, s, 0)
+  }
+
+  return(df)
+}
