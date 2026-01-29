@@ -9,7 +9,8 @@ build_ellipsoid(
   cl = 0.95,
   level = 0.95,
   cor_tilt = NULL,
-  n_points = 100
+  n_points = 100,
+  verbose = TRUE
 )
 }
 \arguments{

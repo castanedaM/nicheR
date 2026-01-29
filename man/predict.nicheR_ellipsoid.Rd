@@ -4,7 +4,7 @@
 \alias{predict.nicheR_ellipsoid}
 \title{Predict Mahalanobis distance and suitability from a nicheR ellipsoid}
 \usage{
-predict.nicheR_ellipsoid(
+\method{predict}{nicheR_ellipsoid}(
   object,
   newdata,
   level = 0.95,

@@ -81,7 +81,8 @@ build_ellipsoid <- function(range,
                             cl = 0.95,
                             level = 0.95,
                             cor_tilt = NULL,
-                            n_points = 100) {
+                            n_points = 100,
+                            verbose = TRUE) {
 
   # User input checks
   stopifnot(is.numeric(cl), length(cl) == 1, cl > 0, cl < 1)

@@ -158,7 +158,7 @@ predict.nicheR_ellipsoid <- function(object,
       out$suitability_trunc <- St
     }
 
-    return(do.call(terra::c, out))
+    return(terra::rast(out))
   }
 
 
