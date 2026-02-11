@@ -2,95 +2,74 @@
 % Please edit documentation in R/build_ellpisoid.R
 \name{build_ellipsoid}
 \alias{build_ellipsoid}
-\title{Build a Probabilistic Ellipsoidal Niche}
+\title{Build a Probabilistic Ellipsoidal Niche from Ranges}
 \usage{
-build_ellipsoid(
-  range,
-  cl = 0.95,
-  level = 0.95,
-  cor_tilt = NULL,
-  n_points = 100,
-  verbose = TRUE
-)
+build_ellipsoid(range, cl = 0.99, cov_matrix = NULL, verbose = TRUE)
 }
 \arguments{
-\item{range}{Input defining the niche centroid and marginal tolerances.
-Supported formats include:
-\itemize{
-  \item data.frame with columns \code{min} and \code{max}
-  \item list with \code{mu} and \code{sd}, or \code{mean} and \code{sd}
-  \item list with \code{mu} and covariance matrix \code{Sigma}
-  \item data.frame or matrix of observations (columns = dimensions)
-}}
+\item{range}{A 2-row `matrix` or `data.frame` of bounds, with variables as
+columns. Rows may be ordered as min/max or max/min. Column names must be
+provided (variable names).}
 
-\item{cl}{Numeric between 0 and 1. Probability mass represented by
-the supplied minimum and maximum values when \code{range} is defined by
-bounds. Default is 0.95.}
+\item{cl}{Numeric confidence level in (0, 1). Used to set the chi-square
+cutoff that determines the ellipsoid contour (not per-variable limits).}
 
-\item{level}{Numeric between 0 and 1. Probability mass enclosed by the
-ellipsoid contour. Default is 0.95.}
+\item{cov_matrix}{Optional variance–covariance matrix \eqn{\Sigma} for the
+ellipsoid (must be `dimensions x dimensions`, symmetric positive definite).
+If provided, it is used directly (no rescaling from `range`).}
 
-\item{cor_tilt}{Optional correlation structure controlling ellipsoid
-orientation. Can be:
-\itemize{
-  \item \code{NULL} for no tilt (independent dimensions)
-  \item a \eqn{p \times p} correlation matrix
-  \item a matrix or data.frame of observations used to estimate correlation
-}}
-
-\item{n_points}{Integer. Number of surface points used to approximate the
-ellipsoid boundary for visualization. Default is 100.}
+\item{verbose}{Logical. If `TRUE`, prints brief progress messages.}
 }
 \value{
-An object of class \code{"nicheR_ellipsoid"} containing:
+An object of class `"nicheR_ellipsoid"` with components:
 \itemize{
-  \item \code{mu}: niche centroid
-  \item \code{Sigma}: covariance matrix
-  \item \code{Sigma_inv}: inverse covariance matrix
-  \item \code{axes_sd}: marginal standard deviations
-  \item \code{axes_boundary}: semi-axis lengths at the specified \code{level}
-  \item \code{boundary_points}: surface coordinates for plotting
-  \item \code{c2}: chi-square cutoff
+  \item `dimensions`: number of variables (dimensions).
+  \item `mu_vec`: centroid vector \eqn{\mu}.
+  \item `cov_matrix`: covariance matrix \eqn{\Sigma}.
+  \item `Sigma_inv`: inverse covariance \eqn{\Sigma^{-1}}.
+  \item `chol_Sigma`: Cholesky factor of \eqn{\Sigma}.
+  \item `eigen`: list with `vectors` and `values` from eigen-decomposition.
+  \item `cl`: confidence level used.
+  \item `chi2_cutoff`: chi-square cutoff \eqn{c^2}.
+  \item `axes_sd`: derived marginal standard deviations (from `range`).
+  \item `semi_axes_lengths`: principal semi-axis lengths \eqn{a_i}.
+  \item `axis_points`: list of principal-axis endpoint coordinates (LB/UB).
+  \item `volume`: ellipsoid hypervolume at the specified contour.
 }
 }
 \description{
-Constructs a multivariate normal (MVN) ellipsoid in environmental space,
-defined by a centroid, marginal tolerances, and optional correlation-based
-tilt among dimensions. The ellipsoid represents a probability contour of
-constant Mahalanobis distance.
+Constructs an ellipsoidal niche in multivariate environmental space using a
+multivariate normal (MVN) contour of constant Mahalanobis distance. The niche
+is defined by a centroid (midpoints of user-provided ranges), per-variable
+marginal spreads (derived from ranges), and an optional user-supplied
+variance–covariance matrix.
 }
 \details{
-The niche is defined as:
-\deqn{X \sim \mathcal{N}(\mu, \Sigma)}
+This function expects `range` as a 2-row matrix/data.frame with variables in
+columns. The two rows represent lower and upper bounds (order can be min/max
+or max/min). The centroid is computed as the midpoint of each variable's
+range:
+\deqn{\mu_i = (m_i + M_i)/2.}
 
-where the covariance matrix is decomposed as:
-\deqn{\Sigma = D R D}
+If `cov_matrix` is not provided, marginal standard deviations are derived from
+ranges using the rule-of-thumb that the provided bounds represent roughly
+\eqn{\pm 3} standard deviations:
+\deqn{\sigma_i = (M_i - m_i)/6,}
+and a diagonal covariance matrix is assumed:
+\deqn{\Sigma = \mathrm{diag}(\sigma_1^2,\dots,\sigma_n^2).}
 
-with \eqn{D} representing marginal standard deviations and \eqn{R} the
-correlation (tilt) matrix.
+The ellipsoid boundary is defined by:
+\deqn{(x - \mu)^\top \Sigma^{-1} (x - \mu) = c^2,}
+where \eqn{c^2} is the chi-square cutoff \eqn{\chi^2_{n}(\mathrm{cl})} with
+\eqn{n} degrees of freedom.
 
-Two probability levels are used:
-
-\describe{
-  \item{cl}{Probability mass represented by the user-supplied
-  minimum and maximum values. Used only to infer marginal standard deviations
-  when defining the multivariate normal niche.}
-
-  \item{level}{Probability mass enclosed by the ellipsoid contour, defined by
-  a chi-square quantile of the Mahalanobis distance.}
+Principal semi-axis lengths are computed from the eigenvalues of \eqn{\Sigma}:
+\deqn{a_i = \sqrt{\lambda_i c^2}.}
 }
+\examples{
+rng <- data.frame(bio1 = c(10, 20),
+                  bio2 = c(20, 30))
+ell <- build_ellipsoid(range = rng, cl = 0.95, verbose = FALSE)
+print(ell)
 
-
-The ellipsoid boundary corresponds to:
-\deqn{(x - \mu)^T \Sigma^{-1} (x - \mu) \le \chi^2_p(\text{level})}
-
-This formulation allows separation of:
-\itemize{
-  \item marginal niche breadth (\code{range})
-  \item correlation structure (\code{cor_tilt})
-  \item probability contour (\code{level})
-}
-}
-\seealso{
-\code{\link{parse_range}}, \code{\link{parse_cor_tilt}}
 }

@@ -61,51 +61,54 @@
 #' print(ell)
 #'
 #' @export
+
 build_ellipsoid <- function(range,
                             cl = 0.99,
                             cov_matrix = NULL,
-                            verbose = TRUE) {
+                            verbose = TRUE){
 
-  verbose_message <- function(...) if (isTRUE(verbose)) cat(...)
+  verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
 
   verbose_message("Starting: building ellipsoidal niche from ranges...\n")
 
   # Input checks -------------------------------------------------------------
 
-  if (!(is.data.frame(range) || is.matrix(range))) {
+  if(!(is.data.frame(range) || is.matrix(range))){
     stop("range must be a data.frame or matrix.")
   }
 
   range <- as.matrix(range)
 
-  if (is.null(colnames(range))) {
+  if(is.null(colnames(range))){
     stop("range must have column names (variable names).")
   }
 
   var_names <- colnames(range)
 
-  if (nrow(range) != 2L) {
+  if(nrow(range) != 2L){
     stop("range must have exactly 2 rows (min/max) and variables as columns.")
   }
 
-  # cl: (0, 1)
-  if (!is.numeric(cl) || length(cl) != 1L || !is.finite(cl) || cl <= 0 || cl >= 1) {
+  if(!is.numeric(cl) || length(cl) != 1L || !is.finite(cl) || cl <= 0 || cl >= 1){
     stop("cl must be a single finite number strictly between 0 and 1.")
   }
 
-  # If covariance is given
-  if (!is.null(cov_matrix)) {
-    if (is.data.frame(cov_matrix)) cov_matrix <- as.matrix(cov_matrix)
+  if(!is.null(cov_matrix)){
 
-    if (!is.matrix(cov_matrix)) {
+    if(is.data.frame(cov_matrix)){
+      cov_matrix <- as.matrix(cov_matrix)
+    }
+
+    if(!is.matrix(cov_matrix)){
       stop("cov_matrix must be a matrix (variance–covariance matrix).")
     }
 
-    if (is.null(colnames(cov_matrix)) || is.null(rownames(cov_matrix))) {
+    if(is.null(colnames(cov_matrix)) || is.null(rownames(cov_matrix))){
       stop("cov_matrix must have row and column names matching range column names.")
     }
 
-    if (!all(colnames(cov_matrix) == var_names) || !all(rownames(cov_matrix) == var_names)) {
+    if(!all(colnames(cov_matrix) == var_names) ||
+       !all(rownames(cov_matrix) == var_names)){
       stop("cov_matrix row/column names must match range column names (same order).")
     }
   }
@@ -115,29 +118,30 @@ build_ellipsoid <- function(range,
   r1 <- as.numeric(range[1, ])
   r2 <- as.numeric(range[2, ])
 
-  if (any(!is.finite(r1)) || any(!is.finite(r2))) {
+  if(any(!is.finite(r1)) || any(!is.finite(r2))){
     stop("range contains non-finite values.")
   }
 
-  if (all(r1 < r2)) {
+  if(all(r1 < r2)){
     mins <- r1
     maxs <- r2
-  } else if (all(r2 < r1)) {
+  }else if(all(r2 < r1)){
     mins <- r2
     maxs <- r1
-  } else {
+  }else{
     stop("Each variable must have max > min. Please check range formatting.")
   }
 
   # Center and marginal SDs --------------------------------------------------
 
-  mu_vec <- (mins + maxs) / 2
-  sd_vec <- (maxs - mins) / 6
+  mu_vec <- (mins + maxs)/2
+  sd_vec <- (maxs - mins)/6
 
-  if (any(!is.finite(mu_vec)) || any(!is.finite(sd_vec))) {
+  if(any(!is.finite(mu_vec)) || any(!is.finite(sd_vec))){
     stop("Derived mu_vec/sd_vec contain non-finite values.")
   }
-  if (any(sd_vec <= 0)) {
+
+  if(any(sd_vec <= 0)){
     stop("Derived sd_vec must be positive for all variables (check mins/maxs).")
   }
 
@@ -145,38 +149,40 @@ build_ellipsoid <- function(range,
 
   # Covariance handling ------------------------------------------------------
 
-  if (is.null(cov_matrix)) {
-    verbose_message("Step: computing covariance matrix...\n")
+  if(is.null(cov_matrix)){
 
+    verbose_message("Step: computing covariance matrix...\n")
 
     cov_matrix <- diag(sd_vec^2, nrow = dimensions, ncol = dimensions)
     rownames(cov_matrix) <- var_names
     colnames(cov_matrix) <- var_names
-  } else {
 
-    if (any(dim(cov_matrix) != c(dimensions, dimensions))) {
+  }else{
+
+    verbose_message("Step: Checking covariance matrix...\n")
+
+    if(any(dim(cov_matrix) != c(dimensions, dimensions))){
       stop("cov_matrix must be a square matrix with dimensions x dimensions.")
     }
-    if (any(!is.finite(cov_matrix))) {
+
+    if(any(!is.finite(cov_matrix))){
       stop("cov_matrix contains non-finite values.")
     }
 
+    if(!isTRUE(all.equal(cov_matrix, t(cov_matrix), tolerance = 1e-6))){
+      stop("cov_matrix must be symmetric. You can use (cov_matrix + t(cov_matrix))/2 to make symmetric.")
+    }
   }
 
-  verbose_message("Step: computing safe covariance limits...see out$cov_limits for options\n")
-  cov_limits <- covariance_limits(cov_matrix)
-
-  # Symmetry + SPD checks ----------------------------------------------------
-
-  verbose_message("Step: Checking covariance matrix...\n")
-
-  cov_matrix <- (cov_matrix + t(cov_matrix)) / 2
-
   chol_Sigma <- tryCatch(chol(cov_matrix), error = function(e) NULL)
-  if (is.null(chol_Sigma)) {
+
+  if(is.null(chol_Sigma)){
     stop("cov_matrix must be symmetric positive definite (SPD).")
   }
 
+  verbose_message("Step: computing safe covariance limits... see out$cov_limits for options\n")
+
+  cov_limits <- covariance_limits(cov_matrix)
   Sigma_inv <- chol2inv(chol_Sigma)
 
   # Ellipsoid metrics --------------------------------------------------------
@@ -190,7 +196,7 @@ build_ellipsoid <- function(range,
   vals <- pmax(eig$values, 0)
   semi_axes_lengths <- sqrt(vals * chi2_cutoff)
 
-  axis_points <- lapply(seq_len(dimensions), function(i) {
+  axis_points <- lapply(seq_len(dimensions), function(i){
     list(
       neg = mu_vec - semi_axes_lengths[i] * eig$vectors[, i],
       pos = mu_vec + semi_axes_lengths[i] * eig$vectors[, i]
@@ -222,13 +228,35 @@ build_ellipsoid <- function(range,
   )
 
   class(out) <- "nicheR_ellipsoid"
+
   out
 }
 
-
-
+#' Print a nicheR Ellipsoid Object
+#'
+#' Provides a concise summary of a \code{nicheR_ellipsoid} object created by
+#' \code{\link{build_ellipsoid}}. The printed output includes dimensionality,
+#' chi-square cutoff, centroid, covariance matrix, principal semi-axis lengths,
+#' axis endpoints, and ellipsoid volume.
+#'
+#' @param x A \code{nicheR_ellipsoid} object.
+#' @param digits Integer. Number of decimal places used when printing numeric
+#'   values. Default is 3.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @details
+#' This is an S3 method for objects of class \code{"nicheR_ellipsoid"}.
+#' The function formats and rounds key quantities for readability but does
+#' not modify the underlying object.
+#'
+#' @return
+#' The input object \code{x}, returned invisibly.
+#'
+#' @seealso \code{\link{build_ellipsoid}}
+#'
+#' @method print nicheR_ellipsoid
 #' @export
-print.nicheR_ellipsoid <- function(x, digits = 3, ...) {
+print.nicheR_ellipsoid <- function(x, digits = 3, ...){
 
   cat("nicheR Ellipsoid Object\n")
   cat("----------------------\n")
@@ -244,12 +272,12 @@ print.nicheR_ellipsoid <- function(x, digits = 3, ...) {
   print(round(x$cov_matrix, digits))
 
   cat("\nSemi-axis lengths:\n  ",
-      paste(round(x$semi_axes_length, digits), collapse = ", "),
+      paste(round(x$semi_axes_lengths, digits), collapse = ", "),
       "\n", sep = "")
 
   cat("\nPrincipal axis endpoints (neg → pos):\n")
 
-  for (i in seq_len(x$dimensions)) {
+  for(i in seq_len(x$dimensions)){
     cat(" Axis", i, ":\n", sep = "")
     cat("   neg: ",
         paste(round(x$axis_points[[i]]$neg, digits), collapse = ", "),

@@ -4,35 +4,31 @@
 \alias{predict.nicheR_ellipsoid}
 \title{Predict Mahalanobis distance and suitability from a nicheR ellipsoid}
 \usage{
-\method{predict}{nicheR_ellipsoid}(
+predict.nicheR_ellipsoid(
   object,
   newdata,
-  level = 0.95,
+  adjust_level = NULL,
   include_suitability = TRUE,
   suitability_truncated = FALSE,
   include_mahalanobis = TRUE,
   mahalanobis_truncated = FALSE,
-  verbose = FALSE,
+  verbose = TRUE,
   ...
 )
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object produced by
-\code{\link{build_ellipsoid}}. Must contain \code{p}, \code{mu}, and
-\code{Sigma_inv}.}
+\code{\link{build_ellipsoid}}. Must contain \code{dimensions},
+\code{centroid}, \code{cov_matrix}, \code{Sigma_inv}, \code{chi2_cutoff}, and
+\code{var_names}.}
 
 \item{newdata}{Environmental data to predict to. Supported inputs are:
 \code{terra::SpatRaster}, \code{raster::RasterLayer},
 \code{raster::RasterStack}, \code{raster::RasterBrick},
-\code{data.frame}, \code{tibble}, or \code{matrix}.
-For tabular inputs, if spatial columns are present they are detected using
-common names (x, y, lat, lon, long, latitude, longitude) and ignored for
-prediction.}
+\code{data.frame}, \code{tibble}, or \code{matrix}.}
 
-\item{level}{Numeric scalar in (0, 1]. Probability level defining the
-chi-square cutoff used for truncated outputs. \code{level = 1} yields an
-infinite cutoff (no truncation by probability; truncated outputs will be
-identical to their non-truncated forms except for the inside/outside mask).}
+\item{adjust_level}{Numeric scalar in (0, 1). Optional probability level used
+to compute a new chi-square cutoff for truncated outputs.}
 
 \item{include_suitability}{Logical; if \code{TRUE}, include suitability
 \eqn{s(x)} in the output.}
@@ -45,27 +41,23 @@ to 0 (and NA values remain NA).}
 distance \eqn{D^2} in the output.}
 
 \item{mahalanobis_truncated}{Logical; if \code{TRUE}, include a binary inside
-mask for Mahalanobis distance at \code{level}. Values are 1 for
+mask for Mahalanobis distance at \code{adjust_level} (or object level if
+\code{adjust_level} is \code{NULL}). Values are 1 for
 \eqn{D^2 \le \chi^2_p(level)}, 0 otherwise (NA values remain NA).}
 
-\item{verbose}{Logical; if \code{TRUE}, print progress messages.}
+\item{verbose}{Logical; if \code{TRUE}, print brief progress messages.}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
 If \code{newdata} is a \code{terra::SpatRaster} (or a \code{raster::Raster*}
 converted to \code{SpatRaster}), returns a multi-layer \code{SpatRaster}
-containing the requested outputs:
-\itemize{
-  \item \code{mahalanobis}: squared Mahalanobis distance \eqn{D^2} (optional)
-  \item \code{suitability}: \eqn{\exp(-0.5 D^2)} (optional)
-  \item \code{mahalanobis_trunc}: inside mask (optional)
-  \item \code{suitability_trunc}: truncated suitability (optional)
-}
+containing the requested outputs.
 
 If \code{newdata} is a \code{data.frame} or \code{matrix}, returns a
-\code{data.frame} with the same rows and added columns matching the requested
-outputs. Rows with missing predictor values receive NA for numeric outputs.
+\code{data.frame} with the same number of rows as \code{newdata} and added
+columns matching the requested outputs. Rows with missing predictor values
+receive NA for numeric outputs.
 }
 \description{
 Computes squared Mahalanobis distance \eqn{D^2} and a monotonic suitability
@@ -85,20 +77,14 @@ Suitability is computed as a convenient monotonic transform:
 s(x) = \exp\left(-\frac{1}{2} D^2(x)\right)
 }
 
-A point is considered inside the ellipsoid at probability \code{level} when:
+A point is considered inside the ellipsoid at probability \code{cl} when:
 \deqn{
-D^2(x) \le \chi^2_p(\text{level})
+D^2(x) \le \chi^2_p(\text{cl})
 }
-where \eqn{p} is the number of predictors.
+where \eqn{p} is the number of predictors (dimensions).
 
 When \code{newdata} is a \code{terra::SpatRaster}, computations are performed
 per cell and the function returns a multi-layer \code{SpatRaster}. When
 \code{newdata} is a \code{data.frame} or \code{matrix}, the function returns a
 \code{data.frame} with added output columns.
-
-
-This function assumes that the predictors in \code{newdata} are in the same
-order and have the same meaning as used to fit \code{object}. For raster
-inputs, the layers should correspond to the same predictors used to build the
-ellipsoid.
 }
