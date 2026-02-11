@@ -245,4 +245,4 @@ When contributing:
 - Include minimal reproducible examples  
 - Add tests when appropriate
 
-Thank you for helping improve **NicheR**.
+Thank you for helping improve **nicheR**.
