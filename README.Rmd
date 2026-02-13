@@ -197,7 +197,8 @@ plot_nicheR(
 
 ```{r}
 # import bias rasters
-bias_layer <- terra::rast("inst/extdata/bias_vars.tif")
+bias_layer <- terra::rast("inst/extdata/bias_layers.tif")
+plot(bias_layer)
 
 # set the bias surface
 # bias_dir = 1  : Higher values = Higher sampling probability
