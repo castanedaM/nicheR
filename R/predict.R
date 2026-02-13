@@ -188,6 +188,7 @@ predict.nicheR_ellipsoid <- function(object,
   }
 
   # Predict: SpatRaster -----------------------------------------------------
+#   To do: use ifelse instead of app, smae thing
   if(inherits(newdata, "SpatRaster")){
 
     D2 <- terra::app(newdata, fun = function(v){

@@ -28,7 +28,7 @@
 #'   \item random: uniform sampling
 #' }
 #'
-#' \strong{method = "probability"}
+#' \strong{method = "suitability"}
 #' \itemize{
 #'   \item center: favors high suitability values
 #'   \item edge: favors low suitability values (but still > 0)
@@ -42,7 +42,7 @@
 #'   variants (e.g., \code{lon}, \code{lat}, \code{longitude}, \code{latitude}).
 #' @param sampling Character. One of \code{"random"}, \code{"center"}, or
 #'   \code{"edge"}.
-#' @param method Character. One of \code{"distance"} or \code{"probability"}.
+#' @param method Character. One of \code{"distance"} or \code{"suitability"}.
 #' @param truncated Logical. If \code{TRUE} (default), sampling is restricted
 #'   to environmentally suitable cells when truncated layers
 #'   (\code{Mahalanobis_trunc} or \code{suitability_trunc}) are available.
@@ -75,7 +75,7 @@
 #' occ <- sample_data(n_occ = 100,
 #'                    suitable_env = pred,
 #'                    sampling = "center",
-#'                    method = "probability",
+#'                    method = "suitability",
 #'                    seed = 42)
 #' }
 #'
@@ -85,15 +85,17 @@
 #'
 #' @export
 sample_data <- function(n_occ,
-                        suitable_env,
-                        sampling = c("random", "center", "edge"),
-                        method = c("distance", "probability"),
+                        # ellipsoid object
+                        # prediction suitable_env,
+                        # TO DO: inverse = TRUE/FALSE
+                        method = c("distance", "suitability"),
                         truncated = TRUE,
                         bias_surface = NULL,
                         bias_dir = 1,
                         seed = NULL,
-                        verbose = TRUE){
-
+                        verbose = TRUE,
+                        sampling_mask = NULL){
+# TO DO: truncated checks
   verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
 
   sampling <- match.arg(sampling)
@@ -177,8 +179,8 @@ sample_data <- function(n_occ,
     stop("method = 'distance' requires a 'Mahalanobis' column/layer from predict().")
   }
 
-  if(method == "probability" && !has_S && !has_St){
-    stop("method = 'probability' requires 'suitability' and/or 'suitability_trunc' from predict().")
+  if(method == "suitability" && !has_S && !has_St){
+    stop("method = 'suitability' requires 'suitability' and/or 'suitability_trunc' from predict().")
   }
 
   # Candidate filtering --------------------------------------------------
@@ -193,7 +195,7 @@ sample_data <- function(n_occ,
     }
   }
 
-  if(method == "probability"){
+  if(method == "suitability"){
 
     if(truncated && has_St){
       df <- df[is.finite(df$suitability_trunc) &
@@ -231,7 +233,7 @@ sample_data <- function(n_occ,
     }
   }
 
-  if(method == "probability"){
+  if(method == "suitability"){
     s <- if(has_St) df$suitability_trunc else df$suitability
 
     if(sampling == "center"){
