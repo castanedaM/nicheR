@@ -67,6 +67,11 @@ build_ellipsoid <- function(range,
                             cov_matrix = NULL,
                             verbose = TRUE){
 
+
+# TO DO: add the limit/threshold for trucations, NA mahalanobis, 0 in
+# suitability. Do not binaries, everything outside the ellipsoid NA. Add the
+# mahalanobis value and suitability correspond to the limit.
+
   verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
 
   verbose_message("Starting: building ellipsoidal niche from ranges...\n")

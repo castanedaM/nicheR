@@ -63,7 +63,13 @@ apply_bias <- function(bias_surface,
                        out_bias = c("biased", "standardized", "both"),
                        verbose = TRUE,
                        truncated = TRUE){
+  # TO DO:
+  # prepare(scaling, bias_direction) ->
+  # apply(prepared_bias, suitable_layers, effect_direction) -> crop and mask for the layers
+  # bias_sampling(n_occ, layer, seed = 1, sampling_mask = NULL)
 
+
+# TO DO: Change bias
   verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
 
   gc()
