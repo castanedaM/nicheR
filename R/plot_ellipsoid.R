@@ -1,3 +1,26 @@
+#' Plot a nicheR Ellipsoid
+#'
+#' Plots the boundary of a probabilistic ellipsoid in environmental space,
+#' optionally overlaying background points.
+#'
+#' @param object A nicheR ellipsoid object containing \code{centroid},
+#'   \code{cov_matrix}, and \code{chi2_cutoff}.
+#' @param background Optional data frame of background points (rows = observations,
+#'   columns = environmental variables).
+#' @param sample Integer. Number of background points to sample for plotting.
+#' @param lty Line type for ellipsoid boundary.
+#' @param lwd Line width for ellipsoid boundary.
+#' @param col_ell Color for ellipsoid boundary.
+#' @param col_bg Color for background points.
+#' @param pch Plotting symbol for background points.
+#' @param alpha_bg Transparency for background points.
+#' @param alpha_ell Transparency for ellipsoid boundary.
+#' @param cex_ell Expansion factor for ellipsoid line.
+#' @param cex_bg Expansion factor for background points.
+#' @param ... Additional graphical parameters passed to \code{plot()}.
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @export
 plot_ellipsoid <- function(object,
                            background = NULL,
                            sample = 1000,
@@ -12,12 +35,11 @@ plot_ellipsoid <- function(object,
                            cex_bg = 1, ...){
 
 #   Check for data frame
-
-
   ell_points <- ellipsoid_surface_points(mu_vec = object$centroid,
                                          cov_matrix = object$cov_matrix,
                                          chi2_cutoff = object$chi2_cutoff,
-                                         n_point = 100) # to do: make sure name of vars does not dissapear
+                                         n_point = 100)
+  # to do: make sure name of vars does not disappear
 
   if(!is.null(background)){
 
@@ -46,25 +68,5 @@ plot_ellipsoid <- function(object,
          cex = cex_ell, ...)
   }
 
-
 }
 
-
-
-
-
-
-pred <- predict(ell,
-                newdata = bios,
-                include_mahalanobis = TRUE,
-                include_suitability = TRUE)
-
-# plot_nicheR(list(ell))
-plot(pred, col=rev(viridis::viridis(100)))
-plot(log(pred), col=rev(viridis::viridis(100)))
-
-occ <- sample_data(n_occ = 50,
-                   suitable_env = pred,
-                   sampling = "center",
-                   method = "probability",
-                   seed = 42)

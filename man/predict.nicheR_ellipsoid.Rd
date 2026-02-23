@@ -7,11 +7,12 @@
 \method{predict}{nicheR_ellipsoid}(
   object,
   newdata,
-  adjust_level = NULL,
+  adjust_truncation_level = NULL,
   include_suitability = TRUE,
   suitability_truncated = FALSE,
   include_mahalanobis = TRUE,
   mahalanobis_truncated = FALSE,
+  keep_data = NULL,
   verbose = TRUE,
   ...
 )
@@ -19,45 +20,55 @@
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object produced by
 \code{\link{build_ellipsoid}}. Must contain \code{dimensions},
-\code{centroid}, \code{cov_matrix}, \code{Sigma_inv}, \code{chi2_cutoff}, and
-\code{var_names}.}
+\code{centroid}, \code{cov_matrix}, \code{Sigma_inv}, \code{truncation_level},
+and \code{var_names}.}
 
 \item{newdata}{Environmental data to predict to. Supported inputs are:
 \code{terra::SpatRaster}, \code{raster::RasterLayer},
 \code{raster::RasterStack}, \code{raster::RasterBrick},
-\code{data.frame}, \code{tibble}, or \code{matrix}.}
+\code{data.frame}, \code{tibble}, or \code{matrix}. Predictor names must
+match \code{object$var_names}.}
 
-\item{adjust_level}{Numeric scalar in (0, 1). Optional probability level used
-to compute a new chi-square cutoff for truncated outputs.}
+\item{adjust_truncation_level}{Optional numeric scalar in (0, 1). If provided,
+overrides \code{object$truncation_level} for truncated outputs.}
 
-\item{include_suitability}{Logical; if \code{TRUE}, include suitability
-\eqn{s(x)} in the output.}
+\item{include_suitability}{Logical; if \code{TRUE}, include the
+\code{"suitability"} output.}
 
-\item{suitability_truncated}{Logical; if \code{TRUE}, include a truncated
-suitability layer/column where values outside the chi-square cutoff are set
-to 0 (and NA values remain NA).}
+\item{suitability_truncated}{Logical; if \code{TRUE}, include the
+\code{"suitability_trunc"} output.}
 
-\item{include_mahalanobis}{Logical; if \code{TRUE}, include squared Mahalanobis
-distance \eqn{D^2} in the output.}
+\item{include_mahalanobis}{Logical; if \code{TRUE}, include the
+\code{"Mahalanobis"} output.}
 
-\item{mahalanobis_truncated}{Logical; if \code{TRUE}, include a binary inside
-mask for Mahalanobis distance at \code{adjust_level} (or object level if
-\code{adjust_level} is \code{NULL}). Values are 1 for
-\eqn{D^2 \le \chi^2_p(level)}, 0 otherwise (NA values remain NA).}
+\item{mahalanobis_truncated}{Logical; if \code{TRUE}, include the
+\code{"Mahalanobis_trunc"} output.}
 
-\item{verbose}{Logical; if \code{TRUE}, print brief progress messages.}
+\item{keep_data}{Logical or \code{NULL}. Controls whether predictor data are
+  retained in the returned object.
+
+  If \code{NULL} (default), behavior depends on the class of \code{newdata}:
+  \itemize{
+    \item For \code{data.frame} or \code{matrix} inputs, \code{keep_data} defaults to \code{TRUE}
+          (predictor columns are retained).
+    \item For \code{terra::SpatRaster} inputs, \code{keep_data} defaults to \code{FALSE}
+          (only prediction layers are returned).
+  }
+
+  If explicitly set to \code{TRUE} or \code{FALSE}, that value overrides the default behavior.}
+
+\item{verbose}{Logical; if \code{TRUE}, print progress messages.}
 
 \item{...}{Additional arguments (currently unused).}
 }
 \value{
-If \code{newdata} is a \code{terra::SpatRaster} (or a \code{raster::Raster*}
-converted to \code{SpatRaster}), returns a multi-layer \code{SpatRaster}
-containing the requested outputs.
+If \code{newdata} is a \code{SpatRaster}, returns a multi layer
+\code{SpatRaster} with layer names matching the selected outputs
+(and optionally predictor layers when \code{keep_data = TRUE}).
 
 If \code{newdata} is a \code{data.frame} or \code{matrix}, returns a
-\code{data.frame} with the same number of rows as \code{newdata} and added
-columns matching the requested outputs. Rows with missing predictor values
-receive NA for numeric outputs.
+\code{data.frame} with added columns named according to the selected outputs
+(and optionally predictor columns when \code{keep_data = TRUE}).
 }
 \description{
 Computes squared Mahalanobis distance \eqn{D^2} and a monotonic suitability
@@ -72,19 +83,31 @@ The squared Mahalanobis distance is:
 D^2(x) = (x - \mu)^T \Sigma^{-1} (x - \mu)
 }
 
-Suitability is computed as a convenient monotonic transform:
+Suitability is computed as a monotonic transform:
 \deqn{
 s(x) = \exp\left(-\frac{1}{2} D^2(x)\right)
 }
 
-A point is considered inside the ellipsoid at probability \code{cl} when:
+A point is considered inside the ellipsoid at probability level \code{cl} when:
 \deqn{
-D^2(x) \le \chi^2_p(\text{cl})
+D^2(x) \le \chi^2_p(\mathrm{cl})
 }
-where \eqn{p} is the number of predictors (dimensions).
+where \eqn{p} is the number of predictors.
 
-When \code{newdata} is a \code{terra::SpatRaster}, computations are performed
-per cell and the function returns a multi-layer \code{SpatRaster}. When
-\code{newdata} is a \code{data.frame} or \code{matrix}, the function returns a
-\code{data.frame} with added output columns.
+Depending on user options, the following outputs may be returned:
+
+\itemize{
+  \item \code{"Mahalanobis"}: squared Mahalanobis distance \eqn{D^2}
+  \item \code{"suitability"}: \eqn{\exp(-\frac{1}{2} D^2)}
+  \item \code{"Mahalanobis_trunc"}: Mahalanobis distance truncated at the
+        chi square cutoff (values outside set to NA)
+  \item \code{"suitability_trunc"}: suitability truncated at the chi square
+        cutoff (values outside set to 0)
+}
+
+When \code{newdata} is a \code{terra::SpatRaster} (or a \code{raster::Raster*}
+object coerced to \code{SpatRaster}), predictions are computed per cell and
+returned as a multi layer \code{SpatRaster}. When \code{newdata} is a
+\code{data.frame} or \code{matrix}, the function returns a \code{data.frame}
+with added output columns using the names listed above.
 }

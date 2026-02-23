@@ -2,78 +2,36 @@
 % Please edit documentation in R/apply_bias.R
 \name{apply_bias}
 \alias{apply_bias}
-\title{Construct and Combine Sampling Bias Surfaces}
+\title{Apply Sampling Bias to a Prediction Surface}
 \usage{
 apply_bias(
-  bias_surface,
-  bias_dir = 1,
-  suitable_env = NULL,
-  out_bias = c("biased", "standardized", "both"),
-  verbose = TRUE,
-  truncated = TRUE
+  prepared_bias,
+  pred,
+  effect_direction = 1,
+  layers = c("suitability", "suitability_trunc")
 )
 }
 \arguments{
-\item{bias_surface}{A \code{terra::SpatRaster} or a list of
-\code{terra::SpatRaster} objects. Multi-layer rasters are split internally
-into single-layer bias surfaces.}
+\item{prepared_bias}{A \code{nicheR_bias_surface} object (output from
+\code{prepare_bias}) or a \code{terra::SpatRaster}.}
 
-\item{bias_dir}{Numeric vector of \code{1} (use layer as-is) or \code{-1}
-(invert via \eqn{1 - x}). A single value is recycled to match the number of
-bias layers.}
+\item{pred}{A \code{terra::SpatRaster} representing the prediction surface
+(e.g., habitat suitability).}
 
-\item{suitable_env}{Optional. A \code{terra::SpatRaster} used as a
-mask/template raster for cropping, resampling, and masking.}
+\item{effect_direction}{Numeric vector. \code{1} for a direct effect (\code{pred * bias}),
+or \code{-1} for an indirect/inverse effect (\code{pred * (1 - bias)}).
+Can contain multiple values (e.g., \code{c(1, -1)}). If multiple values are provided,
+the function returns layers for every combination of valid prediction layer
+and effect direction. Default is \code{1}.}
 
-\item{out_bias}{Character. Controls returned outputs:
-\itemize{
-  \item \code{"biased"} – pooled bias surface only
-  \item \code{"standardized"} – directional standardized layers only
-  \item \code{"both"} – return both
-}}
-
-\item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
-
-\item{truncated}{Logical. If \code{TRUE} (default), each bias layer is cropped
-to the template extent before resampling. If \code{FALSE}, layers are only
-resampled and masked.}
+\item{layers}{Character vector. Names of the layers in \code{pred} to which
+the bias should be applied. Defaults to \code{c("suitability", "suitability_trunc")}.}
 }
 \value{
-A list of class \code{"nicheR_bias_surface"} with:
-\itemize{
-  \item \code{pooled_bias_sp} – pooled bias raster (if requested)
-  \item \code{directional_bias_stack} – stack of standardized and directional
-  layers (if requested)
-  \item \code{combination_formula} – character string showing how layers were
-  combined (e.g., \code{"roads * (1-pop_density) * protected"})
-}
+A \code{terra::SpatRaster} containing the bias-adjusted prediction layers.
 }
 \description{
-Builds standardized, optionally directional, and pooled sampling bias
-surfaces from one or more user-provided rasters. Bias layers are aligned to
-a common template, scaled to \eqn{[0, 1]}, optionally inverted, and combined
-multiplicatively to produce a pooled bias surface.
-}
-\details{
-The function performs the following steps:
-\enumerate{
-  \item Split \code{bias_surface} into single-layer rasters.
-  \item Select a template raster: \code{suitable_env} (if provided) or the
-  first bias layer.
-  \item Optionally crop each bias layer to the template extent
-  (\code{truncated = TRUE}).
-  \item Resample each layer to match the template grid.
-  \item Standardize each layer to \eqn{[0, 1]} using min and max values.
-  \item Optionally invert layers when \code{bias_dir = -1}.
-  \item Stack standardized directional layers.
-  \item Optionally pool layers by multiplication to form a single bias
-  surface.
-}
-
-Cropping and masking are done using \code{terra::crop()} and
-\code{terra::mask()}. Resampling uses nearest-neighbor interpolation
-(\code{method = "near"}) to preserve sharp edges common in bias layers.
-}
-\seealso{
-\code{\link{sample_data}}
+Modifies a prediction surface by applying a spatial bias layer.
+The bias layer is dynamically cropped and masked to match the prediction
+layer, adjusted for effect direction, and combined multiplicatively.
 }

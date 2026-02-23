@@ -6,28 +6,25 @@
 \usage{
 sample_data(
   n_occ,
-  suitable_env,
-  sampling = c("random", "center", "edge"),
-  method = c("distance", "probability"),
+  suitable_environment = NULL,
+  method = c("distance", "suitability"),
   truncated = TRUE,
   bias_surface = NULL,
   bias_dir = 1,
   seed = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  sampling_mask = NULL
 )
 }
 \arguments{
 \item{n_occ}{Integer. Number of occurrence points to sample.}
 
-\item{suitable_env}{A \code{terra::SpatRaster} or \code{data.frame}
+\item{suitable_environment}{A \code{terra::SpatRaster} or \code{data.frame}
 containing prediction outputs from \code{predict()}.
 Must include coordinate columns (\code{x}, \code{y}) or longitude/latitude
 variants (e.g., \code{lon}, \code{lat}, \code{longitude}, \code{latitude}).}
 
-\item{sampling}{Character. One of \code{"random"}, \code{"center"}, or
-\code{"edge"}.}
-
-\item{method}{Character. One of \code{"distance"} or \code{"probability"}.}
+\item{method}{Character. One of \code{"distance"} or \code{"suitability"}.}
 
 \item{truncated}{Logical. If \code{TRUE} (default), sampling is restricted
 to environmentally suitable cells when truncated layers
@@ -47,6 +44,9 @@ bias layers.}
 reproducibility.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
+
+\item{sampling}{Character. One of \code{"random"}, \code{"center"}, or
+\code{"edge"}.}
 }
 \value{
 A \code{data.frame} containing sampled geographic coordinates (\code{x}, \code{y}).
@@ -66,7 +66,7 @@ but sampling weights are determined by environmental suitability or
 Mahalanobis distance in environmental space (E-space).
 
 
-The input \code{suitable_env} must contain prediction outputs from
+The input \code{suitable_environment} must contain prediction outputs from
 \code{predict()}, including:
 
 \itemize{
@@ -84,7 +84,7 @@ Sampling behavior depends on \code{method} and \code{sampling}:
   \item random: uniform sampling
 }
 
-\strong{method = "probability"}
+\strong{method = "suitability"}
 \itemize{
   \item center: favors high suitability values
   \item edge: favors low suitability values (but still > 0)
@@ -100,9 +100,9 @@ pred <- predict(ell,
                 suitability_truncated = TRUE)
 
 occ <- sample_data(n_occ = 100,
-                   suitable_env = pred,
+                   suitable_environment = pred,
                    sampling = "center",
-                   method = "probability",
+                   method = "suitability",
                    seed = 42)
 }
 

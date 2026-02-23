@@ -10,7 +10,7 @@
 #' Mahalanobis distance in environmental space (E-space).
 #'
 #' @details
-#' The input \code{suitable_env} must contain prediction outputs from
+#' The input \code{suitable_environment} must contain prediction outputs from
 #' \code{predict()}, including:
 #'
 #' \itemize{
@@ -36,7 +36,7 @@
 #' }
 #'
 #' @param n_occ Integer. Number of occurrence points to sample.
-#' @param suitable_env A \code{terra::SpatRaster} or \code{data.frame}
+#' @param suitable_environment A \code{terra::SpatRaster} or \code{data.frame}
 #'   containing prediction outputs from \code{predict()}.
 #'   Must include coordinate columns (\code{x}, \code{y}) or longitude/latitude
 #'   variants (e.g., \code{lon}, \code{lat}, \code{longitude}, \code{latitude}).
@@ -73,7 +73,7 @@
 #'                 suitability_truncated = TRUE)
 #'
 #' occ <- sample_data(n_occ = 100,
-#'                    suitable_env = pred,
+#'                    suitable_environment = pred,
 #'                    sampling = "center",
 #'                    method = "suitability",
 #'                    seed = 42)
@@ -86,8 +86,9 @@
 #' @export
 sample_data <- function(n_occ,
                         # ellipsoid object
-                        # prediction suitable_env,
+                        # prediction suitable_environment,
                         # TO DO: inverse = TRUE/FALSE
+                        suitable_environment = NULL,
                         method = c("distance", "suitability"),
                         truncated = TRUE,
                         bias_surface = NULL,
@@ -95,7 +96,9 @@ sample_data <- function(n_occ,
                         seed = NULL,
                         verbose = TRUE,
                         sampling_mask = NULL){
-# TO DO: truncated checks
+
+  # TO DO: truncated checks
+
   verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
 
   sampling <- match.arg(sampling)
@@ -113,8 +116,8 @@ sample_data <- function(n_occ,
     stop("'n_occ' must be a positive integer.")
   }
 
-  if(missing(suitable_env) || is.null(suitable_env)){
-    stop("'suitable_env' must be provided.")
+  if(missing(suitable_environment) || is.null(suitable_environment)){
+    stop("'suitable_environment' must be provided.")
   }
 
   if(!is.logical(truncated) || length(truncated) != 1L){
@@ -135,14 +138,14 @@ sample_data <- function(n_occ,
 
   verbose_message("Starting: sampling data...\n")
 
-  # Coerce suitable_env --------------------------------------------------
+  # Coerce suitable_environment --------------------------------------------------
 
-  if(inherits(suitable_env, "SpatRaster")){
-    df <- terra::as.data.frame(suitable_env, xy = TRUE, na.rm = TRUE)
-  }else if(is.data.frame(suitable_env)){
-    df <- suitable_env
+  if(inherits(suitable_environment, "SpatRaster")){
+    df <- terra::as.data.frame(suitable_environment, xy = TRUE, na.rm = TRUE)
+  }else if(is.data.frame(suitable_environment)){
+    df <- suitable_environment
   }else{
-    stop("'suitable_env' must be either a SpatRaster or a data.frame.")
+    stop("'suitable_environment' must be either a SpatRaster or a data.frame.")
   }
 
   # Coordinate checks ----------------------------------------------------
@@ -165,7 +168,7 @@ sample_data <- function(n_occ,
   }
 
   if(!all(c("x", "y") %in% names(df))){
-    stop("'suitable_env' must include coordinate columns named x and y (or lon/lat, long/lat, longitude/latitude).")
+    stop("'suitable_environment' must include coordinate columns named x and y (or lon/lat, long/lat, longitude/latitude).")
   }
 
   # Required predict outputs --------------------------------------------
@@ -254,7 +257,7 @@ sample_data <- function(n_occ,
 
     bias_obj <- apply_bias(bias_surface = bias_surface,
                            bias_dir = bias_dir,
-                           suitable_env = suitable_env,
+                           suitable_environment = suitable_environment,
                            out_bias = "biased",
                            verbose = FALSE,
                            truncated = truncated)

@@ -208,7 +208,6 @@ ell_t19B <- update_ellipsoid_covariance(ell_t19A,
 ell_t19B$cov_limits
 
 plot_nicheR(list(ell_t19A, ell_t19B))
-# TO DO: change lines
 
 # Ecological Interpretations
 # axes interpretations with change in covariance = c("var1-var2" = 2):
@@ -245,12 +244,8 @@ ell_t21B <- update_ellipsoid_covariance(ell_t21A,
 
 # predict.nicheR_ellipsoid() tests ----------------------------------------
 
-# TO DO: add argument keep_data = TRUE, when data.frame input
-# To do: check imports of packages, to not call on the ones the package installs
-
 # Test 22: Basic raster prediction
 library(geodata)
-# library(sf)
 
 wc_t22 <- geodata::worldclim_global(var = "bio",
                                     res = 10,
@@ -268,26 +263,26 @@ ell_t22 <- build_ellipsoid(range = rng_t22)
 pred_t22 <- predict(ell_t22,
                     newdata = bios_t22,
                     include_mahalanobis = TRUE,
-                    include_suitability = TRUE)
+                    include_suitability = TRUE,
+                    mahalanobis_truncated = TRUE,
+                    suitability_truncated = TRUE)
 
-plot_nicheR(list(ell_t22))
-plot(pred_t22, col=rev(viridis::viridis(100)))
+plot(pred_t22)
 plot(log(pred_t22), col=rev(viridis::viridis(100)))
-
 
 # Test 23: Prediction using data.frame input
 bios_df_t23 <- as.data.frame(bios_t22, xy = TRUE)
 
 pred_t23 <- predict(ell_t22,
-                    newdata = bios_t22,
+                    newdata = bios_df_t23,
                     include_mahalanobis = TRUE,
                     include_suitability = TRUE,
                     mahalanobis_truncated = TRUE,
                     suitability_truncated = TRUE)
 
 head(pred_t23)
-plot(log(pred_t23), col=rev(viridis::viridis(100)))
-plot(pred_t23, col=rev(viridis::viridis(100)))
+# plot(log(pred_t23), col=rev(viridis::viridis(100)))
+# plot(pred_t23, col=rev(viridis::viridis(100)))
 
 
 # Test 24: Missing variable in newdata
@@ -411,8 +406,9 @@ occ_t30E <- sample_data(n_occ = 200,
 
 # TO DO: allow for only e-space return, not only g-space and return with E-space. Whatever prediction came with, ends up with, and preds.
 # TO DO: make it is own class object, better for plotting.
-# Keep_data = NULL, data.frame = TRUE, raster = FALSE
 # TO DO: add virtual data from function from the ellipsoids.
+# TO DO: prediction = NULL, if null make virtual ell data
+
 attributes(occ_t30E)
 head(occ_t30E)
 
@@ -452,8 +448,6 @@ occ_t32 <- sample_data(n_occ = 50,
                        method = "probability",
                        seed = 42)
 
-
-# TO DO: prediction = NULL, if null make virtual ell data
 
 # Test 33: Outside sampling of the niche
 occ_t33 <- sample_data(n_occ = 10000,
@@ -554,4 +548,31 @@ bias_t39 <- apply_bias(bias_surface = bias_stack_t31,
                        verbose = TRUE)
 
 plot(bias_t39$pooled_bias_sp, main = "T39 pooled bias (no crop, no masked)")
+
+
+devtools::load_all()
+
+library(geodata)
+
+wc <- geodata::worldclim_global(var = "bio",
+                                res = 10,
+                                path = tempdir())
+
+bios <- wc[[c(1, 12)]]
+names(bios) <- c("bio1", "bio12")
+
+rng <- data.frame(bio1 = c(-10, 10),
+                  bio12 = c(500, 2000))
+
+ell <- build_ellipsoid(range = rng)
+ell <- update_ellipsoid_covariance(object = ell,
+                                   covariance = c("bio1-bio12" = 200))
+
+
+
+plot_ellipsoid(object = ell, background = as.data.frame(bios, xy = F),
+               xlab = "temp", ylab = "pred",
+               main = "This is our elliposid",
+               las = 1, xlim = c(-20, 20),
+               sample = 10000, pch = ".")
 
