@@ -69,31 +69,32 @@ random_ellipses <- function(object,
   
   # Generate Ellipses
   rand_ellipses <- lapply(1:n, function(i) {
-    # Randomly scale variances between smaller_proportion and 1.0 of original
-    # This keeps the new variances within the "largest possible" limit
+    ## Randomly scale variances between smaller_proportion and 1.0 of original
+    ## This keeps the new variances within the "largest possible" limit
     v_scales <- runif(2, min = smaller_proportion, max = 1)
     new_vars <- ref_vars * v_scales
     sds <- sqrt(new_vars)
     
-    # Calculate covariance limits based on new variances
+    ## Calculate covariance limits based on new variances
     max_cov <- sds[1] * sds[2]
     
-    # Pick a random covariance
-    # To avoid being too close to the edge use a multiplier of 0.9
+    ## Pick a random covariance
+    ## To avoid being too close to the edge use a multiplier of 0.9
     new_cov_val <- runif(1, min = -max_cov * 0.9, max = max_cov * 0.9)
     
-    # Reconstruct the variance-covariance matrix
+    ## Reconstruct the variance-covariance matrix
     new_varcov <- matrix(c(new_vars[1], new_cov_val,
                            new_cov_val, new_vars[2]), nrow = 2)
     
-    # Name covariance matrix dimensions
+    ## Centroid
+    cent <- centroids[i, ]
+
+    ## Name covariance matrix and centroid for downstream use
     colnames(new_varcov) <- rownames(new_varcov) <- colnames(ref_cov)
+    names(cent) <- colnames(ref_cov)
     
-    evniche::ell_features(
-      centroid          = centroids[i, ],
-      covariance_matrix = new_varcov,
-      level             = ref_level
-    )
+    ellipsoid_calculator(cov_matrix = new_varcov, centroid = cent,
+                         cl = ref_level)
   })
   
   return(rand_ellipses)
