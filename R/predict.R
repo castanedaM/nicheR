@@ -353,6 +353,7 @@ predict.nicheR_ellipsoid <- function(object,
                   paste(colnames(out_df), collapse = ", "),
                   "\n")
 
+  out_df <- do.call(cbind, out_df)
   class(out_df) <- "nicheR_prediction"
 
   out_df

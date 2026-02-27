@@ -17,7 +17,7 @@
 #' @return
 #' A matrix with \code{n} rows and columns corresponding to the
 #' dimensions of the input ellipsoid.
-#' 
+#'
 #' @export
 
 virtual_data <- function(object, n = 100) {
@@ -33,21 +33,21 @@ virtual_data <- function(object, n = 100) {
 
   # Number of dimensions
   p <- length(centroid)
-    
+
   # Eigen-decomposition of the covariance matrix
   eS <- eigen(cov_matrix, symmetric = TRUE)
   ev <- eS$values
 
   # Generate standard normal samples
   vdata <- matrix(rnorm(p * n), nrow = n)
-  
+
   # Transform using the Square Root of Sigma (V * L^0.5)
   vdata <- drop(centroid) + eS$vectors %*% diag(sqrt(pmax(ev, 0)), p) %*%
     t(vdata)
-  
+
   # Handle dimension names
   rownames(vdata) <- colnames(cov_matrix)
-  
+
   # Return the generated data
   return(t(vdata))
 }

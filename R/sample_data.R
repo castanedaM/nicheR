@@ -1,109 +1,62 @@
-
-#' @export
-resolve_prediction <- function(prediction, prediction_layer){
-
-  # ---- Case 1: prediction is a data.frame -----------------------------------
-  if(is.data.frame(prediction)){
-
-    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
-      stop("If 'prediction' is a data.frame, 'prediction_layer' must be provided (column name).")
-    }
-
-    if(!all(c("x", "y") %in% names(prediction))){
-      stop("If 'prediction' is a data.frame, it must contain columns named 'x' and 'y'.")
-    }
-
-    if(!(prediction_layer %in% names(prediction))){
-      stop("Column '", prediction_layer, "' not found in data.frame prediction.")
-    }
-
-    return(list(type = "data.frame",
-                df = prediction,
-                pred_name = prediction_layer))
-  }
-
-  # ---- Case 2: prediction is a SpatRaster -----------------------------------
-  if(inherits(prediction, "SpatRaster")){
-
-    if(terra::nlyr(prediction) == 1L){
-
-      if(!is.null(prediction_layer) && nzchar(prediction_layer)){
-        if(is.null(names(prediction)) || !(prediction_layer %in% names(prediction))){
-          stop("Layer '", prediction_layer, "' not found in SpatRaster prediction.")
-        }
-        prediction <- prediction[[prediction_layer]]
-      }
-
-      return(list(type = "SpatRaster", rast = prediction, pred_name = names(prediction)[1]))
-    }
-
-    # multi-layer raster: require layer name
-    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
-      stop("If 'prediction' is a multi-layer SpatRaster, 'prediction_layer' must be provided (layer name).")
-    }
-
-    if(is.null(names(prediction)) || !(prediction_layer %in% names(prediction))){
-      stop("Layer '", prediction_layer, "' not found in SpatRaster prediction. Available: ",
-           paste(names(prediction), collapse = ", "))
-    }
-
-    r <- prediction[[prediction_layer]]
-    return(list(type = "SpatRaster", rast = r, pred_name = prediction_layer))
-  }
-
-  # ---- Case 3: prediction is a list -----------------------------------------
-  if(is.list(prediction)){
-
-    if(length(prediction) == 0L){
-      stop("'prediction' is an empty list.")
-    }
-
-    # If list has one element: repeat rules above
-    if(length(prediction) == 1L){
-      return(resolve_prediction(prediction[[1]], prediction_layer))
-    }
-
-    # list has multiple elements: require prediction_layer
-    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
-      stop("If 'prediction' is a list with multiple elements, 'prediction_layer' must be provided.")
-    }
-
-    # (A) First: check if prediction_layer matches list names
-    if(!is.null(names(prediction)) && prediction_layer %in% names(prediction)){
-      return(resolve_prediction(prediction[[prediction_layer]], prediction_layer))
-      # note: passing prediction_layer again is fine; for SpatRaster single-layer it will no-op,
-      # and for multi-layer it will select inside that element if needed.
-    }
-
-    # (B) Otherwise: go element-by-element to find prediction_layer
-    for(i in seq_along(prediction)){
-      obj <- prediction[[i]]
-
-      if(is.data.frame(obj)){
-        if(prediction_layer %in% names(obj)){
-          return(list(type = "data.frame", df = obj, pred_name = prediction_layer))
-        }
-      }
-
-      if(inherits(obj, "SpatRaster")){
-        if(!is.null(names(obj)) && prediction_layer %in% names(obj)){
-          return(list(type = "SpatRaster", rast = obj[[prediction_layer]], pred_name = prediction_layer))
-        }
-      }
-    }
-
-    stop("Could not find 'prediction_layer' in list names or within any list element.")
-  }
-
-  stop("'prediction' must be a SpatRaster, a data.frame, or a list.")
-}
-
+#' Sample Occurrence Data from a Prediction Surface
+#'
+#' Samples \code{n_occ} occurrence locations from a prediction surface using
+#' weighted random sampling. The prediction can be provided as a
+#' \code{terra::SpatRaster} or a data.frame containing prediction values.
+#'
+#' The user must specify whether the prediction values represent
+#' \code{"suitability"} (expected range [0, 1]) or \code{"mahalanobis"}
+#' (distance or distance-squared values).
+#'
+#' @param n_occ Integer. Number of occurrences to sample.
+#' @param prediction Prediction object to sample from. Typically a
+#' \code{terra::SpatRaster} or a data.frame. This is resolved by
+#' \code{resolve_prediction()}.
+#' @param prediction_layer Optional. Layer name or index used by
+#' \code{resolve_prediction()} when \code{prediction} contains multiple layers.
+#' @param sampling Character. Sampling bias direction. One of:
+#' \itemize{
+#'   \item \code{"centroid"}: sample more from high suitability or low distance
+#'   \item \code{"edge"}: sample more from low suitability or high distance
+#'   \item \code{"random"}: sample uniformly
+#' }
+#' @param method Character. Interpretation of \code{prediction} values. One of:
+#' \itemize{
+#'   \item \code{"suitability"}: values must be in [0, 1]
+#'   \item \code{"mahalanobis"}: values treated as a distance-like measure (>= 0)
+#' }
+#' @param sampling_mask Optional. Restriction mask applied only when
+#' \code{prediction} resolves to a \code{terra::SpatRaster}. Must be a
+#' \code{terra::SpatRaster} or \code{terra::SpatVector}.
+#' @param seed Numeric. Random seed.
+#' @param verbose Logical. If \code{TRUE}, prints progress messages.
+#'
+#' @return A data.frame of sampled points.
+#' If raster input is used, includes \code{x} and \code{y} columns plus any
+#' extracted columns (excluding the internal prediction column).
+#'
+#' @details
+#' Weighting rules:
+#' \itemize{
+#'   \item \code{sampling = "random"}: uniform weights.
+#'   \item \code{method = "suitability"}:
+#'     \code{"centroid"} uses \eqn{w = pred + eps}, \code{"edge"} uses
+#'     \eqn{w = (1 - pred) + eps}.
+#'   \item \code{method = "mahalanobis"}:
+#'     \code{"centroid"} uses \eqn{w = 1 / (pred + eps)}, \code{"edge"} uses
+#'     \eqn{w = pred + eps}.
+#' }
+#'
+#' If \code{method = "suitability"} and any finite prediction values fall outside
+#' [0, 1] (with a small tolerance), the function stops with an error advising the
+#' user to switch \code{method} or rescale their prediction.
+#'
 #' @export
 sample_data <- function(n_occ,
                         prediction,
                         prediction_layer = NULL,
-                        sampling = "weighted",
-                        biased = FALSE,
+                        sampling = "centroid",
+                        method = "suitability",
                         sampling_mask = NULL,
                         seed = 1,
                         verbose = TRUE){
@@ -113,30 +66,29 @@ sample_data <- function(n_occ,
 
   verbose_message("Starting: sample_data()\n")
 
-  # Basic Input checks --------------------------------------------------------
+  sampling <- match.arg(sampling,
+                        choices = c("centroid", "edge", "random"),
+                        several.ok = FALSE)
 
-  sampling <- match.arg(
-    sampling,
-    choices = c("weighted", "center", "edge", "random"),
-    several.ok = FALSE
-  )
+  method <- match.arg(method,
+                      choices = c("suitability", "mahalanobis"),
+                      several.ok = FALSE)
 
   if(!is.numeric(n_occ) || length(n_occ) != 1L || is.na(n_occ) || n_occ <= 0){
     stop("'n_occ' must be a single positive number.")
   }
   n_occ <- as.integer(n_occ)
 
-  if(!is.logical(biased) || length(biased) != 1L){
-    stop("'biased' must be TRUE or FALSE.")
-  }
-
   if(!is.numeric(seed) || length(seed) != 1L || is.na(seed)){
     stop("'seed' must be a single number.")
   }
 
-  if(isTRUE(biased) && sampling != "weighted"){
-    stop("If 'biased = TRUE', sampling must be 'weighted'.")
+  if(!is.logical(verbose) || length(verbose) != 1L){
+    stop("'verbose' must be TRUE or FALSE.")
   }
+
+  eps <- .Machine$double.eps
+  tol <- 1e-8
 
   # Resolve prediction input --------------------------------------------------
 
@@ -164,6 +116,7 @@ sample_data <- function(n_occ,
     }
 
     df <- terra::as.data.frame(r, xy = TRUE, na.rm = TRUE)
+
     if(nrow(df) == 0L){
       stop("No non-NA cells available for sampling.")
     }
@@ -186,22 +139,35 @@ sample_data <- function(n_occ,
     }
   }
 
-  if(n_occ > nrow(df)){
-    stop("'n_occ' is larger than the number of available samples.")
+  df <- df[is.finite(df$pred), , drop = FALSE]
+  if(nrow(df) == 0L){
+    stop("No finite prediction values available for sampling.")
   }
 
-  # Determine value type ------------------------------------------------------
+  # Method-specific value checks ---------------------------------------------
 
-  tol <- 1e-9
-  eps <- 1e-12
+  if(method == "suitability"){
+    rng <- range(df$pred, na.rm = TRUE)
+    if(rng[1] < (0 - tol) || rng[2] > (1 + tol)){
+      stop(
+        "method = 'suitability' requires prediction values in [0, 1]. ",
+        "Found range [", format(rng[1]), ", ", format(rng[2]), "]. ",
+        "Either rescale your prediction to [0,1] or set method = 'mahalanobis'."
+      )
+    }
+    # clamp tiny numeric drift
+    df$pred[df$pred < 0] <- 0
+    df$pred[df$pred > 1] <- 1
+  } else {
+    if(any(df$pred < 0, na.rm = TRUE)){
+      stop("method = 'mahalanobis' requires non-negative prediction values. Found values < 0.")
+    }
+  }
 
-  zmin <- suppressWarnings(min(df$pred, na.rm = TRUE))
-  zmax <- suppressWarnings(max(df$pred, na.rm = TRUE))
-  standardized <- is.finite(zmin) && is.finite(zmax) &&
-    (zmin >= -tol) && (zmax <= 1 + tol)
+  # Ensure sample size possible ----------------------------------------------
 
-  if(isTRUE(standardized)){
-    df$pred <- pmax(pmin(df$pred, 1), 0)
+  if(n_occ > nrow(df)){
+    stop("'n_occ' is larger than the number of available samples.")
   }
 
   # Weights -------------------------------------------------------------------
@@ -210,45 +176,25 @@ sample_data <- function(n_occ,
 
     w <- rep(1, nrow(df))
 
-  } else if(sampling == "weighted"){
+  } else if(method == "suitability"){
 
-    w <- df$pred
-    w[!is.finite(w)] <- NA_real_
-
-    if(any(w < 0, na.rm = TRUE)){
-      stop("Weighted sampling requires non-negative values. Found values < 0.")
+    if(sampling == "centroid"){
+      w <- df$pred + eps
+    } else { # edge
+      w <- (1 - df$pred) + eps
     }
 
-    w <- w + eps
+  } else { # method == "mahalanobis"
 
-  } else {
-
-    if(isTRUE(standardized)){
-
-      if(sampling == "center"){
-        w <- df$pred + eps
-      } else if(sampling == "edge"){
-        w <- (1 - df$pred) + eps
-      }
-
-    } else {
-
-      d <- df$pred
-      d[!is.finite(d)] <- NA_real_
-
-      if(any(d < 0, na.rm = TRUE)){
-        stop("For non-standardized surfaces, expected non-negative distance-like values for center/edge.")
-      }
-
-      if(sampling == "center"){
-        w <- 1/(d + eps)
-      } else if(sampling == "edge"){
-        w <- d + eps
-      }
+    if(sampling == "centroid"){
+      w <- 1 / (df$pred + eps)
+    } else { # edge
+      w <- df$pred + eps
     }
   }
 
   w[!is.finite(w)] <- 0
+
   if(sum(w) <= 0){
     stop("Sampling weights are all zero. Check your inputs.")
   }
@@ -257,13 +203,13 @@ sample_data <- function(n_occ,
 
   set.seed(seed)
   idx <- sample.int(nrow(df), size = n_occ, replace = FALSE, prob = w)
+
+  # Return sampled points (drop internal pred column)
   df$pred <- NULL
   out <- df[idx, , drop = FALSE]
 
-  verbose_message("Done: sampled ", nrow(out), " occurrences.\n")
+  verbose_message("Done: sampled ", nrow(out), " points.\n")
   gc()
 
   out
 }
-
-

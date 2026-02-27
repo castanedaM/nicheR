@@ -366,8 +366,17 @@ pred_t30 <- predict(ell_t30,
 occ_t30C <- sample_data(n_occ = 200,
                        prediction = pred_t30,
                        prediction_layer = "Mahalanobis_trunc",
-                       sampling = "center",
+                       sampling = "centroid",
+                       method = "mahalanobis",
                        seed = 42)
+
+occ_t30C_v <- sample_virtual_data(n_occ = 10,
+                                object = ell_t30,
+                                prediction_layer = "Mahalanobis",
+                                sampling = "centroid",
+                                method = "mahalanobis",
+                                seed = 42)
+
 # Edge
 occ_t30D <- sample_data(n_occ = 200,
                         prediction = pred_t30,
@@ -380,10 +389,6 @@ occ_t30E <- sample_data(n_occ = 200,
                         sampling = "random",
                         prediction_layer = "Mahalanobis_trunc",
                         seed = 42)
-
-# TO DO: make it is own class object, better for plotting.
-# TO DO: add virtual data from function from the ellipsoids.
-# TO DO: prediction = NULL, if null make virtual ell data
 
 head(occ_t30E)
 

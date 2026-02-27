@@ -127,5 +127,108 @@ update_ellipsoid_covariance <- function(object,
 }
 
 
+#' Resolves user input when to many columns or layers
+#'
+#'
+#' @export
+resolve_prediction <- function(prediction, prediction_layer){
+
+  # ---- Case 1: prediction is a data.frame -----------------------------------
+  if(is.data.frame(prediction)){
+
+    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
+      stop("If 'prediction' is a data.frame, 'prediction_layer' must be provided (column name).")
+    }
+
+    if(!all(c("x", "y") %in% names(prediction))){
+      warning("'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show geogrphical connections.")
+    }
+
+    if(!(prediction_layer %in% names(prediction))){
+      stop("Column '", prediction_layer, "' not found in data.frame prediction.")
+    }
+
+    return(list(type = "data.frame",
+                df = prediction,
+                pred_name = prediction_layer))
+  }
+
+  # ---- Case 2: prediction is a SpatRaster -----------------------------------
+  if(inherits(prediction, "SpatRaster")){
+
+    if(terra::nlyr(prediction) == 1L){
+
+      if(!is.null(prediction_layer) && nzchar(prediction_layer)){
+        if(is.null(names(prediction)) || !(prediction_layer %in% names(prediction))){
+          stop("Layer '", prediction_layer, "' not found in SpatRaster prediction.")
+        }
+        prediction <- prediction[[prediction_layer]]
+      }
+
+      return(list(type = "SpatRaster", rast = prediction, pred_name = names(prediction)[1]))
+    }
+
+    # multi-layer raster: require layer name
+    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
+      stop("If 'prediction' is a multi-layer SpatRaster, 'prediction_layer' must be provided (layer name).")
+    }
+
+    if(is.null(names(prediction)) || !(prediction_layer %in% names(prediction))){
+      stop("Layer '", prediction_layer, "' not found in SpatRaster prediction. Available: ",
+           paste(names(prediction), collapse = ", "))
+    }
+
+    r <- prediction[[prediction_layer]]
+    return(list(type = "SpatRaster", rast = r, pred_name = prediction_layer))
+  }
+
+  # ---- Case 3: prediction is a list -----------------------------------------
+  if(is.list(prediction)){
+
+    if(length(prediction) == 0L){
+      stop("'prediction' is an empty list.")
+    }
+
+    # If list has one element: repeat rules above
+    if(length(prediction) == 1L){
+      return(resolve_prediction(prediction[[1]], prediction_layer))
+    }
+
+    # list has multiple elements: require prediction_layer
+    if(is.null(prediction_layer) || !nzchar(prediction_layer)){
+      stop("If 'prediction' is a list with multiple elements, 'prediction_layer' must be provided.")
+    }
+
+    # (A) First: check if prediction_layer matches list names
+    if(!is.null(names(prediction)) && prediction_layer %in% names(prediction)){
+      return(resolve_prediction(prediction[[prediction_layer]], prediction_layer))
+      # note: passing prediction_layer again is fine; for SpatRaster single-layer it will no-op,
+      # and for multi-layer it will select inside that element if needed.
+    }
+
+    # (B) Otherwise: go element-by-element to find prediction_layer
+    for(i in seq_along(prediction)){
+      obj <- prediction[[i]]
+
+      if(is.data.frame(obj)){
+        if(prediction_layer %in% names(obj)){
+          return(list(type = "data.frame", df = obj, pred_name = prediction_layer))
+        }
+      }
+
+      if(inherits(obj, "SpatRaster")){
+        if(!is.null(names(obj)) && prediction_layer %in% names(obj)){
+          return(list(type = "SpatRaster", rast = obj[[prediction_layer]], pred_name = prediction_layer))
+        }
+      }
+    }
+
+    stop("Could not find 'prediction_layer' in list names or within any list element.")
+  }
+
+  stop("'prediction' must be a SpatRaster, a data.frame, or a list.")
+}
+
+
 
 
