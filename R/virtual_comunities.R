@@ -1,4 +1,4 @@
-#' Generate random ellipses constrained by a point cloud and covariance limits
+#' Generate random ellipses constrained by a point cloud and a reference ellipse
 #'
 #' @description
 #' Creates n random ellipses with centroids sampled from an irregular point
@@ -22,6 +22,8 @@
 #' Set to NULL for no seeding.
 #'
 #' @return A list of length \code{n} with ellipse features.
+#' 
+#' @export
 
 random_ellipses <- function(object,
                             background,
@@ -41,7 +43,7 @@ random_ellipses <- function(object,
   
   # Extract reference covariance and level
   background <- as.matrix(background)
-  ref_cov <- object$covariance_matrix
+  ref_cov <- object$cov_matrix
   ref_vars <- diag(ref_cov)
   ref_level <- object$level
   
@@ -98,4 +100,75 @@ random_ellipses <- function(object,
   })
   
   return(rand_ellipses)
+}
+
+
+
+#' Generate nested ellipses based on a reference ellipse
+#'
+#' @description
+#' Creates a sequence of nested ellipses by scaling the covariance matrix of a
+#' reference ellipse. The distribution of the nested ellipses can be controlled
+#' using a bias exponent to cluster them toward the border or the centroid.
+#'
+#' @param object An object of class "nicheR_ellipsoid"
+#'    describing an initial ellipse. Must contain \code{centroid},
+#'    \code{cov_matrix}, and \code{cl}.
+#' @param n Integer. Number of nested ellipses to generate. Default is 10.
+#' @param smaller_proportion Numeric scalar in \code{(0, 1)}. The scale of the
+#'    smallest ellipse relative to the original. Default is \code{0.1}.
+#' @param bias Numeric. An exponent controlling the spacing of the nested
+#'    ellipses.
+#'    \itemize{
+#'      \item \code{bias = 1}: Linear spacing (default).
+#'      \item \code{0 < bias < 1}: Clusters ellipses toward the **border**
+#'      (outer original ellipse).
+#'      \item \code{bias > 1}: Clusters ellipses toward the **centroid**
+#'      (inner smallest ellipse).
+#'    }
+#'
+#' @return
+#' A list of \code{n} "nicheR_ellipsoid" objects. The largest ellipse
+#' corresponds to the original reference, and the smallest is that scaled by
+#' \code{smaller_proportion}.
+#'
+#' @details
+#' The function generates a sequence of scale factors $k$ using the formula:
+#' $k_i = \text{smaller\_proportion} + (1 - \text{smaller\_proportion}) \ times t_i^{\text{bias}}$,
+#' where $t_i$ is a linear sequence from 1 down to 0.
+#' 
+#' @export
+
+nested_ellipses <- function(object,
+                            n = 10,
+                            smaller_proportion = 0.1,
+                            bias = 1) {
+  # Basic checks
+  if (missing(object)) stop("Argument 'object' is required.")
+  if (!inherits(object, "nicheR_ellipsoid")) {
+    stop("Argument 'object' must be of class 'nicheR_ellipsoid'.")
+  }
+  if (is.null(object$centroid) ||
+      is.null(object$cov_matrix) ||
+      is.null(object$cl)) {
+    stop("'object' must contain 'centroid', 'cov_matrix', and 'cl'.")
+  }
+  if (!is.numeric(bias) || length(bias) != 1L || bias <= 0) {
+    stop("'bias' must be a single numeric value > 0.")
+  }
+  
+  # Generate biased scale factors
+  # t goes from 1 to 0. Raising it to 'bias' shifts the distribution
+  t <- seq(1, 0, length.out = n)
+  scales <- smaller_proportion + (1 - smaller_proportion) * (t^bias)
+  
+  # Generate nested ellipses
+  ell_list <- lapply(scales, function(k) {
+    scaled_cov <- k * object$cov_matrix
+    ellipsoid_calculator(cov_matrix = scaled_cov,
+                         centroid = object$centroid,
+                         cl = object$cl)
+  })
+  
+  return(ell_list)
 }
