@@ -1,0 +1,100 @@
+#' Generate random ellipses constrained by a point cloud and covariance limits
+#'
+#' @description
+#' Creates n random ellipses with centroids sampled from an irregular point
+#' cloud. Covariance matrices are built using random rotations and scaled
+#' eigenvalues restricted by user-defined limits.
+#'
+#' @param object A nicheR_ellipsoid object used as a reference ellipse, and
+#'   containing at least \code{covariance_matrix} and \code{cl}.
+#' @param background Matrix or Dataframe. The 2D point cloud (coordinates)
+#'   used to select random centroids.
+#' @param n Integer. Number of ellipses to generate.
+#' @param smaller_proportion Numeric. Minimum scaling factor for the covariance.
+#'   Must be between 0 and 1. Default = 0.1. This controls how much smaller
+#'   the new ellipses can be compared to the reference.
+#' @param uniform_centroids Logical. If TRUE, centroids are sampled more
+#'   uniformly across the background using a grid-based thinning approach.
+#'   Default = TRUE.
+#' @param resolution Integer. Number of cells per side in the grid to deal with
+#'   point density variation across background.
+#' @param seed Integer. Random seed for reproducibility. Default = 1.
+#' Set to NULL for no seeding.
+#'
+#' @return A list of length \code{n} with ellipse features.
+
+random_ellipses <- function(object,
+                            background,
+                            n = 10,
+                            smaller_proportion = 0.1,
+                            uniform_centroids = TRUE,
+                            resolution = 50,
+                            seed = 1) {
+  
+  # Input validation
+  if (missing(object)) stop("Argument 'object' is required.")
+  if (!inherits(object, "nicheR_ellipsoid")) {
+    stop("Argument 'object' must be of class 'nicheR_ellipsoid'.")
+  }
+  if (missing(background)) stop("Argument 'background' is required.")
+  if (!is.null(seed)) set.seed(seed)
+  
+  # Extract reference covariance and level
+  background <- as.matrix(background)
+  ref_cov <- object$covariance_matrix
+  ref_vars <- diag(ref_cov)
+  ref_level <- object$level
+  
+  # Sample centroids
+  if (uniform_centroids) {
+    ## Create a grid and assign points to grid cells
+    x_range <- seq(min(background[, 1]), max(background[, 1]),
+                   length.out = resolution)
+    y_range <- seq(min(background[, 2]), max(background[, 2]),
+                   length.out = resolution)
+    grid_id <- paste(findInterval(background[, 1], x_range),
+                     findInterval(background[, 2], y_range), sep = "_")
+    
+    thin_idx <- tapply(seq_len(nrow(background)), grid_id, function(x) {
+      if(length(x) == 1) return(x) else return(sample(x, 1))
+    })
+    
+    idx <- sample(thin_idx, n, replace = TRUE)
+  } else {
+    idx <- sample(seq_len(nrow(background)), n, replace = TRUE)
+  }
+  
+  ## Extract centroids for the selected indices
+  centroids <- background[idx, , drop = FALSE]
+  
+  # Generate Ellipses
+  rand_ellipses <- lapply(1:n, function(i) {
+    # Randomly scale variances between smaller_proportion and 1.0 of original
+    # This keeps the new variances within the "largest possible" limit
+    v_scales <- runif(2, min = smaller_proportion, max = 1)
+    new_vars <- ref_vars * v_scales
+    sds <- sqrt(new_vars)
+    
+    # Calculate covariance limits based on new variances
+    max_cov <- sds[1] * sds[2]
+    
+    # Pick a random covariance
+    # To avoid being too close to the edge use a multiplier of 0.9
+    new_cov_val <- runif(1, min = -max_cov * 0.9, max = max_cov * 0.9)
+    
+    # Reconstruct the variance-covariance matrix
+    new_varcov <- matrix(c(new_vars[1], new_cov_val,
+                           new_cov_val, new_vars[2]), nrow = 2)
+    
+    # Name covariance matrix dimensions
+    colnames(new_varcov) <- rownames(new_varcov) <- colnames(ref_cov)
+    
+    evniche::ell_features(
+      centroid          = centroids[i, ],
+      covariance_matrix = new_varcov,
+      level             = ref_level
+    )
+  })
+  
+  return(rand_ellipses)
+}
