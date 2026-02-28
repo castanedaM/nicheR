@@ -2,19 +2,31 @@
 % Please edit documentation in R/virtual_data.R
 \name{virtual_data}
 \alias{virtual_data}
-\title{Generate data within based on a ellipsoidal niche}
+\title{Generate data based on a ellipsoidal niche}
 \usage{
-virtual_data(object, n = 100)
+virtual_data(object, n = 100, truncate = TRUE, effect = "direct", seed = 1)
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object containing at least
 \code{centroid} and \code{cov_matrix}.}
 
 \item{n}{Integer. The number of virtual points to generate. Default = 100.}
+
+\item{truncate}{Logical. If \code{TRUE} (default), points are constrained
+within the confidence limit (\code{cl}) defined in the object.}
+
+\item{effect}{Character. The distribution pattern of points.
+\code{"direct"} (default) creates a concentration near the centroid.
+\code{"inverse"} creates higher density towards the edges.
+\code{"uniform"} distributes points evenly throughout the ellipsoid volume.
+Note: \code{"inverse"} and \code{"uniform"} require \code{truncate = TRUE}.}
+
+\item{seed}{Integer. Random seed for reproducibility. Default = 1.
+Set to NULL for no seeding.}
 }
 \value{
 A matrix with \code{n} rows and columns corresponding to the
-dimensions of the input ellipsoid.
+environmental variables (dimensions) of the input \code{object}.
 }
 \description{
 Simulates \code{n} random points from a multivariate normal distribution
@@ -22,7 +34,26 @@ defined by the centroid and covariance matrix of a \code{nicheR_ellipsoid}
 object.
 }
 \details{
-The function uses eigen-decomposition to transform standard normal
-variables into the coordinate system defined by the ellipsoid's
-covariance structure.
+When \code{truncate = FALSE}, the function generates points from a standard
+multivariate normal distribution defined by the ellipsoid's centroid and
+covariance matrix, without any constraints on their location. The function
+uses eigen-decomposition to transform standard normal variables into the
+coordinate system defined by the ellipsoid's covariance structure.
+
+When \code{truncate = TRUE}, the function generates candidate points
+uniformly distributed within a bounding box (hyper-cube) defined by the
+ellipsoid's \code{axes_coordinates}. Points falling outside the ellipsoid
+(where Mahalanobis distance $Md >$ \code{chi2_cutoff}) are removed.
+
+From this filtered pool, \code{n} points are selected using weighted random
+sampling without replacement. The weights are determined by the \code{effect}
+argument:
+\itemize{
+  \item \code{"direct"}: Weights are proportional to the multivariate normal
+  density ($\exp(-0.5 \cdot Md)$), clustering points near the centroid.
+  \item \code{"inverse"}: Weights are proportional to the complement of the
+  normal density ($1 - \exp(-0.5 \cdot Md)$), pushing points toward the edges.
+  \item \code{"uniform"}: All points within the ellipsoid have equal weight,
+  resulting in a uniform spatial distribution.
+}
 }
