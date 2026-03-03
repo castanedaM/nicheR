@@ -1,13 +1,12 @@
 # Title: nicheR tester functions
 # Authors: Mariana Castaneda-Guzman
-# Date Last Updated: 2/27/2026
+# Date Last Updated: 3/3/2026
 # Description: Tester workflows for function in the nicheR package
 
 
 # Load function from local package after any update
 devtools::load_all()
 set.seed(124)
-
 
 # build_ellipsoid() tests -------------------------------------------------
 
@@ -23,7 +22,9 @@ rng_t1 <- data.frame(var1 = c(10, 20),
                      var3 = c(67, 80))
 
 ell_t1 <- build_ellipsoid(range = rng_t1)
-plot_nicheR(list(ell_t1))
+
+plot_ellipsoid(ell_t1)
+plot_ellipsoid_pairs(ell_t1)
 
 
 # Test 2: Wrong range input (min max switch), should fail

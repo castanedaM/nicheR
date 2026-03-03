@@ -52,6 +52,43 @@ ellipsoid_boundary_2d <- function(object,
   pts
 }
 
+#' Plot all pairwise 2D ellipsoid projections
+#'
+#' Plots all pairwise two-dimensional slices of a \code{nicheR_ellipsoid}
+#' in a multi-panel layout using \code{plot_ellipsoid()}.
+#'
+#' @param object A \code{nicheR_ellipsoid} object.
+#' @param ... Additional graphical arguments passed to \code{plot_ellipsoid()}.
+#'
+#' @return Invisibly returns \code{NULL}.
+#'
+#' @export
+plot_ellipsoid_pairs <- function(object, ...) {
+
+  if (!inherits(object, "nicheR_ellipsoid"))
+    stop("'object' must be a nicheR_ellipsoid.")
+
+  pairs_idx <- t(combn(seq_len(object$dimensions), 2))
+  n_pairs <- nrow(pairs_idx)
+
+  n_cols <- ceiling(sqrt(n_pairs))
+  n_rows <- ceiling(n_pairs / n_cols)
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  par(mfrow = c(n_rows, n_cols))
+
+  for (i in seq_len(n_pairs)) {
+    plot_ellipsoid(object = object,
+                   dim = pairs_idx[i, ],
+                   ...)
+  }
+
+  invisible(NULL)
+}
+
+
 
 #' Plot 2d base R just for testing right now
 #'
