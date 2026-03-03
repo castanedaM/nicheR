@@ -48,7 +48,7 @@ plot_ellipsoid <- function(object,
       bg_sample <- nrow(background)
     }
 
-    bg_sample_bg <- bg_sample(1:nrow(background), bg_sample)
+    bg_sample_bg <- sample(1:nrow(background), bg_sample)
 
     plot(background[bg_sample_bg, ],
          col = adjustcolor(col_bg, alpha.f = alpha_bg),

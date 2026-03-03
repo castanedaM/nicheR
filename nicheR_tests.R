@@ -26,6 +26,12 @@ ell_t1 <- build_ellipsoid(range = rng_t1)
 plot_ellipsoid(ell_t1)
 plot_ellipsoid_pairs(ell_t1)
 
+ell_t1_vd <- virtual_data(ell_t1, n = 1000, truncate = FALSE)
+plot_ellipsoid(ell_t1, dim = c(2,1),
+               background = ell_t1_vd)
+
+plot_ellipsoid_pairs(ell_t1, background = ell_t1_vd)
+
 
 # Test 2: Wrong range input (min max switch), should fail
 rng_t2 <- data.frame(var1 = c(20, 10),

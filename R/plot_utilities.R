@@ -90,6 +90,7 @@ plot_ellipsoid_pairs <- function(object, ...) {
 
 
 
+
 #' Plot 2d base R just for testing right now
 #'
 #' @export
