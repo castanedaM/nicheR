@@ -147,7 +147,9 @@ predict.nicheR_ellipsoid <- function(object,
     }
     set.seed(as.integer(seed))
 
-    newdata <- as.data.frame(virtual_data(object = object, n = n_virtual))
+    newdata <- as.data.frame(virtual_data(object = object,
+                                          n = n_virtual,
+                                          trucated = FALSE))
 
     # enforce names again after virtual_data()
     if(is.null(colnames(newdata)) || !all(var_names %in% colnames(newdata))){

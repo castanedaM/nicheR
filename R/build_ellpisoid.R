@@ -1,60 +1,39 @@
 #' Build a probabilistic ellipsoidal niche from ranges
 #'
-#' Constructs an ellipsoidal niche in multivariate environmental space using a
-#' multivariate normal (MVN) contour of constant Mahalanobis distance. The niche
-#' is defined by a centroid (midpoints of user provided ranges), marginal spreads
-#' (derived from ranges), and an optional user supplied variance covariance matrix.
+#' Builds an ellipsoidal niche in multivariate environmental space using a
+#' multivariate normal (MVN) contour defined by a constant Mahalanobis distance.
+#' The ellipsoid is parameterized from user-provided variable ranges by deriving
+#' a centroid and marginal standard deviations, and assuming a diagonal covariance
+#' matrix.
 #'
 #' @details
-#' This function expects \code{range} as a 2 row matrix or data.frame with variables in
-#' columns. The two rows represent lower and upper bounds (order can be min max
-#' or max min). The centroid is computed as the midpoint of each variable range:
+#' \code{range} must be a 2-row \code{matrix} or \code{data.frame} with variables
+#' in columns. Rows represent lower and upper bounds for each variable (row order
+#' may be min/max or max/min). The centroid is computed as:
 #' \deqn{\mu_i = (m_i + M_i)/2.}
 #'
-#' If \code{cov_matrix} is not provided, marginal standard deviations are derived from
-#' ranges using the rule of thumb that the provided bounds represent roughly
-#' \eqn{\pm 3} standard deviations:
+#' Marginal standard deviations are derived assuming bounds represent
+#' approximately \eqn{\pm 3} standard deviations:
 #' \deqn{\sigma_i = (M_i - m_i)/6,}
 #' and a diagonal covariance matrix is assumed:
 #' \deqn{\Sigma = \mathrm{diag}(\sigma_1^2,\dots,\sigma_n^2).}
 #'
-#' The ellipsoid boundary is defined by:
-#' \deqn{(x - \mu)^\top \Sigma^{-1} (x - \mu) = c^2,}
-#' where \eqn{c^2} is the chi square cutoff \eqn{\chi^2_{n}(\mathrm{cl})} with
-#' \eqn{n} degrees of freedom.
+#' The ellipsoid contour is defined using a chi-square cutoff
+#' \eqn{c^2 = \chi^2_{n}(\mathrm{cl})}, where \eqn{n} is the number of variables.
 #'
-#' Principal semi axis lengths are computed from the eigenvalues of \eqn{\Sigma}:
-#' \deqn{a_i = \sqrt{\lambda_i c^2}.}
-#'
-#' @param range A 2 row \code{matrix} or \code{data.frame} of bounds, with variables as
-#'   columns. Rows may be ordered as min max or max min. Column names must be
-#'   provided and are stored as \code{var_names}.
-#' @param cl Numeric confidence level in (0, 1). Used to set the chi square cutoff
-#'   that determines the ellipsoid contour.
-#' @param cov_matrix Optional variance covariance matrix \eqn{\Sigma} for the
-#'   ellipsoid (must be \code{dimensions x dimensions}, symmetric positive definite).
-#'   If provided, it is used directly (no rescaling from \code{range}).
-#' @param verbose Logical; if \code{TRUE}, print brief progress messages.
+#' @param range A 2-row \code{matrix} or \code{data.frame} of bounds, with variables
+#'   as columns. Rows may be ordered as min/max or max/min. Column names are required
+#'   and used as variable names.
+#' @param cl Numeric confidence level in (0, 1). Used to compute the chi-square
+#'   cutoff defining the ellipsoid contour.
+#' @param verbose Logical; if \code{TRUE}, prints brief progress messages.
 #'
 #' @return
-#' An object of class \code{"nicheR_ellipsoid"} with components:
-#' \itemize{
-#'   \item \code{dimensions}: number of variables (dimensions).
-#'   \item \code{var_names}: variable names (from \code{colnames(range)}).
-#'   \item \code{centroid}: centroid vector \eqn{\mu}.
-#'   \item \code{cov_matrix}: covariance matrix \eqn{\Sigma}.
-#'   \item \code{Sigma_inv}: inverse covariance \eqn{\Sigma^{-1}}.
-#'   \item \code{chol_Sigma}: Cholesky factor of \eqn{\Sigma}.
-#'   \item \code{eigen}: list with \code{vectors} and \code{values} from eigen decomposition.
-#'   \item \code{cl}: confidence level used.
-#'   \item \code{chi2_cutoff}: chi square cutoff \eqn{c^2}.
-#'   \item \code{truncation_level}: truncation level stored (set equal to \code{cl}).
-#'   \item \code{axes_sd}: derived marginal standard deviations (from \code{range}).
-#'   \item \code{semi_axes_lengths}: principal semi axis lengths \eqn{a_i}.
-#'   \item \code{axis_points}: list of principal axis endpoint coordinates (neg and pos).
-#'   \item \code{volume}: ellipsoid hypervolume at the specified contour.
-#'   \item \code{cov_limits}: output from \code{covariance_limits()}.
-#' }
+#' An object of class \code{"nicheR_ellipsoid"} produced by
+#' \code{\link{ellipsoid_calculator}} (via \code{\link{new_nicheR_ellipsoid}}),
+#' containing ellipsoid geometry and associated quantities (e.g., centroid,
+#' covariance matrix, chi-square cutoff, semi-axis lengths, axis vertex coordinates,
+#' volume, and covariance limits).
 #'
 #' @examples
 #' rng <- data.frame(bio1 = c(10, 20),
