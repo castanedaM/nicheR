@@ -40,16 +40,14 @@ ellipsoid_calculator <- function(cov_matrix,
     stop("'cov_matrix' must be a square matrix.")
   }
   if (!is.numeric(centroid) || length(centroid) != ncol(cov_matrix)) {
-    stop("'centroid' must be a numeric vector, 
+    stop("'centroid' must be a numeric vector,
     with length equal to the number of columns in 'cov_matrix'.")
   }
   if (!is.numeric(cl) || cl <= 0 || cl >= 1) {
     stop("'cl' must be a numeric value between 0 and 1.")
   }
 
-  verbose_message <- function(...) if(isTRUE(verbose)) message(...)
-
-  verbose_message("Step: computing ellipsoid metrics...\n")
+   verbose_message(verbose, "Step: computing ellipsoid metrics...\n")
 
   # SPD + inverse
   chol_Sigma <- tryCatch(chol(cov_matrix), error = function(e) NULL)
@@ -68,7 +66,7 @@ ellipsoid_calculator <- function(cov_matrix,
   # Axis coordinates
   axes_coordinates <- lapply(seq_len(ncol(cov_matrix)), function(i) {
     current_length <- semi_axes_lengths[i]
-    
+
     ## Create the matrix of vertex coordinates for the current axis
     rbind(vertex_a = centroid - current_length * eig$vectors[, i],
           vertex_b = centroid + current_length * eig$vectors[, i])
@@ -80,7 +78,7 @@ ellipsoid_calculator <- function(cov_matrix,
 
   cov_limits <- covariance_limits(cov_matrix)
 
-  verbose_message("Done: updated ellipsoidal niche boundary. For remianing limits see out$cov_limits_remaining\n")
+   verbose_message(verbose, "Done: updated ellipsoidal niche boundary. For remianing limits see out$cov_limits_remaining\n")
 
   new_nicheR_ellipsoid(
     dimensions = ncol(cov_matrix),

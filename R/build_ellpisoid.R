@@ -67,9 +67,7 @@ build_ellipsoid <- function(range,
                             cl = 0.99,
                             verbose = TRUE){
 
-  verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
-
-  verbose_message("Starting: building ellipsoidal niche from ranges...\n")
+  verbose_message(verbose, "Starting: building ellipsoidal niche from ranges...\n")
 
   # Input checks -------------------------------------------------------------
 
@@ -128,14 +126,14 @@ build_ellipsoid <- function(range,
   # Covariance handling ------------------------------------------------------
 
 
-  verbose_message("Step: computing covariance matrix...\n")
+  verbose_message(verbose, "Step: computing covariance matrix...\n")
 
   cov_matrix <- diag(sd_vec^2, nrow = length(mu_vec), ncol = length(mu_vec))
   rownames(cov_matrix) <- var_names
   colnames(cov_matrix) <- var_names
   names(mu_vec) <- var_names
 
-  verbose_message("Done: created ellipsoidal niche.\n")
+  verbose_message(verbose, "Done: created ellipsoidal niche.\n")
 
   out <- ellipsoid_calculator(cov_matrix = cov_matrix,
                               centroid = mu_vec, cl = cl,

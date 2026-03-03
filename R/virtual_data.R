@@ -97,9 +97,9 @@ virtual_data <- function(object,
     # Truncating with Mahalanobis distance and chi-squared cutoff
     conf_cutoff <- object$chi2_cutoff
     inv_cov <- object$Sigma_inv
-    
+
     final_points <- matrix(nrow = 0, ncol = p)
-    
+
     while (nrow(final_points) < n) {
       ## Batch size
       batch_size <- ceiling((n - nrow(final_points)) / 0.1)
@@ -107,7 +107,7 @@ virtual_data <- function(object,
       ## Generate uniform random points in the space defined by the axes
       v_raw_cube <- mapply(runif, n = rep(batch_size, p),
                            min = v_min, max = v_max)
-      
+
       ## Mahalanobis distance to points
       diffs <- sweep(v_raw_cube, 2L, centroid, "-")
       d2 <- rowSums((diffs %*% inv_cov) * diffs)
@@ -123,7 +123,7 @@ virtual_data <- function(object,
 
       ## Multivariate normal from the Mahalanobis distance
       mvnd <- exp(-0.5 * d2)
-      
+
       if (effect == "direct") {
         weights <- mvnd
       } else if (effect == "inverse") {
@@ -131,16 +131,16 @@ virtual_data <- function(object,
       } else {
         weights <- rep(1, nrow(v_raw_cube)) # Uniform
       }
-      
+
       ## Sample points based on weights, ensuring we don't exceed n
       keep <- sample(seq_len(nrow(v_raw_cube)),
                      size = min(nrow(v_raw_cube), n - nrow(final_points)),
                      prob = weights, replace = FALSE)
-      
+
       ## Add the sampled points to our collection
       final_points <- rbind(final_points, v_raw_cube[keep, , drop = FALSE])
     }
-    
+
     # Trim to exactly n and ensure names
     final_points <- final_points[1:n, , drop = FALSE]
     colnames(final_points) <- colnames(cov_matrix)
@@ -149,14 +149,14 @@ virtual_data <- function(object,
   } else {
     # Generate standard normal samples
     vdata <- matrix(rnorm(p * n), nrow = n)
-  
+
     # Transform using the Square Root of Sigma (V * L^0.5)
     vdata <- drop(centroid) + es$vectors %*% diag(sqrt(pmax(ev, 0)), p) %*%
       t(vdata)
-  
+
     # Handle dimension names
     rownames(vdata) <- colnames(cov_matrix)
-  
+
     # Return the generated data
     return(t(vdata))
   }
