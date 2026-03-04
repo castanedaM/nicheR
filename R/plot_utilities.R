@@ -159,10 +159,8 @@ plot_nicheR <- function(ell_list = NULL,
     mu2 <- ell$centroid[dims]
     Sig2 <- ell$cov_matrix[dims, dims, drop = FALSE]
 
-    boundary_points[[i]] <- ellipsoid_surface_points(mu_vec = mu2,
-                                                     cov_matrix = Sig2,
-                                                     chi2_cutoff = ell$chi2_cutoff,
-                                                     n_points = n_points)
+    boundary_points[[i]] <- ellipsoid_boundary_2d(object = object,
+                                                  dim= dim)
 
     mu_mat[i, ] <- mu2
   }

@@ -88,7 +88,7 @@ predict.nicheR_ellipsoid <- function(object,
   }
 
   required_fields <- c("dimensions", "centroid", "cov_matrix", "Sigma_inv",
-                       "truncation_level", "var_names")
+                       "cl", "var_names")
   missing_fields <- required_fields[!required_fields %in% names(object)]
   if(length(missing_fields) > 0){
     stop("object is missing required fields: ", paste(missing_fields, collapse = ", "))
@@ -128,7 +128,7 @@ predict.nicheR_ellipsoid <- function(object,
   mu <- object$centroid
   Sigma_inv <- object$Sigma_inv
   var_names <- object$var_names
-  truncation_level <- object$truncation_level
+  truncation_level <- object$cl
 
   # If newdata is NULL, generate virtual environmental samples --------------
   v_data <- FALSE
@@ -149,7 +149,7 @@ predict.nicheR_ellipsoid <- function(object,
 
     newdata <- as.data.frame(virtual_data(object = object,
                                           n = n_virtual,
-                                          trucated = FALSE))
+                                          truncate = FALSE))
 
     # enforce names again after virtual_data()
     if(is.null(colnames(newdata)) || !all(var_names %in% colnames(newdata))){
@@ -172,7 +172,7 @@ predict.nicheR_ellipsoid <- function(object,
                                 paste(class(newdata), collapse = ", "),
                                 "...\n"))
 
-  verbose_message(verbose, verbose, starting_msg)
+  verbose_message(verbose, starting_msg)
 
 
   # Cutoff handling ---------------------------------------------------------

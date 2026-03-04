@@ -27,8 +27,7 @@ plot_ellipsoid(ell_t1)
 plot_ellipsoid_pairs(ell_t1)
 
 ell_t1_vd <- virtual_data(ell_t1, n = 1000, truncate = FALSE)
-plot_ellipsoid(ell_t1, dim = c(2,1),
-               background = ell_t1_vd)
+plot_ellipsoid(ell_t1, background = ell_t1_vd)
 
 plot_ellipsoid_pairs(ell_t1, background = ell_t1_vd)
 
@@ -152,51 +151,6 @@ ell_t15 <- build_ellipsoid(range = rng_t15)
 plot_nicheR(list(ell_t15))
 
 
-# - test cov_matrix argument inputs ---------------------------------------
-
-# Test 16: covariance with wrong dimensions
-rng_t16 <- data.frame(var1 = c(10, 20),
-                      var2 = c(20, 35),
-                      var3 = c(67, 80))
-
-cov_t16 <- diag(2)
-
-ell_t16 <- build_ellipsoid(range = rng_t16, cov_matrix = cov_t16)
-
-
-# Test 17: covariance not symmetric
-rng_t17 <- data.frame(var1 = c(10, 20),
-                      var2 = c(20, 35),
-                      var3 = c(67, 80))
-
-cov_t17 <- matrix(c(1.0, 0.9, 0.1,
-                    0.2, 2.0, 0.3,
-                    0.1, 0.3, 1.5),
-                  nrow = 3, byrow = TRUE)
-
-colnames(cov_t17) <- c("var1", "var2", "var3")
-rownames(cov_t17) <- c("var1", "var2", "var3")
-
-ell_t17 <- build_ellipsoid(range = rng_t17, cov_matrix = cov_t17)
-
-# Test 18: covariance not positive definite
-rng_t18 <- data.frame(var1 = c(10, 20),
-                      var2 = c(20, 35),
-                      var3 = c(67, 80))
-
-cov_t18 <- matrix(c(1, 2, 3,
-                    2, 4, 6,
-                    3, 6, 9),
-                  nrow = 3, byrow = TRUE)  # singular
-
-colnames(cov_t18) <- c("var1", "var2", "var3")
-rownames(cov_t18) <- c("var1", "var2", "var3")
-
-ell_t18 <- build_ellipsoid(range = rng_t18, cov_matrix = cov_t18)
-
-
-
-
 # - test update_covariance_ellipsoid() --------------------------------------
 
 # Test 19: Basic run of covariance limits
@@ -212,9 +166,8 @@ ell_t19A$cov_limits
 ell_t19B <- update_ellipsoid_covariance(ell_t19A,
                                         covariance = c("var1-var2" = 2))
 
+ell_t19A$cov_limits
 ell_t19B$cov_limits
-
-plot_nicheR(list(ell_t19A, ell_t19B))
 
 # Ecological Interpretations
 # axes interpretations with change in covariance = c("var1-var2" = 2):
@@ -266,13 +219,35 @@ rng_t22 <- data.frame(bio1 = c(-10, 10),
                         bio15 = c(30, 150))
 
 ell_t22 <- build_ellipsoid(range = rng_t22)
+plot_ellipsoid(ell_t22)
 
 pred_t22 <- predict(ell_t22,
-                    newdata = bios_t22,
+                    # newdata = bios_t22,
                     include_mahalanobis = TRUE,
                     include_suitability = TRUE,
                     mahalanobis_truncated = TRUE,
-                    suitability_truncated = TRUE)
+                    suitability_truncated = TRUE, n_virtual = 5000)
+
+library(ggplot2)
+names(pred_t22)
+
+ggplot(pred_t22, aes(x = bio1, y = bio12)) +
+  geom_point(aes(color = suitability)) +
+  scale_color_continuous(palette = "Reds")
+
+ggplot(pred_t22, aes(x = bio1, y = bio12)) +
+  geom_point(aes(color = suitability_trunc)) +
+  scale_color_continuous(palette = "Reds")
+
+ggplot(pred_t22, aes(x = bio1, y = bio12)) +
+  geom_point(aes(color = Mahalanobis)) +
+  scale_color_continuous(palette = "Reds")
+
+ggplot(pred_t22, aes(x = bio1, y = bio12)) +
+  geom_point(aes(color = Mahalanobis_trunc)) +
+  scale_color_continuous(palette = "Reds")
+
+
 
 plot(pred_t22)
 plot(log(pred_t22), col=rev(viridis::viridis(100)))
@@ -288,8 +263,6 @@ pred_t23 <- predict(ell_t22,
                     suitability_truncated = TRUE)
 
 head(pred_t23)
-# plot(log(pred_t23), col=rev(viridis::viridis(100)))
-# plot(pred_t23, col=rev(viridis::viridis(100)))
 
 
 # Test 24: Missing variable in newdata
@@ -360,7 +333,7 @@ range_t30 <- data.frame(bio1 = c(-10, 10),
                         bio15 = c(30, 150))
 
 ell_t30 <- build_ellipsoid(range = range_t30)
-plot_nicheR(list(ell_t30))
+plot_ellipsoid(ell_t30)
 
 pred_t30 <- predict(ell_t30,
                     newdata = bios_t30,
@@ -376,13 +349,95 @@ occ_t30C <- sample_data(n_occ = 200,
                        sampling = "centroid",
                        method = "mahalanobis",
                        seed = 42)
+occ_t30C_bios <- terra::extract(bios_t30, occ_t30C[, c("x", "y")])
 
-occ_t30C_v <- sample_virtual_data(n_occ = 10,
-                                object = ell_t30,
-                                prediction_layer = "Mahalanobis",
-                                sampling = "centroid",
-                                method = "mahalanobis",
-                                seed = 42)
+
+vals <- occ_t30C$Mahalanobis_trunc
+
+pal <- heat.colors(100)
+
+# Rescale to 1–100
+col_index <- as.numeric(cut(vals,
+                            breaks = 100,
+                            include.lowest = TRUE))
+
+points(x = occ_t30C_bios$bio1,
+       y = occ_t30C_bios$bio12,
+       col = pal[col_index])
+
+
+occ_t30C_v_center <- sample_virtual_data(n_occ = 200,
+                                         object = ell_t30,
+                                         prediction_layer = "Mahalanobis",
+                                         sampling = "centroid",
+                                         method = "mahalanobis",
+                                         seed = 42)
+ell_t30$chi2_cutoff
+hist(occ_t30C_v_center$Mahalanobis)
+
+pred_t30_df <- predict(ell_t30,
+                    newdata = as.data.frame(bios_t30, xy = TRUE),
+                    include_mahalanobis = TRUE,
+                    include_suitability = TRUE,
+                    suitability_truncated = TRUE,
+                    mahalanobis_truncated = TRUE)
+head(pred_t30_df)
+occ_t30C_df <- sample_data(n_occ = 200,
+                           prediction = pred_t30_df,
+                           prediction_layer = "suitability",
+                           sampling = "centroid",
+                           method = "suitability",
+                           seed = 42)
+
+head(occ_t30_df)
+
+plot_ellipsoid(ell_t30, main = "Prediction and Centroid Sampling")
+add_data(x = pred_t30_df$bio1,
+         y = pred_t30_df$bio12,
+         col_layer = pred_t30_df$suitability_trunc,
+         rev = TRUE, pch = 16,
+         pts_sample = 5000)
+add_data(x = occ_t30C_df$bio1,
+         y = occ_t30C_df$bio12,
+         pch = 4, pts_col = "orange")
+add_ellipsoid(ell_t30,
+              col_ell = "red",
+              lwd = 2)
+
+
+col_layer <- pred_t30_df$suitability_trunc
+x <- pred_t30_df$bio1
+y <- pred_t30_df$bio12
+
+x <- x[col_layer > 0 & !is.na(col_layer)]
+y <- y[col_layer > 0 & !is.na(col_layer)]
+col_layer <- col_layer[col_layer > 0 && !is.na(col_layer)]
+
+
+col_indx <- as.numeric(cut(vals,
+                           breaks = length(pal),
+                           include.lowest = TRUE))
+
+
+# Lowest is red
+# Higest is yellow
+occ_t30C_v_edge <- sample_virtual_data(n_occ = 200,
+                                       object = ell_t30,
+                                       prediction_layer = "Mahalanobis",
+                                       sampling = "edge",
+                                       method = "mahalanobis",
+                                       seed = 42)
+hist(occ_t30C_v_edge$Mahalanobis)
+
+
+plot_ellipsoid(ell_t30)
+add_data(x = occ_t30C_v_edge$bio1,
+                 y = occ_t30C_v_edge$bio12,
+                 col_layer = occ_t30C_v_edge$Mahalanobis,
+                 rev_col = TRUE)
+
+
+
 
 # Edge
 occ_t30D <- sample_data(n_occ = 200,

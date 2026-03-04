@@ -40,7 +40,7 @@ sample_virtual_data <- function(n_occ,
 
   if(is.null(virtual_prediction)){
     virtual_prediction <- as.data.frame(unclass(predict(object = object,
-                                  newdata = virtual_data(object = object))))
+                                                        n_virtual = 5000)))
   }
 
   # Resolve prediction input --------------------------------------------------
