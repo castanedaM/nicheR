@@ -83,11 +83,10 @@ ellipsoid_calculator <- function(cov_matrix,
 
   # Axis coordinates
   axes_coordinates <- lapply(seq_len(ncol(cov_matrix)), function(i) {
-    current_length <- semi_axes_lengths[i]
+    vec <- eig$vectors[, i] * semi_axes_lengths[i]
 
     ## Create the matrix of vertex coordinates for the current axis
-    rbind(vertex_a = centroid - current_length * eig$vectors[, i],
-          vertex_b = centroid + current_length * eig$vectors[, i])
+    rbind(vertex_a = centroid - vec, vertex_b = centroid + vec)
   })
   names(axes_coordinates) <- paste0("axis_", seq_along(axes_coordinates))
 
