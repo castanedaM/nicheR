@@ -38,4 +38,7 @@ LazyData: true
 URL: https://github.com/castanedaM/NicheR
 BugReports: https://github.com/castanedaM/NicheR/issues
 RoxygenNote: 7.3.3
-Imports: 
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
