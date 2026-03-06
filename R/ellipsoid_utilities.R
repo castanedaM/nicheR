@@ -6,6 +6,7 @@
 #' @param ... Objects passed to \code{message()}.
 #'
 #' @return Invisibly \code{NULL}.
+#' @noRd
 #' @keywords internal
 verbose_message <- function(verbose, ...) {
   if (isTRUE(verbose)) message(...)

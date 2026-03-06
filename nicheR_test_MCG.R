@@ -102,8 +102,7 @@ add_ellipsoid(ell, col_ell = "red", lw = 2)
 # Apply bias to prediction ------------------------------------------------
 
 biased_predict_r <- apply_bias(prepared_bias = bias,
-                               prediction = ell_predict_r,
-                               effect_direction = c("direct", "inverse"))
+                               prediction = ell_predict_r)
 
 # To do: only allow prediction to be one layer
 # To do: fix space in message "tonpredictions"
@@ -131,7 +130,7 @@ head(sample_data_df_cn)
 plot_ellipsoid(ell, main = "Sampled Center Unbiased")
 add_data(x = ell_predict_df$bio1, y = ell_predict_df$bio12,
          pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_df$bio1, y = sample_data_df$bio12,
+add_data(x = sample_data_df_cn$bio1, y = sample_data_df_cn$bio12,
          pts_col = "black", pch = 4, lwd = 2)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
@@ -162,7 +161,7 @@ head(sample_data_v_c)
 plot_ellipsoid(ell, main = "Sampled Center Unbiased")
 add_data(x = ell_predict_v$bio1, y = ell_predict_v$bio12,
          pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_v$bio1, y = sample_data_v$bio12,
+add_data(x = sample_data_v_c$bio1, y = sample_data_v_c$bio12,
          pts_col = "black", pch = 4, lwd = 2)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
@@ -171,9 +170,11 @@ add_ellipsoid(ell, col_ell = "red", lwd = 2)
 # UNBIASED SAMPLING - Data frame - Edge
 sample_data_df_ed <- sample_data(n_occ = 100,
                               prediction = ell_predict_df,
-                              prediction_layer = "suitability",
+                              prediction_layer = "suitability_trunc",
                               sampling = "edge",
                               method = "suitability")
+# To do: Make sure this shows a stric removing the zeros outside the ellipsoid
+# To do: consider some of the samples can fall outside the ellipsoid, use trucated and stric = TRUE for sampling strictly inside the ellipsoid.
 
 # PLOT FOR CENTER AND EDGE - normal data
 par(mfrow = c(2,1))
@@ -212,6 +213,6 @@ add_data(x = sample_data_v_e$bio1, y = sample_data_v_e$bio12,
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
 
-
+# To do: do an example with uniform virtual data
 
 
