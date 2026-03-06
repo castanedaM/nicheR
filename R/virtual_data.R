@@ -50,7 +50,7 @@
 
 virtual_data <- function(object,
                          n = 100,
-                         truncate = TRUE,
+                         truncate = FALSE,
                          effect = "direct",
                          seed = 1) {
   # Detecting potential errors

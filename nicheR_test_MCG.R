@@ -18,8 +18,8 @@ range <- data.frame(bio1 = c(-5, 10),
 
 
 # Bias layers
-bias <- prepare_bias(bias_surface = wc[[6]],
-                     effect_direction = "direct")
+bias <- prepare_bias(bias_surface = wc[[c(6, 11)]],
+                     effect_direction = "direct", include_processed_layers = TRUE)
 # To do: message says that it is a stack but it only has one, so remove that message
 
 bias$combination_formula
@@ -37,6 +37,7 @@ ell
 
 plot_ellipsoid(ell)
 plot_ellipsoid_pairs(ell)
+# to do: plot_ellipsoid_grid or plot_all_ellipsoids
 
 # plot_ellipsoid(ell,ell_prededict# plot_ellipsoid(ell, background = bios)
 # to do: need to add checks, it does not stop when backgorung is a spatRaster
@@ -51,6 +52,12 @@ plot_ellipsoid(ell, background = bios_df[, c(3,4)])
 
 # VIRTUAL DATA
 ell_predict_v <- predict(ell) #this will generate virtual data of 1000 by default
+
+# to do: remove the option for creating virtual data internally, require the user to provide the newdata
+newdata <- as.data.frame(virtual_data(object = ell,
+                                      n = 10000,
+                                      truncate = FALSE))
+head(newdata)
 head(ell_predict_v)
 
 plot_ellipsoid(ell, background = ell_predict_v[,1:2])
@@ -87,14 +94,19 @@ add_data(x = ell_predict_v$bio1,
          col_layer = ell_predict_v$suitability,
          rev_col = FALSE,
          pch = 20)
+add_ellipsoid(ell, col_ell = "red", lw = 2)
+
+# to do: add to plot_ellipsoid and argument of prediction = NULL, and if prediction is there color layer can be other than NULL
 
 
 # Apply bias to prediction ------------------------------------------------
 
 biased_predict_r <- apply_bias(prepared_bias = bias,
-                               prediction = ell_predict_r)
-# To do: only allow prediction to be one layer
+                               prediction = ell_predict_r,
+                               effect_direction = c("direct", "inverse"))
 
+# To do: only allow prediction to be one layer
+# To do: fix space in message "tonpredictions"
 
 # Sample data -------------------------------------------------------------
 
@@ -105,14 +117,14 @@ sample_data_r <- sample_data(n_occ = 100,
                              sampling = "centroid",
                              method = "suitability")
 head(sample_data_r)
-
+# To do: tolower(args) for method and sampling
 
 # UNBIASED SAMPLING - Data frame
 sample_data_df_cn <- sample_data(n_occ = 100,
-                             prediction = ell_predict_df,
-                             prediction_layer = "suitability",
-                             sampling = "centroid",
-                             method = "suitability")
+                                 prediction = ell_predict_df,
+                                 prediction_layer = "suitability",
+                                 sampling = "centroid",
+                                 method = "suitability")
 head(sample_data_df_cn)
 
 
