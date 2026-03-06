@@ -93,7 +93,7 @@ add_data <- function(x, y,
     y <- y[pts_idx]
 
   }else{
-    pts_idx <- length(x)
+    pts_idx <- 1:length(x)
   }
 
 

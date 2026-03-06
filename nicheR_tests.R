@@ -382,7 +382,7 @@ pred_t30_df <- predict(ell_t30,
                     suitability_truncated = TRUE,
                     mahalanobis_truncated = TRUE)
 head(pred_t30_df)
-occ_t30C_df <- sample_data(n_occ = 200,
+occ_t30C_df <- sample_data(n_occ = 50,
                            prediction = pred_t30_df,
                            prediction_layer = "suitability",
                            sampling = "centroid",
@@ -394,33 +394,22 @@ head(occ_t30_df)
 plot_ellipsoid(ell_t30, main = "Prediction and Centroid Sampling")
 add_data(x = pred_t30_df$bio1,
          y = pred_t30_df$bio12,
+         pts_col = "lightgrey",
+         pch = 20,  pts_sample = 10000)
+add_data(x = pred_t30_df$bio1,
+         y = pred_t30_df$bio12,
          col_layer = pred_t30_df$suitability_trunc,
+         pal = terrain.colors(100),
          rev = TRUE, pch = 16,
-         pts_sample = 5000)
+         pts_sample = 10000)
 add_data(x = occ_t30C_df$bio1,
          y = occ_t30C_df$bio12,
-         pch = 4, pts_col = "orange")
+         pch = 4, pts_col = "black", lwd = 2)
 add_ellipsoid(ell_t30,
-              col_ell = "red",
+              col_ell = "tomato",
               lwd = 2)
 
 
-col_layer <- pred_t30_df$suitability_trunc
-x <- pred_t30_df$bio1
-y <- pred_t30_df$bio12
-
-x <- x[col_layer > 0 & !is.na(col_layer)]
-y <- y[col_layer > 0 & !is.na(col_layer)]
-col_layer <- col_layer[col_layer > 0 && !is.na(col_layer)]
-
-
-col_indx <- as.numeric(cut(vals,
-                           breaks = length(pal),
-                           include.lowest = TRUE))
-
-
-# Lowest is red
-# Higest is yellow
 occ_t30C_v_edge <- sample_virtual_data(n_occ = 200,
                                        object = ell_t30,
                                        prediction_layer = "Mahalanobis",

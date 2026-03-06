@@ -1,11 +1,12 @@
 #' @export
 sample_biased_data <- function(n_occ,
-                        prediction,
-                        prediction_layer = NULL, #column or raster-layer
-                        sampling_mask = NULL,
-                        seed = 1,
-                        verbose = TRUE){
+                               prediction,
+                               prediction_layer = NULL, #column or raster-layer
+                               sampling_mask = NULL,
+                               seed = 1,
+                               verbose = TRUE){
   gc()
+
   verbose_message(verbose, "Starting: sample_biased_data()\n")
 
   # Basic Input checks --------------------------------------------------------
@@ -13,11 +14,8 @@ sample_biased_data <- function(n_occ,
   if(!is.numeric(n_occ) || length(n_occ) != 1L || is.na(n_occ) || n_occ <= 0){
     stop("'n_occ' must be a single positive number.")
   }
-  n_occ <- as.integer(n_occ)
 
-  if(!is.logical(biased) || length(biased) != 1L){
-    stop("'biased' must be TRUE or FALSE.")
-  }
+  n_occ <- as.integer(n_occ)
 
   if(!is.numeric(seed) || length(seed) != 1L || is.na(seed)){
     stop("'seed' must be a single number.")
@@ -82,10 +80,6 @@ sample_biased_data <- function(n_occ,
     stop("Weighted sampling requires non-negative values. Found values < 0.")
   }
 
-  w <- w + eps
-  w <- rep(1, nrow(df))
-
-
   w[!is.finite(w)] <- 0
   if(sum(w) <= 0){
     stop("Sampling weights are all zero. Check your inputs.")
@@ -94,6 +88,7 @@ sample_biased_data <- function(n_occ,
   # Sample --------------------------------------------------------------------
 
   set.seed(seed)
+
   idx <- sample.int(nrow(df), size = n_occ, replace = FALSE, prob = w)
   df$pred <- NULL
   out <- df[idx, , drop = FALSE]

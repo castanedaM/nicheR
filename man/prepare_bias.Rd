@@ -10,77 +10,10 @@ prepare_bias(
   template_layer = NULL,
   include_composite = TRUE,
   include_processed_layers = FALSE,
-  mask_na = TRUE,
+  mask_na = FALSE,
   verbose = TRUE
 )
 }
-\arguments{
-\item{bias_surface}{A \code{terra::SpatRaster} or a list of
-\code{terra::SpatRaster} objects. Multi-layer rasters are split internally
-into single-layer bias surfaces.}
-
-\item{effect_direction}{Character vector specifying how each bias layer
-contributes to sampling probability. Options are \code{"direct"} or
-\code{"inverse"}. A single value is recycled to match the number of bias
-layers.}
-
-\item{include_composite}{Logical. If \code{TRUE} (default), returns a
-composite bias surface.}
-
-\item{include_processed_layers}{Logical. If \code{TRUE}, also returns the
-processed (standardized and directional) bias layers as a multi-layer
-\code{SpatRaster}.}
-
-\item{verbose}{Logical. If \code{TRUE}, prints progress messages.}
-
-\item{template_surface}{Optional. A \code{terra::SpatRaster} used as a spatial
-template. If provided, bias layers are cropped and masked to its extent and
-resampled to its grid. If \code{NULL}, the first bias layer is used as the
-template grid.}
-}
-\value{
-A list of class \code{"nicheR_bias_surface"} with:
-\itemize{
-  \item \code{composite_surface} A single-layer composite bias surface
-  (only if \code{include_composite = TRUE}).
-  \item \code{processed_layers} A multi-layer raster of standardized and
-  directional bias layers (returned if \code{include_processed_layers = TRUE},
-  or if \code{include_composite = FALSE}).
-  \item \code{combination_formula} Character string describing how layers
-  were combined (e.g., \code{"roads * (1-pop_density) * protected"}).
-}
-}
 \description{
-Standardizes, optionally inverts, and combines one or more sampling bias
-rasters into a composite bias surface aligned to a common template.
-}
-\details{
-This function:
-\enumerate{
-  \item Splits \code{bias_surface} into single-layer rasters.
-  \item Determines a template raster:
-  \itemize{
-    \item If \code{template_surface} is provided, each bias layer is cropped
-    and masked to its extent and later resampled to its grid.
-    \item If \code{template_surface} is \code{NULL}, the first bias layer is
-    used as the template grid.
-  }
-  \item Resamples bias layers to match the template grid when needed
-  (\code{terra::compareGeom()} + \code{terra::resample(method = "near")}).
-  \item Standardizes each layer to \eqn{[0, 1]} using min-max scaling.
-  \item Applies the direction of effect:
-  \itemize{
-    \item \code{"direct"} uses standardized values as-is.
-    \item \code{"inverse"} inverts standardized values via \eqn{1 - x}.
-  }
-  \item Optionally builds a composite bias surface:
-  \itemize{
-    \item Where multiple layers overlap, values are combined multiplicatively.
-    \item Where only one layer is defined, that layer's value is retained.
-    \item Where all layers are \code{NA}, the composite is \code{NA}.
-  }
-}
-}
-\seealso{
-\code{\link{apply_bias}}
+Prepare Sampling Bias Surfaces
 }

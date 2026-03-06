@@ -8,8 +8,6 @@ sample_virtual_data <- function(n_occ,
                                 seed = 1,
                                 verbose = TRUE){
 
-
-  verbose_message <- function(...) if(isTRUE(verbose)) cat(...)
   gc()
 
   verbose_message(verbose, "Starting: sample_data()\n")

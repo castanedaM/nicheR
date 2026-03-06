@@ -118,7 +118,7 @@ resolve_prediction <- function(prediction, prediction_layer){
     }
 
     if(!all(c("x", "y") %in% names(prediction))){
-      warning("'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show geogrphical connections.")
+      warning("'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show geographical connections.")
     }
 
     if(!(prediction_layer %in% names(prediction))){
@@ -179,23 +179,24 @@ resolve_prediction <- function(prediction, prediction_layer){
     # (A) First: check if prediction_layer matches list names
     if(!is.null(names(prediction)) && prediction_layer %in% names(prediction)){
       return(resolve_prediction(prediction[[prediction_layer]], prediction_layer))
-      # note: passing prediction_layer again is fine; for SpatRaster single-layer it will no-op,
-      # and for multi-layer it will select inside that element if needed.
     }
 
     # (B) Otherwise: go element-by-element to find prediction_layer
     for(i in seq_along(prediction)){
       obj <- prediction[[i]]
-
       if(is.data.frame(obj)){
         if(prediction_layer %in% names(obj)){
-          return(list(type = "data.frame", df = obj, pred_name = prediction_layer))
+          return(list(type = "data.frame",
+                      df = obj,
+                      pred_name = prediction_layer))
         }
       }
 
       if(inherits(obj, "SpatRaster")){
         if(!is.null(names(obj)) && prediction_layer %in% names(obj)){
-          return(list(type = "SpatRaster", rast = obj[[prediction_layer]], pred_name = prediction_layer))
+          return(list(type = "SpatRaster",
+                      rast = obj[[prediction_layer]],
+                      pred_name = prediction_layer))
         }
       }
     }
