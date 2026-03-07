@@ -12,26 +12,31 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.height = 6,
+  fig.height = 7,
   dpi = 100,
   out.width = "95%"
 )
 ```
 
-# Summary
+## Summary
 
 - [Description](#description)
 - [Getting ready](#getting-ready)
 - [Loading example data](#loading-example-data)
 - [Simulating a random community](#simulating-a-random-community)
   - [Effect of background density](#effect-of-background-density)
-  - [Effect of the proportion of smaller ellipses](#effect-of-the-proportion-of-smaller-ellipses)
+  - [Effect of proportion arguments](#effect-of-proportion-arguments)
 - [Simulating nested communities](#simulating-nested-communities)
+  - [Effect of proportion argument](#effect-of-proportion-argument)
+  - [Effect of bias argument](#effect-of-bias-argument)
 - [Niche conservatism in communities](#niche-conservatism-in-communities)
+  - [Effect of background density](#effect-of-background-density)
+  - [Effect of proportion arguments](#effect-of-proportion-arguments)
+- [Save and import communities](#save-and-import-communities)
 
 <hr>
 
-# Description
+## Description
 
 This vignette shows how to simulate virtual communities using functions in the nicheR package. For our purposes, we will consider a community a set of species niches (ellipses) that are distributed in a given environmental space. The simulation of virtual communities is useful to generate hypothetical scenarios of community assembly and explore patterns derived from the way species are distributed in envrionmental and geographical space. 
 
@@ -43,7 +48,7 @@ The main functions that automate community simulations in `nicheR` are:
 
 <br>
 
-# Getting ready
+## Getting ready
 
 If `nicheR`  has not been installed yet, please do so. See the [Main guide](index.html) for installation instructions.
 
@@ -68,7 +73,7 @@ original_par <- par(no.readonly = TRUE)
 
 <br>
 
-# Loading example data
+## Loading example data
 
 The lines of code below help us load the data to run our example comunity simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these envrionmental variables for North America to represent the background for our simulations.
 
@@ -82,120 +87,267 @@ data("back_data", package = "nicheR")
 
 <br>
 
-# Simulating random communities
+Let's take a look at the reference niche and the background data to get familiar with them before we start simulating communities.
+```{r data_check}
+# Check reference niche
+print(ref_ellipse)
+
+# Check background data
+head(back_data)
+
+# Plotting the background data to visualize the environmental space
+par(mar = c(4, 4, 2, 1))  # adjust margins for better visualization
+
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Background Environmental Space and Reference Niche")
+
+# Adding the reference niche to the plot
+add_ellipsoid(ref_ellipse, col = "#000000", lwd = 2)
+```
+
+<br>
+
+
+## Simulating random communities
 
 The `random_ellipses()` function helps to create a community of species with niches that are randomly distributed in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show an general example of how to use this function.
 
 ```{r random}
 # Simulating the community
 rand_comm <- random_ellipses(object = ref_ellipse,
-                             background = back_data[, c("bio1", "bio12")],
+                             background = back_data[, c("bio_1", "bio_12")],
                              n = 20)  # number of species in the community
 
+# check the a few details from the generated community
+names(rand_comm)  # elements in the community object
+
+print(rand_comm)  # a summary of the elements in the community object
+```
+
+<br> 
+
+Now let's us plot the generated community to visualize the distribution of the random ellipses in environmental space. We will use the `add_ellipsoid()` function to add the ellipses to a plot of the background data.
+
+```{r random_plot}
 # Plotting the community
-plot(back_data[, c("bio1", "bio12")], pch = ".")
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Background and Community of Random Ellipses")
 
 ## defined colors for ellispes
-cols <- rainbow(length(rand_comm))
+cols <- rainbow(length(rand_comm$ellipse_community))
 
 ## Add random ellipses in loop
-for (i in seq_along(rand_comm)) {
-  add_ellipsoid(rand_comm[[i]], col = cols[i])
+for (i in seq_along(rand_comm$ellipse_community)) {
+  add_ellipsoid(rand_comm$ellipse_community[[i]], col = cols[i])
 }
 ```
 
+<br>
 
-## Effect of background density
+### Effect of background density
 
 As the `random_ellipses()` function uses the background as a reference to pick ellipse centroids, the density of the background data can affect the distribution of these ellipses. If the background data is dense in certain areas of the environmental space, it may lead to a higher concentration of ellipses in those areas, while sparse background data may result in fewer ellipses being generated in those regions. This can influence the overall structure and diversity of the simulated community, as well as the patterns observed in niche overlap and species interactions.
 
 The example below shows how the density of the background can affect the distribution of random ellipses in the environmental space. We will simulate two communities: (1) using the full background as reference, and (2) using the arguments thin_background and resolution to reduce the effect of uneven point density. We will increase the number of species in the community to better visualize the effect of background density on the distribution of ellipses.
 
-```{r background_density}
+```{r random_den}
 # Simulating the community with the full background
 rand_comm_full <- random_ellipses(object = ref_ellipse,
-                                  background = back_data[, c("bio1", "bio12")],
+                                  background = back_data[, c("bio_1", "bio_12")],
                                   n = 25)
 
 # Simulating the community with a thinned background
 rand_comm_thin <- random_ellipses(object = ref_ellipse,
-                                  background = back_data[, c("bio1", "bio12")],
+                                  background = back_data[, c("bio_1", "bio_12")],
                                   n = 25, thin_background = TRUE,
                                   resolution = 20)
 
+# Check summary of the two communities
+rand_comm_full
+
+rand_comm_thin
+```
+
+<br>
+
+Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the arguments `thin_background` and `resolution`.
+
+```{r random_den_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}  
 # Plotting the communities
 ## defined colors for ellipses
-cols <- rainbow(length(rand_comm_full))
+cols <- rainbow(length(rand_comm_full$ellipse_community))
 
-par(mfrow = c(1, 2))  # set up the plotting area
+par(mfrow = c(1, 2), cex = 0.6)  # set up the plotting area
 
 ## Plotting the community with the full background
-plot(back_data[, c("bio1", "bio12")], pch = ".")  # plot the background
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community from Full Background")
 
 ## Add random ellipses in loop
-for (i in seq_along(rand_comm_full)) {
-  add_ellipsoid(rand_comm_full[[i]], col = cols[i])
+for (i in seq_along(rand_comm_full$ellipse_community)) {
+  add_ellipsoid(rand_comm_full$ellipse_community[[i]], col = cols[i])
 }
 
 ## Plotting the community with the thinned background
-plot(back_data[, c("bio1", "bio12")], pch = ".")
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community from Thinned Background")
 
 ## Add random ellipses in loop
-for (i in seq_along(rand_comm_thin)) {
-  add_ellipsoid(rand_comm_thin[[i]], col = cols[i])
+for (i in seq_along(rand_comm_thin$ellipse_community)) {
+  add_ellipsoid(rand_comm_thin$ellipse_community[[i]], col = cols[i])
 }
 ```
 
 <br>
 
-## Effect of the proportion of smaller ellipses
+### Effect of proportion arguments
 
-The size of the ellipses in the communities is determined by the reference niche and the argument `smaller_proportion` in the `random_ellipses()` function. A smaller value for this argument will increase diversity of sizes of ellipse niches. Together with the reference niche, playing witht he aregument `smaller_proportion` can help explore distinct scenarios of niche overlap in the community.
+The size of the ellipses in the communities is determined by the reference niche and the arguments `smallest_proportion` and `largest_proportion` in the `random_ellipses()` function. Based on the reference niche, playing with the values for the areguments `smallest_proportion` and `largest_proportion` can help explore scenarios with . This can affect elements of the community structure such as the level of niche overlap observed among the species (ellipses).
 
-The example below shows how the proportion of smaller ellipses can affect the distribution of random ellipses in the environmental space. We will simulate two communities: (1) using a value of 0.7 for `smaller_proportion`, and (2) using 0.05 as the value for this arguemnt. We will thin the background in both cases to reduce the effect of uneven point density and better visualize the effect of the argument `smaller_proportion`.
+The example below shows how these proportions can affect the coverage and overlap of random ellipses in environmental space. Considering that `smallest_proportion` must be smaller than `largest_proportion`, we will simulate four communities: (1) both arguments are small; and (2) both arguments are large; (3) `smallest_proportion` is large and `largest_proportion` is small; and (4) `smallest_proportion` is small and `largest_proportion` is large. We will thin the background in both cases to reduce the effect of uneven point density and better visualize the effect of the argument `smaller_proportion`.
 
-```{r proportions}
-# Simulating the community with a higher proportion of smaller ellipses
-rand_comm_high <- random_ellipses(object = ref_ellipse,
-                                  background = back_data[, c("bio1", "bio12")],
-                                  n = 25, thin_background = TRUE,
-                                  resolution = 20, smaller_proportion = 0.7)
+```{r random_prop}
+# Community with both arguments small
+rand_comm1 <- random_ellipses(object = ref_ellipse,
+                              background = back_data[, c("bio_1", "bio_12")],
+                              n = 25, thin_background = TRUE,
+                              resolution = 20,
+                              smallest_proportion = 0.1,
+                              largest_proportion = 0.5)
 
-# Simulating the community with a lower proportion of smaller ellipses
-rand_comm_low <- random_ellipses(object = ref_ellipse,
-                                 background = back_data[, c("bio1", "bio12")],
-                                 n = 25, thin_background = TRUE,
-                                 resolution = 20, smaller_proportion = 0.05)
+# Community with both arguments large
+rand_comm2 <- random_ellipses(object = ref_ellipse,
+                              background = back_data[, c("bio_1", "bio_12")],
+                              n = 25, thin_background = TRUE,
+                              resolution = 20,
+                              smallest_proportion = 0.7,
+                              largest_proportion = 1.5)
 
+# Community with smallest_proportion large and largest_proportion small
+rand_comm3 <- random_ellipses(object = ref_ellipse,
+                              background = back_data[, c("bio_1", "bio_12")],
+                              n = 25, thin_background = TRUE,
+                              resolution = 20,
+                              smallest_proportion = 0.5,
+                              largest_proportion = 0.7)
+
+# Community with smallest_proportion small and largest_proportion large
+rand_comm4 <- random_ellipses(object = ref_ellipse,
+                              background = back_data[, c("bio_1", "bio_12")],
+                              n = 25, thin_background = TRUE,
+                              resolution = 20,
+                              smallest_proportion = 0.1,
+                              largest_proportion = 1.5)
+
+# Check summary of the communities
+rand_comm1
+
+rand_comm2
+
+rand_comm3
+
+rand_comm4
+```
+
+<br>
+
+Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the argument `smaller_proportion`.
+
+```{r random_prop_plot}
 # Plotting the communities
 ## defined colors for ellipses
-cols <- rainbow(length(rand_comm_high))
+cols <- rainbow(length(rand_comm1$ellipse_community))
 
-par(mfrow = c(1, 2))  # set up the plotting area
+par(mfrow = c(2, 2), cex = 0.6)  # set up the plotting area
 
-## Plotting the community with bigger ellipses
-plot(back_data[, c("bio1", "bio12")], pch = ".")  # plot the background
+## Community with small proportions
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community with Small Proportions")
 
 ## Add random ellipses in loop
-for (i in seq_along(rand_comm_high)) {
-  add_ellipsoid(rand_comm_high[[i]], col = cols[i])
+for (i in seq_along(rand_comm1$ellipse_community)) {
+  add_ellipsoid(rand_comm1$ellipse_community[[i]], col = cols[i])
 }
 
-## Plotting the community with smaller ellipses
-plot(back_data[, c("bio1", "bio12")], pch = ".")
+## Community with large proportions
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community with Large Proportions")
 
 ## Add random ellipses in loop
-for (i in seq_along(rand_comm_low)) {
-  add_ellipsoid(rand_comm_low[[i]], col = cols[i])
+for (i in seq_along(rand_comm2$ellipse_community)) {
+  add_ellipsoid(rand_comm2$ellipse_community[[i]], col = cols[i])
+}
+
+## Community with large smallest_proportion and small largest_proportion
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community with Large and Small")
+
+## Add random ellipses in loop
+for (i in seq_along(rand_comm3$ellipse_community)) {
+  add_ellipsoid(rand_comm3$ellipse_community[[i]], col = cols[i])
+}
+
+## Community with small smallest_proportion and large largest_proportion
+plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
+     xlab = "Bio1 (Mean Annual Temperature)",
+     ylab = "Bio12 (Annual Precipitation)",
+     main = "Random Community with Small and Large")
+
+## Add random ellipses in loop
+for (i in seq_along(rand_comm4$ellipse_community)) {
+  add_ellipsoid(rand_comm4$ellipse_community[[i]], col = cols[i])
 }
 ```
 
 <br> 
 
-# Simulating nested communities
+## Simulating nested communities
 
 The `nested_ellipses()` function helps to create a community of species with niches that are nested in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show an general example of how to use this function.
 
 <br>
 
-# Niche conservatism in communities
+### Effect of proportion argument
+
+<br>
+
+### Effect of bias argument
+
+<br>
+
+## Niche conservatism in communities
+
+<br>
+
+### Effect of background density
+
+<br>
+
+### Effect of proportion arguments
+
+<br>
+
+<br> 
+
+```{r par_reset}
+# Reset plotting parameters
+par(original_par)
+```
+
+<br>
+
+## Save and import communities
