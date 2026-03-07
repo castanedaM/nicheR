@@ -27,7 +27,8 @@
 #' Set to NULL for no seeding.
 #'
 #' @return
-#' A list of \code{n} "nicheR_ellipsoid" objects.
+#' An object of class \code{nicheR_community} containing the generated
+#' ellipses, the reference object, and generation metadata.
 #'
 #' @export
 
@@ -118,8 +119,16 @@ random_ellipses <- function(object,
     ellipsoid_calculator(cov_matrix = new_varcov, centroid = cent,
                          cl = ref_level, verbose = FALSE)
   })
-  
-  return(rand_ellipses)
+
+  return(new_nicheR_community(
+    ellipse_community = rand_ellipses,
+    reference = object,
+    pattern = "random",
+    n = n,
+    smallest_proportion = smallest_proportion,
+    largest_proportion = largest_proportion,
+    seed = seed
+  ))
 }
 
 
@@ -148,14 +157,16 @@ random_ellipses <- function(object,
 #'    }
 #'
 #' @return
-#' A list of \code{n} "nicheR_ellipsoid" objects. The largest ellipse
-#' corresponds to the original reference, and the smallest is that scaled by
-#' \code{smallest_proportion}.
+#' An object of class \code{nicheR_community} containing the generated
+#' ellipses, the reference object, and generation metadata.
 #'
 #' @details
+#' The largest ellipse corresponds to the original reference, and the
+#' smallest is that scaled by \code{smallest_proportion}.
+#'
 #' The function generates a sequence of scale factors $k$ using the formula:
 #' $k_i = \text{smaller\_proportion} + (1 - \text{smaller\_proportion}) \ times t_i^{\text{bias}}$,
-#' where $t_i$ is a linear sequence from 1 down to 0.
+#' where $t_i$ is a linear sequence from 1 down to 0.#' A list of \code{n} "nicheR_ellipsoid" objects.
 #' 
 #' @export
 
@@ -190,7 +201,14 @@ nested_ellipses <- function(object,
                          cl = object$cl, verbose = FALSE)
   })
   
-  return(ell_list)
+  return(new_nicheR_community(
+    ellipse_community = ell_list,
+    reference = object,
+    pattern = "nested",
+    n = n,
+    smallest_proportion = smallest_proportion,
+    bias = bias
+  ))
 }
 
 
@@ -223,10 +241,14 @@ nested_ellipses <- function(object,
 #' Set to NULL for no seeding.
 #'
 #' @return
-#' A list of \code{n} "nicheR_ellipsoid" objects. Ellipses are generated to
-#' simulate a community of niches with varying degrees of similarity to the
-#' reference. The distribution of the generated ellipses is influenced by
-#' the proximity to the reference and the density of the background points.
+#' An object of class \code{nicheR_community} containing the generated
+#' ellipses, the reference object, and generation metadata.
+#'
+#' @details
+#' Ellipses are generated to simulate a community of niches with varying
+#' degrees of similarity to the reference. The distribution of the generated
+#' ellipses is influenced by the proximity to the reference and the density
+#' of the background points.
 #'
 #' @export
 
@@ -238,7 +260,7 @@ conserved_ellipses <- function(object,
                                thin_background = FALSE,
                                resolution = 100,
                                seed = 1) {
-  
+
   # Input validation
   if (missing(object)) {
     stop("Argument 'object' is required.")
@@ -330,5 +352,13 @@ conserved_ellipses <- function(object,
                          cl = ref_level, verbose = FALSE)
   })
 
-  return(results)
+  return(new_nicheR_community(
+    ellipse_community = results,
+    reference = object,
+    pattern = "conserved",
+    n = n,
+    smallest_proportion = smallest_proportion,
+    largest_proportion = largest_proportion,
+    seed = seed
+  ))
 }

@@ -4,7 +4,7 @@
 \alias{virtual_data}
 \title{Generate data based on a ellipsoidal niche}
 \usage{
-virtual_data(object, n = 100, truncate = TRUE, effect = "direct", seed = 1)
+virtual_data(object, n = 100, truncate = FALSE, effect = "direct", seed = 1)
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object containing at least

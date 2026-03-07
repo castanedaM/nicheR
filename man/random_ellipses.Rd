@@ -45,7 +45,8 @@ point density variation across background. Default = 50.}
 Set to NULL for no seeding.}
 }
 \value{
-A list of \code{n} "nicheR_ellipsoid" objects.
+An object of class \code{nicheR_community} containing the generated
+ellipses, the reference object, and generation metadata.
 }
 \description{
 Creates n random ellipses with centroids sampled from an irregular point

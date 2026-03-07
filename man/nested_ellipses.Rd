@@ -27,9 +27,8 @@ ellipses.
 }}
 }
 \value{
-A list of \code{n} "nicheR_ellipsoid" objects. The largest ellipse
-corresponds to the original reference, and the smallest is that scaled by
-\code{smallest_proportion}.
+An object of class \code{nicheR_community} containing the generated
+ellipses, the reference object, and generation metadata.
 }
 \description{
 Creates a sequence of nested ellipses by scaling the covariance matrix of a
@@ -37,7 +36,10 @@ reference ellipse. The distribution of the nested ellipses can be controlled
 using a bias exponent to cluster them toward the border or the centroid.
 }
 \details{
+The largest ellipse corresponds to the original reference, and the
+smallest is that scaled by \code{smallest_proportion}.
+
 The function generates a sequence of scale factors $k$ using the formula:
 $k_i = \text{smaller\_proportion} + (1 - \text{smaller\_proportion}) \ times t_i^{\text{bias}}$,
-where $t_i$ is a linear sequence from 1 down to 0.
+where $t_i$ is a linear sequence from 1 down to 0.#' A list of \code{n} "nicheR_ellipsoid" objects.
 }

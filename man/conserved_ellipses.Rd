@@ -43,13 +43,17 @@ point density variation across background. Default = 100.}
 Set to NULL for no seeding.}
 }
 \value{
-A list of \code{n} "nicheR_ellipsoid" objects. Ellipses are generated to
-simulate a community of niches with varying degrees of similarity to the
-reference. The distribution of the generated ellipses is influenced by
-the proximity to the reference and the density of the background points.
+An object of class \code{nicheR_community} containing the generated
+ellipses, the reference object, and generation metadata.
 }
 \description{
 Creates a set of ellipses with centroids sampled from a background, biased
 by their proximity to the centroid to a reference niche. Includes an option
 to thin the background to reduce centroid sampling bias due to point-density.
+}
+\details{
+Ellipses are generated to simulate a community of niches with varying
+degrees of similarity to the reference. The distribution of the generated
+ellipses is influenced by the proximity to the reference and the density
+of the background points.
 }
