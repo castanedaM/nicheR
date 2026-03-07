@@ -95,16 +95,18 @@ print(ref_ellipse)
 # Check background data
 head(back_data)
 
+# Pick the variables for the background data
+vars <- c("bio_1", "bio_12")
+
 # Plotting the background data to visualize the environmental space
 par(mar = c(4, 4, 2, 1))  # adjust margins for better visualization
 
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Background Environmental Space and Reference Niche")
-
-# Adding the reference niche to the plot
-add_ellipsoid(ref_ellipse, col = "#000000", lwd = 2)
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2,
+               alpha_bg = 1, alpha_ell = 1,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Reference Niche and Background Environmental Space")
 ```
 
 <br>
