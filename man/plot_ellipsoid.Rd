@@ -18,8 +18,8 @@ plot_ellipsoid(
   col_ell = "#000000",
   col_bg = "#8A8A8A",
   pch = 1,
-  alpha_bg = 0.5,
-  alpha_ell = 0.7,
+  alpha_bg = 1,
+  alpha_ell = 1,
   cex_ell = 1,
   cex_bg = 1,
   ...
