@@ -10,8 +10,8 @@
 #' @param background Matrix or Dataframe. The environmental background points.
 #' @param dim Numeric vector of length 2. The indices of the variables to
 #'   plot (default is \code{c(1, 2)}).
-#' @param bg_sample Integer. Number of background points to subsample.
-#'   Default = 1000.
+#' @param bg_sample Integer. Number of background points to sample for plotting.
+#'   The default, NULL, plots all background points.
 #' @param lty,lwd Numeric. Line type and width for community ellipses.
 #' @param col_comm Character vector. Colors for the community ellipses.
 #'   Defaults to a rainbow palette.
@@ -27,7 +27,7 @@
 plot_community <- function(object,
                            background = NULL,
                            dim = c(1, 2),
-                           bg_sample = 1000,
+                           bg_sample = NULL,
                            lty = 1,
                            lwd = 1,
                            col_comm = NULL,
@@ -46,9 +46,6 @@ plot_community <- function(object,
   if (!is.null(background) && !is.data.frame(background) &&
         !is.matrix(background)) {
     stop("Background must be a 'data.frame' or 'matrix'.")
-  }
-  if (dim %in% c(1, 2)) {
-    stop("'dim' can only be c(1, 2) for 'nicheR_community' plots.")
   }
 
   # Setup Colors
@@ -77,8 +74,8 @@ plot_community <- function(object,
   if (!is.null(background)) {
     bg_sub <- as.matrix(background[, var_names, drop = FALSE])
 
-    if (nrow(bg_sub) > bg_sample) {
-      bg_sub <- bg_sub[sample(nrow(bg_sub), bg_sample), ]
+    if (!is.null(bg_sample) && nrow(bg_sub) > bg_sample) {
+      bg_sub <- bg_sub[sample(seq_len(nrow(bg_sub)), bg_sample), ]
     }
   }
 

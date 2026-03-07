@@ -8,7 +8,7 @@ plot_community(
   object,
   background = NULL,
   dim = c(1, 2),
-  bg_sample = 1000,
+  bg_sample = NULL,
   lty = 1,
   lwd = 1,
   col_comm = NULL,
@@ -31,8 +31,8 @@ community simulation functions (e.g., \code{random_ellipses},
 \item{dim}{Numeric vector of length 2. The indices of the variables to
 plot (default is \code{c(1, 2)}).}
 
-\item{bg_sample}{Integer. Number of background points to subsample.
-Default = 1000.}
+\item{bg_sample}{Integer. Number of background points to sample for plotting.
+The default, NULL, plots all background points.}
 
 \item{lty, lwd}{Numeric. Line type and width for community ellipses.}
 

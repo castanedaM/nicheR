@@ -88,13 +88,20 @@ data("back_data", package = "nicheR")
 <br>
 
 Let's take a look at the reference niche and the background data to get familiar with them before we start simulating communities.
+
 ```{r data_check}
 # Check reference niche
 print(ref_ellipse)
 
 # Check background data
 head(back_data)
+```
 
+<br>
+
+Now, let's plot the reference niche and the background data to visualize the environmental space in which we will simulate our communities. We will use the `plot_ellipsoid()` function to plot the reference niche and the background data together.
+
+```{r data_plot}
 # Pick the variables for the background data
 vars <- c("bio_1", "bio_12")
 
@@ -103,7 +110,6 @@ par(mar = c(4, 4, 2, 1))  # adjust margins for better visualization
 
 plot_ellipsoid(ref_ellipse, background = back_data[, vars],
                pch = ".", col_bg = "#9a9797", lwd = 2,
-               alpha_bg = 1, alpha_ell = 1,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
                main = "Reference Niche and Background Environmental Space")
@@ -119,7 +125,7 @@ The `random_ellipses()` function helps to create a community of species with nic
 ```{r random}
 # Simulating the community
 rand_comm <- random_ellipses(object = ref_ellipse,
-                             background = back_data[, c("bio_1", "bio_12")],
+                             background = back_data[, vars],
                              n = 20)  # number of species in the community
 
 # check the a few details from the generated community
@@ -134,18 +140,11 @@ Now let's us plot the generated community to visualize the distribution of the r
 
 ```{r random_plot}
 # Plotting the community
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Background and Community of Random Ellipses")
-
-## defined colors for ellispes
-cols <- rainbow(length(rand_comm$ellipse_community))
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm$ellipse_community)) {
-  add_ellipsoid(rand_comm$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Community of Random Ellipses")
 ```
 
 <br>
@@ -159,19 +158,12 @@ The example below shows how the density of the background can affect the distrib
 ```{r random_den}
 # Simulating the community with the full background
 rand_comm_full <- random_ellipses(object = ref_ellipse,
-                                  background = back_data[, c("bio_1", "bio_12")],
-                                  n = 25)
+                                  background = back_data[, vars], n = 25)
 
 # Simulating the community with a thinned background
 rand_comm_thin <- random_ellipses(object = ref_ellipse,
-                                  background = back_data[, c("bio_1", "bio_12")],
-                                  n = 25, thin_background = TRUE,
-                                  resolution = 20)
-
-# Check summary of the two communities
-rand_comm_full
-
-rand_comm_thin
+                                  background = back_data[, vars], n = 25,
+                                  thin_background = TRUE, resolution = 20)
 ```
 
 <br>
@@ -180,32 +172,21 @@ Let's check the distribution of ellipses in the two communities with a plot to v
 
 ```{r random_den_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}  
 # Plotting the communities
-## defined colors for ellipses
-cols <- rainbow(length(rand_comm_full$ellipse_community))
-
 par(mfrow = c(1, 2), cex = 0.6)  # set up the plotting area
 
 ## Plotting the community with the full background
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community from Full Background")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm_full$ellipse_community)) {
-  add_ellipsoid(rand_comm_full$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm_full, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community from Full Background")
 
 ## Plotting the community with the thinned background
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community from Thinned Background")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm_thin$ellipse_community)) {
-  add_ellipsoid(rand_comm_thin$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm_thin, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community from Thinned Background")
 ```
 
 <br>
@@ -219,44 +200,31 @@ The example below shows how these proportions can affect the coverage and overla
 ```{r random_prop}
 # Community with both arguments small
 rand_comm1 <- random_ellipses(object = ref_ellipse,
-                              background = back_data[, c("bio_1", "bio_12")],
-                              n = 25, thin_background = TRUE,
-                              resolution = 20,
+                              background = back_data[, vars], n = 25,
+                              thin_background = TRUE, resolution = 20,
                               smallest_proportion = 0.1,
                               largest_proportion = 0.5)
 
 # Community with both arguments large
 rand_comm2 <- random_ellipses(object = ref_ellipse,
-                              background = back_data[, c("bio_1", "bio_12")],
-                              n = 25, thin_background = TRUE,
-                              resolution = 20,
+                              background = back_data[, vars], n = 25,
+                              thin_background = TRUE, resolution = 20,
                               smallest_proportion = 0.7,
                               largest_proportion = 1.5)
 
 # Community with smallest_proportion large and largest_proportion small
 rand_comm3 <- random_ellipses(object = ref_ellipse,
-                              background = back_data[, c("bio_1", "bio_12")],
-                              n = 25, thin_background = TRUE,
-                              resolution = 20,
+                              background = back_data[, vars], n = 25,
+                              thin_background = TRUE, resolution = 20,
                               smallest_proportion = 0.5,
                               largest_proportion = 0.7)
 
 # Community with smallest_proportion small and largest_proportion large
 rand_comm4 <- random_ellipses(object = ref_ellipse,
-                              background = back_data[, c("bio_1", "bio_12")],
-                              n = 25, thin_background = TRUE,
-                              resolution = 20,
+                              background = back_data[, vars], n = 25,
+                              thin_background = TRUE, resolution = 20,
                               smallest_proportion = 0.1,
                               largest_proportion = 1.5)
-
-# Check summary of the communities
-rand_comm1
-
-rand_comm2
-
-rand_comm3
-
-rand_comm4
 ```
 
 <br>
@@ -265,54 +233,35 @@ Let's check the distribution of ellipses in the two communities with a plot to v
 
 ```{r random_prop_plot}
 # Plotting the communities
-## defined colors for ellipses
-cols <- rainbow(length(rand_comm1$ellipse_community))
-
 par(mfrow = c(2, 2), cex = 0.6)  # set up the plotting area
 
 ## Community with small proportions
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community with Small Proportions")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm1$ellipse_community)) {
-  add_ellipsoid(rand_comm1$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm1, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community with Small Proportions")
 
 ## Community with large proportions
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community with Large Proportions")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm2$ellipse_community)) {
-  add_ellipsoid(rand_comm2$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm2, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community with Large Proportions")
 
 ## Community with large smallest_proportion and small largest_proportion
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community with Large and Small")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm3$ellipse_community)) {
-  add_ellipsoid(rand_comm3$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm3, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community with Large and Small")
 
 ## Community with small smallest_proportion and large largest_proportion
-plot(back_data[, c("bio_1", "bio_12")], pch = ".", col = "#9a9797",
-     xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Random Community with Small and Large")
-
-## Add random ellipses in loop
-for (i in seq_along(rand_comm4$ellipse_community)) {
-  add_ellipsoid(rand_comm4$ellipse_community[[i]], col = cols[i])
-}
+plot_community(rand_comm4, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Random Community with Small and Large")
 ```
 
 <br> 
