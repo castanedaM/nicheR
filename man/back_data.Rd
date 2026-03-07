@@ -9,8 +9,14 @@ A data frame with 12,396 rows and 4 variables:
 \describe{
   \item{x}{Longitude in decimal degrees (WGS84).}
   \item{y}{Latitude in decimal degrees (WGS84).}
-  \item{bio1}{Annual Mean Temperature (units: degrees Celsius).}
-  \item{bio12}{Annual Precipitation (units: mm).}
+  \item{bio_1}{Annual Mean Temperature (°C).}
+  \item{bio_5}{Max Temperature of Warmest Month (°C).}
+  \item{bio_6}{Min Temperature of Coldest Month (°C).}
+  \item{bio_7}{Temperature Annual Range (bio_5 - bio_6) (°C).}
+  \item{bio_12}{Annual Precipitation (mm).}
+  \item{bio_13}{Precipitation of Wettest Month (mm).}
+  \item{bio_14}{Precipitation of Driest Month (mm).}
+  \item{bio_15}{Precipitation Seasonality (Coefficient of Variation).}
 }
 }
 \source{
