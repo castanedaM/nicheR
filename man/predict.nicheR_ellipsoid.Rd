@@ -6,7 +6,7 @@
 \usage{
 \method{predict}{nicheR_ellipsoid}(
   object,
-  newdata = NULL,
+  newdata,
   adjust_truncation_level = NULL,
   include_suitability = TRUE,
   suitability_truncated = FALSE,
