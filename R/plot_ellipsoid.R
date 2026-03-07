@@ -23,7 +23,11 @@
 #' @export
 plot_ellipsoid <- function(object,
                            background = NULL,
+                           prediction = NULL,
                            dim = c(1, 2),
+                           col_layer = NULL,
+                           pal = heat.colors(100),
+                           rev_pal = FALSE,
                            bg_sample = 1000,
                            lty = 1,
                            lwd = 1,
@@ -35,12 +39,14 @@ plot_ellipsoid <- function(object,
                            cex_ell = 1,
                            cex_bg = 1, ...){
 
+  if(inherits(background, "SpatRaster")){
+    stop("Background has to be a data.drame")
+  }
+
   # Check for data frame
   ell_points <- ellipsoid_boundary_2d(object = object,
                                       n_segments = 50,
                                       dim = dim)
-
-  # to do: make sure name of vars does not disappear
 
   if(!is.null(background)){
 
@@ -50,7 +56,7 @@ plot_ellipsoid <- function(object,
 
     bg_sample_bg <- sample(1:nrow(background), bg_sample)
 
-    plot(background[bg_sample_bg, ],
+    plot(background[bg_sample_bg, c(object$var_names[dim])],
          col = adjustcolor(col_bg, alpha.f = alpha_bg),
          pch = pch,
          cex = cex_bg, ...)
@@ -61,6 +67,65 @@ plot_ellipsoid <- function(object,
           col = adjustcolor(col_ell, alpha.f = alpha_ell),
           cex = cex_ell)
 
+  } else if (!is.null(prediction)){
+
+    if(is.null(col_layer)){
+
+      if(nrow(prediction) <= bg_sample){
+        pred_sample <- nrow(prediction)
+      }
+
+      pred_sample_indx <- sample(1:nrow(prediction), pred_sample)
+
+
+      plot(prediction[pred_sample_indx, c(object$var_names[dim])],
+           col = adjustcolor(col_bg, alpha.f = alpha_bg),
+           pch = pch,
+           cex = cex_bg, ...)
+
+      lines(ell_points,
+            lty = lty,
+            lwd = lwd,
+            col = adjustcolor(col_ell, alpha.f = alpha_ell),
+            cex = cex_ell)
+
+
+    } else {
+
+      # Remove zeros and NAs
+      col_layer_clean <- prediction[ , col_layer]
+      col_layer_clean <- col_layer_clean[col_layer_clean > 0 & !is.na(col_layer_clean)]
+
+      if(length(col_layer_clean) <= bg_sample){
+        pred_sample <- length(col_layer_clean)
+      }
+
+      pred_sample_indx <- sample(1:length(col_layer_clean), pred_sample)
+
+      if(is.function(pal)){
+        pal <- pal(100)
+      }
+
+      if(isTRUE(rev_pal)){
+        pal <- rev(pal)
+      }
+
+
+      col_indx <- as.numeric(cut(log(col_layer_clean[pred_sample_indx]),
+                                 breaks = length(pal),
+                                 include.lowest = TRUE))
+
+      plot(prediction[pred_sample_indx, c(object$var_names[dim])],
+           col = pal[col_indx],
+           pch = pch,
+           cex = cex_bg, ...)
+
+      lines(ell_points,
+            lty = lty,
+            lwd = lwd,
+            col = adjustcolor(col_ell, alpha.f = alpha_ell),
+            cex = cex_ell)
+    }
   }else{
     # Basic line for elliposid
     plot(ell_points, type = "l",
@@ -74,66 +139,58 @@ plot_ellipsoid <- function(object,
 
 
 #' @export
-add_data <- function(x, y,
+add_data <- function(data, x, y,
                      pts_col = "#000000",
                      pts_alpha  = 1,
                      col_layer = NULL,
                      pal = heat.colors(100),
-                     rev_col = FALSE,
+                     rev_pal = FALSE,
                      pch = 1,
                      pts_sample = 1000,
                      ...) {
 
-  if(length(x) > pts_sample || length(y) > pts_sample ||
-     length(col_layer) > pts_sample){
-
-    pts_idx <- sample(1:length(x), pts_sample)
-
-    x <- x[pts_idx]
-    y <- y[pts_idx]
-
-  }else{
-    pts_idx <- 1:length(x)
-  }
-
-
-  # Now plot
-
   if(is.null(col_layer)){
 
-    points(x = x,
-           y = y,
-           pch = pch,
-           col = adjustcolor(pts_col, alpha.f = pts_alpha),
-           ...)
+    if(nrow(data) > pts_sample){
+      pts_idx <- sample(1:nrow(data), pts_sample)
+    }else{
+      pts_idx <- 1:nrow(data)
+    }
 
+
+    points(data[pts_idx, c(x, y)],
+           col = adjustcolor(pts_col, alpha.f = pts_alpha),
+           pch = pch, ...)
 
   } else {
 
-    col_layer <- col_layer[pts_idx]
+    # Remove zeros and NAs
+    col_layer_clean <- data[  , col_layer]
+    col_layer_clean <- col_layer_clean[col_layer_clean > 0 & !is.na(col_layer_clean)]
+
+    if(length(col_layer_clean) <= pts_sample){
+      pts_sample <- length(col_layer_clean)
+    }
+
+    pts_idx <- sample(1:length(col_layer_clean), pts_sample)
 
     if(is.function(pal)){
       pal <- pal(100)
     }
 
-    if(rev_col){
+    if(isTRUE(rev_pal)){
       pal <- rev(pal)
     }
 
-    # Remove zeros and NAs
-    x <- x[col_layer > 0 & !is.na(col_layer)]
-    y <- y[col_layer > 0 & !is.na(col_layer)]
 
-    col_layer <- col_layer[col_layer > 0 & !is.na(col_layer)]
-
-    col_indx <- as.numeric(cut(log(col_layer),
+    col_indx <- as.numeric(cut(log(col_layer_clean[pts_idx]),
                                breaks = length(pal),
                                include.lowest = TRUE))
-    points(x = x,
-           y = y,
+
+    points(data[pts_idx, c(x, y)],
            col = pal[col_indx],
-           pch = pch,
-           ...)
+           pch = pch, ...)
+
   }
 }
 
