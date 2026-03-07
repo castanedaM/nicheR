@@ -10,9 +10,8 @@ names(bios) <- c("bio1", "bio12", "bio15")
 bios_df <- as.data.frame(bios, xy = TRUE)
 
 range <- data.frame(bio1 = c(-5, 10),
-                    bio12 = c(500, 750))
-                    # bio15 = c(30, 150))
-
+                    bio12 = c(500, 750),
+                    bio15 = c(30, 150))
 
 # Bias layers
 bias <- prepare_bias(bias_surface = wc[[c(6, 11)]],
@@ -37,11 +36,6 @@ plot_ellipsoid_pairs(ell)
 
 plot_ellipsoid(ell, background = bios) # has to fail
 
-plot_ellipsoid(ell, background = bios_df, dim = c(1,3))
-
-plot_ellipsoid(ell, background = bios_df, dim = c(1,3))
-# To do: check for name matching in the bagorund and ell dim
-
 # Predict Suitability -----------------------------------------------------
 
 bios_df_v <- virtual_data(ell, n = 1000, truncate = FALSE)
@@ -56,7 +50,6 @@ plot_ellipsoid(ell, background = ell_predict_v)
 ell_predict_r <- predict(ell, newdata = bios,
                          suitability_truncated   = TRUE,
                          mahalanobis_truncated   = TRUE,
-
                          keep_data = TRUE)
 ell_predict_r #default sutibility and mahalanobis, no truncation
 
@@ -68,63 +61,31 @@ ell_predict_df <- predict(ell, newdata = bios_df,
                           suitability_truncated   = TRUE)
 head(ell_predict_df) # default suitability and mahalanobis, no truncation
 
-
 ell_predict_df_r <- as.data.frame(ell_predict_r, xy = TRUE)
-
-
-library(ggplot2)
-
-ell_predict_df_r_s <- ell_predict_df_r[sample(1:nrow(ell_predict_df_r), 10000), ]
-
-ggplot(ell_predict_df_r_s, aes(x = bio1, y = bio12, color = suitability_trunc)) +
-  geom_point()
 
 
 # For DF
 set.seed(123)
+
+# No TRUNCATED ZOOMED OUT
 plot_ellipsoid(ell,
                background = ell_predict_df,
-               col_layer = "suitability_trunc",
                pch = 20,
-               pal = terrain.colors(100),
-               rev_pal = T,
-               bg_sample = 50000)
-
+               bg_sample = 10000)
 add_data(data = ell_predict_df, x = "bio1", y = "bio12",
-         col_layer = "suitability", rev_pal = T,
+         col_layer = "suitability",
+         rev_pal = T,
          pal = terrain.colors(100),
-         pts_sample = 1000, pch = 20)
-add_ellipsoid(ell)
+         bg_sample = 10000, pch = 20)
+add_ellipsoid(ell, col_ell = "red")
 
-
-plot_ellipsoid(ell,
-               prediction = ell_predict_df,
-               pal = terrain.colors(100), pch = 16,
-               col_layer = "suitability_trunc",
-               bg_sample = 100)
-
-add_data(data = ell_predict_df, x = "bio1", y = "bio12",
-         col_layer = "suitability_trunc",
-         # pal = terrain.colors(100),
-         pts_sample = 8000, pch = 20)
-add_ellipsoid(ell)
-
-
-
-# For virtual data
-set.seed(123)
+# TRUCATED ZOOMED IN
 plot_ellipsoid(ell)
-ell_predict_v$suitability_e <- exp(ell_predict_v$suitability)
-add_data(data = ell_predict_v, x = "bio1", y = "bio12",
-         col_layer = "suitability_e",
-         rev_pal = TRUE, pts_sample = 1000, pch = 16)
+add_data(data = ell_predict_df, x = "bio1", y = "bio12",
+         col_layer = "suitability_trunc", rev_pal = T,
+         bg_sample = 50000, pch = 20)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
-add_data(x = ell_predict_v$bio1,
-         y = ell_predict_v$bio12,
-         col_layer = ell_predict_v$suitability,
-         rev_col = FALSE,
-         pch = 20)
-add_ellipsoid(ell, col_ell = "red", lw = 2)
 
 # Apply bias to prediction ------------------------------------------------
 
@@ -205,10 +166,28 @@ sample_data_df_ed <- sample_data(n_occ = 100,
                                  sampling = "edge",
                                  method = "suitability")
 
+plot_ellipsoid(ell,
+               main = "Sampled Center Unbiased",
+               # background = bios_df,
+               # bg_sample = 10000,
+               pch = 20)
+add_data(data = ell_predict_df,
+         x = "bio1", y = "bio12",
+         pts_col = "grey",
+         pch = 20,
+         bg_sample = 8000)
+add_data(data = sample_data_df_ed,
+         x = "bio1", y = "bio12",
+         pts_col = "black",
+         pch = 4,
+         lwd = 2)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
+
+
 # PLOT FOR CENTER AND EDGE - normal data
-par(mfrow = c(2,1))
+# par(mfrow = c(2,1))
 plot_ellipsoid(ell, main = "Sampled Edge Unbiased",
-               background = bios_df[, c(3,4)])
+               background = bios_df)
 add_data(x = ell_predict_df$bio1, y = ell_predict_df$bio12,
          pts_col = "grey", pch = 20, pts_sample = 8000)
 add_data(x = sample_data_df_ed$bio1, y = sample_data_df_ed$bio12,
