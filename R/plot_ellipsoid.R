@@ -7,7 +7,8 @@
 #'   \code{cov_matrix}, and \code{chi2_cutoff}.
 #' @param background Optional data frame of background points (rows = observations,
 #'   columns = environmental variables).
-#' @param bg_sample Integer. Number of background points to bg_sample for plotting.
+#' @param bg_sample Integer. Number of background points to sample for plotting.
+#'   The default, NULL, plots all background points.
 #' @param lty Line type for ellipsoid boundary.
 #' @param lwd Line width for ellipsoid boundary.
 #' @param col_ell Color for ellipsoid boundary.
@@ -28,33 +29,36 @@ plot_ellipsoid <- function(object,
                            col_layer = NULL,
                            pal = heat.colors(100),
                            rev_pal = FALSE,
-                           bg_sample = 1000,
+                           bg_sample = NULL,
                            lty = 1,
                            lwd = 1,
                            col_ell = "#000000",
                            col_bg = "#8A8A8A",
                            pch = 1,
-                           alpha_bg = 0.5,
-                           alpha_ell = 0.7,
+                           alpha_bg = 1,
+                           alpha_ell = 1,
                            cex_ell = 1,
-                           cex_bg = 1, ...){
+                           cex_bg = 1, ...) {
 
-  if(inherits(background, "SpatRaster")){
-    stop("Background has to be a data.drame")
+  if (missing(object) || !inherits(object, "nicheR_ellipsoid")) {
+    stop("Please provide a valid 'nicheR_ellipsoid' object.")
+  }
+  if (!is.null(background) && !is.data.frame(background) &&
+        !is.matrix(background)) {
+    stop("Background must be a 'data.frame' or 'matrix'.")
   }
 
-  # Check for data frame
-  ell_points <- ellipsoid_boundary_2d(object = object,
-                                      n_segments = 50,
+  # Calculate ellipse boundaries
+  ell_points <- ellipsoid_boundary_2d(object = object, n_segments = 100,
                                       dim = dim)
 
-  if(!is.null(background)){
-
-    if(nrow(background) <= bg_sample){
-      bg_sample <- nrow(background)
+  # Background sampling
+  if (!is.null(background)) {
+    if (!is.null(bg_sample) && nrow(background) > bg_sample) {
+      bg_sample_bg <- sample(seq_len(nrow(background)), bg_sample)
+    } else {
+      bg_sample_bg <- seq_len(nrow(background))
     }
-
-    bg_sample_bg <- sample(1:nrow(background), bg_sample)
 
     plot(background[bg_sample_bg, c(object$var_names[dim])],
          col = adjustcolor(col_bg, alpha.f = alpha_bg),

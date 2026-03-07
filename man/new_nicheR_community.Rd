@@ -12,6 +12,8 @@ new_nicheR_community(
   smallest_proportion,
   largest_proportion = NA,
   bias = NA,
+  thin_background = NA,
+  resolution = NA,
   seed = NA
 )
 }
@@ -31,6 +33,12 @@ new_nicheR_community(
 (NA if not applicable).}
 
 \item{bias}{Numeric. Bias exponent used (NA if not applicable).}
+
+\item{thin_background}{Logical. Whether the background was thinned during
+generation of the community (NA if not applicable).}
+
+\item{resolution}{Numeric. Resolution of the background grid (NA if
+not applicable).}
 
 \item{seed}{Integer. Seed used for reproducibility (NA if not applicable).}
 }

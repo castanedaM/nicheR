@@ -127,6 +127,8 @@ random_ellipses <- function(object,
     n = n,
     smallest_proportion = smallest_proportion,
     largest_proportion = largest_proportion,
+    thin_background = thin_background,
+    resolution = resolution,
     seed = seed
   ))
 }
@@ -359,6 +361,8 @@ conserved_ellipses <- function(object,
     n = n,
     smallest_proportion = smallest_proportion,
     largest_proportion = largest_proportion,
+    thin_background = thin_background,
+    resolution = resolution,
     seed = seed
   ))
 }

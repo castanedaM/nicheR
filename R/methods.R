@@ -93,6 +93,12 @@ print.nicheR_community <- function(x, digits = 3, ...) {
   if (!is.na(x$details$bias)) {
     cat("  Bias exponent:      ", round(x$details$bias, digits), "\n", sep = "")
   }
+  if (!is.na(x$details$thin_background)) {
+    cat("  Thin background:    ", x$details$thin_background, "\n", sep = "")
+  }
+  if (!is.na(x$details$resolution)) {
+    cat("  Resolution:         ", x$details$resolution, "\n", sep = "")
+  } 
   if (!is.na(x$details$seed)) {
     cat("  Random seed:        ", x$details$seed, "\n", sep = "")
   }

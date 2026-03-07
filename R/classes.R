@@ -62,6 +62,10 @@ new_nicheR_ellipsoid <- function(dimensions, var_names, centroid, cov_matrix,
 #' @param largest_proportion Numeric. Maximum scaling factor used
 #'   (NA if not applicable).
 #' @param bias Numeric. Bias exponent used (NA if not applicable).
+#' @param thin_background Logical. Whether the background was thinned during
+#'   generation of the community (NA if not applicable).
+#' @param resolution Numeric. Resolution of the background grid (NA if
+#'   not applicable).
 #' @param seed Integer. Seed used for reproducibility (NA if not applicable).
 #'
 #' @return
@@ -75,7 +79,8 @@ new_nicheR_ellipsoid <- function(dimensions, var_names, centroid, cov_matrix,
 
 new_nicheR_community <- function(ellipse_community, reference, pattern, n,
                                  smallest_proportion, largest_proportion = NA,
-                                 bias = NA, seed = NA) {
+                                 bias = NA, thin_background = NA,
+                                 resolution = NA, seed = NA) {
 
   details <- data.frame(
     pattern = pattern,
@@ -84,6 +89,8 @@ new_nicheR_community <- function(ellipse_community, reference, pattern, n,
     smallest_proportion = smallest_proportion,
     largest_proportion = largest_proportion,
     bias = bias,
+    thin_background = thin_background,
+    resolution = resolution,
     seed = seed
   )
   

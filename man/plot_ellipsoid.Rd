@@ -7,15 +7,19 @@
 plot_ellipsoid(
   object,
   background = NULL,
+  prediction = NULL,
   dim = c(1, 2),
-  bg_sample = 1000,
+  col_layer = NULL,
+  pal = heat.colors(100),
+  rev_pal = FALSE,
+  bg_sample = NULL,
   lty = 1,
   lwd = 1,
   col_ell = "#000000",
   col_bg = "#8A8A8A",
   pch = 1,
-  alpha_bg = 0.5,
-  alpha_ell = 0.7,
+  alpha_bg = 1,
+  alpha_ell = 1,
   cex_ell = 1,
   cex_bg = 1,
   ...
@@ -28,7 +32,8 @@ plot_ellipsoid(
 \item{background}{Optional data frame of background points (rows = observations,
 columns = environmental variables).}
 
-\item{bg_sample}{Integer. Number of background points to bg_sample for plotting.}
+\item{bg_sample}{Integer. Number of background points to sample for plotting.
+The default, NULL, plots all background points.}
 
 \item{lty}{Line type for ellipsoid boundary.}
 
