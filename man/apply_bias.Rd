@@ -7,6 +7,7 @@
 apply_bias(
   prepared_bias,
   prediction,
+  prediction_layer = NULL,
   effect_direction = "direct",
   verbose = TRUE
 )
