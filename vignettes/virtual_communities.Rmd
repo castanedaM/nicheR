@@ -572,13 +572,44 @@ The plot show that when both arguments are small, the ellipses are generally sma
 
 ```{r par_reset}
 # Reset plotting parameters
-#par(original_par)
-
-#save_nicheR(cons_comm, "../NicheR_complements/test_com.rds")
-
-read_com <- read_nicheR("../NicheR_complements/test_com.rds")
+par(original_par)
 ```
 
 <br>
 
 ## Save and import
+
+To facilitate writing nicheR objects to local directories and importing results in later sessions, we created the `save_nicheR` and `read_nicheR` functions. These functions can be used with the results obtained from virtual community simulations as `nicheR_community` objects, as shown below. 
+
+```{r save_import, eval=FALSE}
+# file name (in a temporary directory for demonstration purposes)
+temp_file <- file.path(tempdir(), "conserved_community.rds")
+
+# Save the community object to a local directory
+save_nicheR(cons_comm, file = temp_file)
+
+# Import the community object from a local directory
+read_com <- read_nicheR(temp_file)
+```
+
+<br>
+
+Results from predictions obatined as `data.frame` or `SpatRaster` can be saved using functions that are convinient for those types of objects. For instance, `write.csv()` for the data.frame and `terra::writeRaster()` for the raster results. Importing those files can be done with `read.csv()` and `terra::rast()`.
+
+```{r save_import2, eval=FALSE}
+# file names (in a temporary directory for demonstration purposes)
+temp_df_file <- file.path(tempdir(), "df_cons_com_predictions.csv")
+temp_raster <- file.path(tempdir(), "raster_cons_com_predictions.tif")
+
+# Save predictions in data.frame objects
+write.csv(df_cons_com_pred, file = temp_df_file, row.names = FALSE)
+
+# Save predictions in raster objects
+terra::writeRaster(ras_cons_com_pred, filename = temp_raster)
+
+# Import predictions as data.frame objects
+read_com_pred_df <- read.csv(temp_df_file)
+
+# Import predictions as SpatRaster objects
+read_com_pred_ras <- terra::rast(temp_raster)
+```

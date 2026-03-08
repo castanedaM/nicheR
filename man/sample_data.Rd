@@ -12,6 +12,7 @@ sample_data(
   method = "suitability",
   sampling_mask = NULL,
   seed = 1,
+  strict = NULL,
   verbose = TRUE
 )
 }

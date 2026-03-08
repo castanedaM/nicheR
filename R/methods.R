@@ -145,3 +145,120 @@ print.nicheR_community <- function(x, digits = 3, ...) {
   cat("\n")
   invisible(x)
 }
+
+
+
+# Predcit methods ------------------------------------------------------
+#' Predict method for a nicheR Community
+#'
+#' @description
+#' Iterates through all ellipses in a \code{nicheR_community} and calculates
+#' predictions (suitability or Mahalanobis distance) using
+#' \code{\link{predict.nicheR_ellipsoid}}.
+#'
+#' @param object A \code{nicheR_community} object.
+#' @param newdata A \code{SpatRaster}, \code{data.frame}, or \code{matrix}
+#'   containing at least the environmental variables used to create the
+#'   reference ellipsoid in the community.
+#' @param prediction Character. The type of prediction to return. One of:
+#'   \code{"Mahalanobis"} (default), \code{"suitability"}, 
+#'   \code{"Mahalanobis_trunc"}, or \code{"suitability_trunc"}.
+#' @param verbose Logical. If \code{TRUE}, prints progress messages.
+#'   Default = \code{TRUE}.
+#'
+#' @return
+#' If \code{newdata} is a \code{SpatRaster}, returns a \code{SpatRaster}
+#' where each layer represents one ellipse. If \code{newdata} is a
+#' \code{data.frame}, returns a \code{data.frame} with the original data
+#' plus one column per ellipse.
+#'
+#' @method predict nicheR_community
+#' @export
+
+predict.nicheR_community <- function(object,
+                                     newdata,
+                                     prediction = "Mahalanobis",
+                                     verbose = TRUE) {
+
+  # Validation and Setup
+  if (missing(object) || missing(newdata)) {
+    stop("Arguments 'object' and 'newdata' must be specified.")
+  }
+  if (!inherits(object, "nicheR_community")) {
+    stop("'object' must be of class 'nicheR_community'.")
+  }
+  if (!inherits(newdata, c("SpatRaster", "data.frame", "matrix"))) {
+    stop("'newdata' must be a 'SpatRaster', 'data.frame', or 'matrix'.")
+  }
+  valid_preds <- c("Mahalanobis", "suitability",
+                   "Mahalanobis_trunc", "suitability_trunc")
+  if (!(prediction %in% valid_preds)) {
+    stop("'prediction' must be one of: ", paste(valid_preds, collapse = ", "))
+  }
+
+  is_raster <- inherits(newdata, "SpatRaster")
+  
+  verbose_message(
+    verbose,
+    paste0("Starting: using newdata of class: ", class(newdata)[1], "...\n")
+  )
+
+  # Map the 'prediction' argument to the internal flags
+  inc_suit  <- prediction == "suitability"
+  inc_mahal <- prediction == "Mahalanobis"
+  trunc_s   <- prediction == "suitability_trunc"
+  trunc_m   <- prediction == "Mahalanobis_trunc"
+
+  # Number of ellipses in the community
+  n_ell <- length(object$ellipse_community)
+  ell_names <- paste0("ell_", seq_len(n_ell))
+
+  verbose_message(
+    verbose,
+    paste0("Predictions for a ", object$details$pattern, " community of ",
+           n_ell, " ellipses...\n")
+  )
+
+  # Iterate Predictions
+  if (verbose) {
+    pb <- utils::txtProgressBar(min = 0, max = n_ell, style = 3)
+  }
+
+  results_list <- lapply(seq_len(n_ell), function(i) {
+    # Call the existing method for a single ellipsoid
+    p <- predict.nicheR_ellipsoid(object = object$ellipse_community[[i]],
+                                  newdata = newdata,
+                                  include_suitability = inc_suit,
+                                  suitability_truncated = trunc_s,
+                                  include_mahalanobis = inc_mahal,
+                                  mahalanobis_truncated = trunc_m,
+                                  verbose = FALSE)
+
+    if (verbose) utils::setTxtProgressBar(pb, i)
+
+    # Extract the specific column/layer requested
+    res <- p[[prediction]]
+
+    if (is_raster) {
+      names(res) <- ell_names[i]
+    }
+
+    return(res)
+  })
+
+  if (verbose) close(pb)
+
+  verbose_message(verbose, "\nFinalizing results...\n")
+
+  # Format and Return Output
+  if (is_raster) {
+    return(terra::rast(results_list))
+  } else {
+    # Combine results into a data frame
+    results_list <- do.call(cbind, results_list)
+    colnames(results_list) <- ell_names
+    
+    # Return original data (with spatial cols if present) + new predictions
+    return(cbind(as.data.frame(newdata), results_list))
+  }
+}
