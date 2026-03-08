@@ -32,7 +32,11 @@ knitr::opts_chunk$set(
 - [Niche conservatism in communities](#niche-conservatism-in-communities)
   - [Effect of background density](#effect-of-background-density)
   - [Effect of proportion arguments](#effect-of-proportion-arguments)
-- [Save and import communities](#save-and-import-communities)
+- [Predictions for communities](#predictions-for-communities)
+  - [Predict to data frames](#predictions-to-data-frames)
+  - [Predict to SpatRaster](#predictions-to-spatraster)
+  - [Species richness maps](#species-richness-maps)
+- [Save and import](#save-and-import)
 
 <hr>
 
@@ -59,13 +63,13 @@ Note: We will display functions from other packages as `package::function()`.
 ```{r get_ready, results='hide', message=FALSE, warning=FALSE}
 # Load packages
 library(nicheR)
-library(terra)
+#library(terra)
 
 # Current directory
 getwd()
 
 # Define new directory
-#setwd("YOUR/DIRECTORY")  # uncomment and modify if setting a new directory
+#setwd("YOUR/DIRECTORY")  # modify if setting a new directory
 
 # Saving original plotting parameters
 original_par <- par(no.readonly = TRUE)
@@ -83,11 +87,15 @@ data("ref_ellipse", package = "nicheR")
 
 # Background data
 data("back_data", package = "nicheR")
+
+# Raster layers for predictions
+ma_bios <- terra::rast(system.file("extdata", "ma_bios.tif",
+                                   package = "nicheR"))
 ```
 
 <br>
 
-Let's take a look at the reference niche and the background data to get familiar with them before we start simulating communities.
+Let's take a look at the reference niche and the background data to get familiar with them before we start simulating communities. The raster layers will be used later for predictions, so we will just check them here to make sure they are loaded correctly.
 
 ```{r data_check}
 # Check reference niche
@@ -95,6 +103,9 @@ print(ref_ellipse)
 
 # Check background data
 head(back_data)
+
+# Check the raster layers
+ma_bios
 ```
 
 <br>
@@ -106,7 +117,8 @@ Now, let's plot the reference niche and the background data to visualize the env
 vars <- c("bio_1", "bio_12")
 
 # Plotting the background data to visualize the environmental space
-par(mar = c(4, 4, 2, 1))  # adjust margins for better visualization
+mars <- c(4, 4, 2, 1)
+par(mar = mars)  # adjust margins for better visualization
 
 plot_ellipsoid(ref_ellipse, background = back_data[, vars],
                pch = ".", col_bg = "#9a9797", lwd = 2,
@@ -116,7 +128,6 @@ plot_ellipsoid(ref_ellipse, background = back_data[, vars],
 ```
 
 <br>
-
 
 ## Simulating random communities
 
@@ -136,10 +147,12 @@ print(rand_comm)  # a summary of the elements in the community object
 
 <br> 
 
-Now let's us plot the generated community to visualize the distribution of the random ellipses in environmental space. We will use the `add_ellipsoid()` function to add the ellipses to a plot of the background data.
+Now let's plot the generated community to visualize the distribution of the random ellipses in environmental space. We will use the `plot_community()` function for this purpose.
 
 ```{r random_plot}
 # Plotting the community
+par(mar = mars)  # adjust margins for better visualization
+
 plot_community(rand_comm, background = back_data[, vars],
                pch = ".", col_bg = "#9a9797",
                xlab = "Bio1 (Mean Annual Temperature)",
@@ -172,7 +185,7 @@ Let's check the distribution of ellipses in the two communities with a plot to v
 
 ```{r random_den_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}  
 # Plotting the communities
-par(mfrow = c(1, 2), cex = 0.6)  # set up the plotting area
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
 ## Plotting the community with the full background
 plot_community(rand_comm_full, background = back_data[, vars],
@@ -191,11 +204,15 @@ plot_community(rand_comm_thin, background = back_data[, vars],
 
 <br>
 
+As you can see in the plots, the community generated with the full background has a higher concentration of ellipses in areas where the background data is denser, whereas the community created with thinned background has a more even distribution of ellipses. This highlights the importance of considering this factor when simulating communities using random ellipses. Play with the value for the argument `resolution` to see how it can affect the distribution of ellipses in the community. Keep in mind that the largest the value for this argument, the more points will be available for the function to pick centroids.
+
+<br>
+
 ### Effect of proportion arguments
 
 The size of the ellipses in the communities is determined by the reference niche and the arguments `smallest_proportion` and `largest_proportion` in the `random_ellipses()` function. Based on the reference niche, playing with the values for the areguments `smallest_proportion` and `largest_proportion` can help explore scenarios with . This can affect elements of the community structure such as the level of niche overlap observed among the species (ellipses).
 
-The example below shows how these proportions can affect the coverage and overlap of random ellipses in environmental space. Considering that `smallest_proportion` must be smaller than `largest_proportion`, we will simulate four communities: (1) both arguments are small; and (2) both arguments are large; (3) `smallest_proportion` is large and `largest_proportion` is small; and (4) `smallest_proportion` is small and `largest_proportion` is large. We will thin the background in both cases to reduce the effect of uneven point density and better visualize the effect of the argument `smaller_proportion`.
+The example below shows how these proportions can affect the coverage and overlap of random ellipses in environmental space. Considering that `smallest_proportion` must be smaller than `largest_proportion`, we will simulate four communities: (1) both arguments are small; and (2) both arguments are large; (3) `smallest_proportion` is large and `largest_proportion` is small; and (4) `smallest_proportion` is small and `largest_proportion` is large. We will thin the background in both cases to reduce the effect of uneven point density and better visualize the effect of the proportion arguments.
 
 ```{r random_prop}
 # Community with both arguments small
@@ -229,11 +246,11 @@ rand_comm4 <- random_ellipses(object = ref_ellipse,
 
 <br>
 
-Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the argument `smaller_proportion`.
+Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the proportion arguments.
 
 ```{r random_prop_plot}
 # Plotting the communities
-par(mfrow = c(2, 2), cex = 0.6)  # set up the plotting area
+par(mfrow = c(2, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
 ## Community with small proportions
 plot_community(rand_comm1, background = back_data[, vars],
@@ -264,41 +281,304 @@ plot_community(rand_comm4, background = back_data[, vars],
                main = "Random Community with Small and Large")
 ```
 
+<br>
+
+As shown in the plots, when both arguments are small, the ellipses are generally smaller and there is less overlap among them. When both arguments are large, the ellipses tend to be larger and there is more overlap among them. When `smallest_proportion` is large and `largest_proportion` is small, the ellipses tend to be of intermediate size. Finally, when `smallest_proportion` is small and `largest_proportion` is large, the ellipses tend to be more variable in size. This highlights how the size of the ellipses can affect the structure of the community and the "interactions" among species niches (ellipses). Play with the values for these arguments to explore different scenarios and pick the ones that are more convinient for your research.
+
 <br> 
 
 ## Simulating nested communities
 
 The `nested_ellipses()` function helps to create a community of species with niches that are nested in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show an general example of how to use this function.
 
+```{r nested}
+# Simulating the community
+nest_comm <- nested_ellipses(object = ref_ellipse, n = 20)
+
+# check the a few details from the generated community
+print(nest_comm)  # a summary of the elements in the community object
+```
+
+<br>
+
+Now let's plot the generated community to visualize the distribution of the nested ellipses in environmental space. We will use the `plot_community()` function for this purpose.
+
+```{r nested_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the community
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Plotting the community of nested ellipses
+plot_community(nest_comm,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Community of Nested Ellipses")
+
+## Plotting the community of nested ellipses with the background
+plot_community(nest_comm, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Nested Community with Background")
+```
+
+<br>
+
+Despite the fact that background was not used to create nested ellipses, since the reference niche is located in the same environmental space, we can see how the generated ellipses are distributed in that space. The nested structure of the community is evident in both plots, with each ellipse being contained within the previous one. 
+
 <br>
 
 ### Effect of proportion argument
+
+An important arument in the `nested_ellipses()` function is `smallest_proportion`, which determines the size of the smallest nested ellipse to be generated, in relation to the reference niche. A smaller value for `smallest_proportion` will result in a greater range of ellipse sizes.
+
+```{r nested_prop}
+# Simulating the community with a small smallest_proportion
+nest_comm_small <- nested_ellipses(object = ref_ellipse, n = 20,
+                                   smallest_proportion = 0.1)
+
+# Simulating the community with a large smallest_proportion
+nest_comm_large <- nested_ellipses(object = ref_ellipse, n = 20,
+                                   smallest_proportion = 0.6)
+
+# Lets check the volume stats for the communities for comparison
+## Communities with small smallest_proportion
+mean(sapply(nest_comm_small$ellipse_community, function(x) x$volume))
+
+## Communities with large smallest_proportion
+mean(sapply(nest_comm_large$ellipse_community, function(x) x$volume))
+```
+
+<br>
+
+Below we plot the two communities to visualize the effect of the argument `smallest_proportion` on the distribution of nested ellipses in environmental space.
+
+```{r nested_prop_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the communities
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Plotting the community with a small smallest_proportion
+plot_community(nest_comm_small,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Nested with Small Proportion")
+
+## Plotting the community with a large smallest_proportion
+plot_community(nest_comm_large,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Nested with Large Proportion")
+```
+
+<br>
+
+From the plot, it is clear why the mean volume of the ellipses in the community with a small `smallest_proportion` is smaller than the mean volume of the ellipses in the community with a large `smallest_proportion`.
 
 <br>
 
 ### Effect of bias argument
 
+Another important arument in the `nested_ellipses()` function is `bias`, which determines the degree of bias towards generating smaller or larger ellipses in the community. A value of `bias` clusters ellipses toward the border of the reference ellipse, whereas a value greater than 1 clusters them toward the centroid of the reference ellipse. We will keep the value for `smallest_proportion` the same in both cases to better visualize the effect of the argument `bias`.
+
+```{r nested_bias}
+# Simulating the community with a bias towards the border
+nest_comm_small_bias <- nested_ellipses(object = ref_ellipse, n = 20,
+                                        smallest_proportion = 0.1, bias = 0.2)
+
+# Simulating the community with a bias towards the centroid
+nest_comm_large_bias <- nested_ellipses(object = ref_ellipse, n = 20,
+                                        smallest_proportion = 0.1, bias = 2)
+
+# Lets check the volume stats for the communities for comparison
+## Community with bias towards the border
+mean(sapply(nest_comm_small_bias$ellipse_community, function(x) x$volume))
+
+## Community with bias towards the centroid
+mean(sapply(nest_comm_large_bias$ellipse_community, function(x) x$volume))
+```
+
+<br>
+
+Now, let's plot the two communities to visualize the effect of the argument `bias` on the distribution of nested ellipses in environmental space.
+
+```{r nested_bias_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the communities
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Plotting the community with a bias towards the border
+plot_community(nest_comm_small_bias,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Nested with Bias Towards Border")
+
+## Plotting the community with a bias towards the centroid
+plot_community(nest_comm_large_bias,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Nested with Bias Towards Centroid")
+```
+
+<br>
+
+The plots clearly show the effect of the argument `bias` on the distribution of nested ellipses. A community created with `bias` values close to zero will tend to have larger volumes than one created with values larger than one. We used these values only for reference, play with the argument to explore different scenarios and pick the one that helps you explore your questions.
+
 <br>
 
 ## Niche conservatism in communities
+
+The function `conserved_ellipses` creates a ellipses based on a reference ellipse aiming for a set of results that are similar to the reference. To do that centroids for the new ellipses are sampled from a background with a bias towards the centroid of the reference ellipse. A general example of how to use this function is shown below.
+
+```{r conserved}
+# Simulating the community
+cons_comm <- conserved_ellipses(object = ref_ellipse,
+                                background = back_data[, vars],
+                                n = 20)
+
+# check the a few details from the generated community
+print(cons_comm)  # a summary of the elements in the community object
+```
+
+<br>
+
+The plot below shows the generated community.
+
+```{r conserved_plot}
+# Plotting the community withe the background
+par(mar = mars)  # adjust margins for better visualization
+
+plot_community(cons_comm, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Community of Conserved Ellipses")
+```
+
+<br>
+
+As you can see in the plot, the ellipses generated vary in size, direction, and position, but they don't go very far from the original ellipdsoid. This follows the ideas of niche conservatism, which say that closely related species tend to have similar ecological niches. 
 
 <br>
 
 ### Effect of background density
 
+Similar to the `random_ellipses()` function, the `conserved_ellipses()` function uses the background as a reference to pick ellipse centroids. Differences in background density can affect the bias used to generate the ellipses (bias = tend to select new centroids close to the reference centroid). If the effect of background density is not controlled, it will be like saying that niche position evolution depends on the how close you are to the ancester niche position and how common are environments. Keeping in mind that ancestry is not considered here, the trick is that those common environments are not necessarily geographically available as geography is not considered here.
+
+The example below shows how the density of the background can affect the distribution of random ellipses when using the function. We will simulate two communities: (1) using the full background as reference, and (2) using the arguments `thin_background` and `resolution` to reduce the effect of uneven point density.
+
+```{r cons_den}
+# Simulating the community with the full background
+cons_comm_full <- conserved_ellipses(object = ref_ellipse,
+                                     background = back_data[, vars], n = 20)
+
+# Simulating the community with a thinned background
+cons_comm_thin <- conserved_ellipses(object = ref_ellipse,
+                                     background = back_data[, vars], n = 20,
+                                     thin_background = TRUE, resolution = 10)
+```
+
+<br>
+
+Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the arguments `thin_background` and `resolution`.
+
+```{r cons_den_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}  
+# Plotting the communities
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Plotting the community with the full background
+plot_community(cons_comm_full, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Conserved Community from Full Background")
+
+## Plotting the community with the thinned background
+plot_community(cons_comm_thin, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Conserved Community from Thinned Background")
+```
+
+<br>
+
+As you can see in the plots, the community generated with the full background has a higher concentration of ellipses in areas where the background data is denser compared to the one created with thinned background. This highlights the importance of considering this factor when simulating communities using the function `conserved_ellipses()`. Play with the value for the argument `resolution` to see how it can affect the distribution of ellipses in the community (larger values, more points available).
+
 <br>
 
 ### Effect of proportion arguments
 
+We have explored before the effect of the arguments that control the smallest and largest proportions when generating new ellipses considering the reference. We will explore two examples with the function `conserved_ellipses()`: (1) both argeuments are small; and (2) `smallest_proportion` is small and `largest_proportion` is large. We will thin the background in both examples to better visualize the effect of the porportion arguments.
+
+```{r cons_prop}
+# Community with both arguments small
+cons_comm1 <- conserved_ellipses(object = ref_ellipse,
+                                 background = back_data[, vars], n = 20,
+                                 thin_background = TRUE, resolution = 10,
+                                 smallest_proportion = 0.1,
+                                 largest_proportion = 0.5)
+
+# Community with smallest_proportion small and largest_proportion large
+cons_comm2 <- conserved_ellipses(object = ref_ellipse,
+                                 background = back_data[, vars], n = 20,
+                                 thin_background = TRUE, resolution = 10,
+                                 smallest_proportion = 0.1,
+                                 largest_proportion = 1.5)
+```
+
 <br>
+
+Let's check the distribution of ellipses in the two communities with a plot to visualize the effect of the porportion arguments.
+
+```{r cons_prop_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the communities
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Community with small proportions
+plot_community(cons_comm1, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Conserved Community with Small Proportions")
+
+## Community with small smallest_proportion and large largest_proportion
+plot_community(cons_comm2, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797",
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Conserved Community with Small and Large")
+```
+
+<br>
+
+The plot show that when both arguments are small, the ellipses are generally smaller. When `smallest_proportion` is small and `largest_proportion` is large, the ellipses are more variable in size, but in general larger than in the previous case. A larger number of ellipses generated can help visualize the effect of the arguments on the distribution of sizes of the ellipses. Play with the values for these arguments to explore different scenarios and pick the ones that are more convinient for your research.
+
+<br> 
+
+## Predictions for communities
+
+<br>
+
+### Predict to data frames
+
+<br>
+
+### Predict to SpatRaster
+
+<br>
+
+### Species richness maps
+
 
 <br> 
 
 ```{r par_reset}
 # Reset plotting parameters
-par(original_par)
+#par(original_par)
+
+#save_nicheR(cons_comm, "../NicheR_complements/test_com.rds")
+
+read_com <- read_nicheR("../NicheR_complements/test_com.rds")
 ```
 
 <br>
 
-## Save and import communities
+## Save and import
