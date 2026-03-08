@@ -161,7 +161,7 @@ print.nicheR_community <- function(x, digits = 3, ...) {
 #'   containing at least the environmental variables used to create the
 #'   reference ellipsoid in the community.
 #' @param prediction Character. The type of prediction to return. One of:
-#'   \code{"Mahalanobis"} (default), \code{"suitability"}, 
+#'   \code{"Mahalanobis"} (default), \code{"suitability"},
 #'   \code{"Mahalanobis_trunc"}, or \code{"suitability_trunc"}.
 #' @param verbose Logical. If \code{TRUE}, prints progress messages.
 #'   Default = \code{TRUE}.
@@ -197,6 +197,17 @@ predict.nicheR_community <- function(object,
   }
 
   is_raster <- inherits(newdata, "SpatRaster")
+
+  # Variable matching check
+  var_names <- object$reference$var_names
+  nd_names <- if (is_raster) names(newdata) else colnames(newdata)
+  
+  missing_vars <- setdiff(var_names, nd_names)
+  
+  if (length(missing_vars) > 0) {
+    stop("'newdata' is missing required variables: ",
+         paste(var_names, collapse = ", "))
+  }
   
   verbose_message(
     verbose,

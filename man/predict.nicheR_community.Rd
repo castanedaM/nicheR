@@ -14,7 +14,7 @@ containing at least the environmental variables used to create the
 reference ellipsoid in the community.}
 
 \item{prediction}{Character. The type of prediction to return. One of:
-\code{"Mahalanobis"} (default), \code{"suitability"}, 
+\code{"Mahalanobis"} (default), \code{"suitability"},
 \code{"Mahalanobis_trunc"}, or \code{"suitability_trunc"}.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints progress messages.
