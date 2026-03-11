@@ -13,12 +13,41 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 7,
+  fig.width = 10,
   fig.height = 6,
   dpi = 100,
   out.width = "95%"
 )
 ```
+
+## Summary
+
+- [Description](#description)
+- [Getting ready](#getting-ready)
+- [1. Defining the Niche Space: build_ellipsoid()](#1-defining-the-niche-space-build_ellipsoid)
+  - [Example: Building an Ellipsoid](#example-building-an-ellipsoid)
+- [2. Generating the Prediction Surface](#2-generating-the-prediction-surface)
+  - [Example: Predicting to a Spatial Raster](#example-predicting-to-a-spatial-raster)
+- [3. Standard Occurrence Sampling: sample_data()](#3-standard-occurrence-sampling-sample_data)
+  - [Example: Sampling from a Suitability Raster](#example-sampling-from-a-suitability-raster)
+  - [Suitability | centroid | Strict = FALSE](#suitability-centroid-strict-false)
+  - [Mahalanobis | edge | Strict = FALSE](#mahalanobis-edge-strict-false)
+  - [Suitability Truncated | random | Strict = TRUE](#suitability-truncated-random-strict-true)
+  - [Mahalanobis Truncated | edge | Strict = TRUE](#mahalanobis-truncated-edge-strict-true)
+- [4. Introducing Sampling Bias: sample_biased_data()](#4-introducing-sampling-bias-sample_biased_data)
+  - [Prerequisites: Prepare the Bias Layer](#prerequisites-prepare-the-bias-layer)
+  - [Suitability | Direct Bias | Strict = FALSE](#suitability-direct-bias-strict-false)
+  - [Suitability Truncated | Inverse Bias | Strict = TRUE](#suitability-truncated-inverse-bias-strict-true)
+  - [Mahalanobis | Direct Bias | Strict = FALSE](#mahalanobis-direct-bias-strict-false)
+  - [Mahalanobis Truncated | Inverse Bias | Strict = TRUE](#mahalanobis-truncated-inverse-bias-strict-true)
+- [5. Virtual Species Sampling: sample_virtual_data()](#5-virtual-species-sampling-sample_virtual_data)
+  - [Example: Sampling from a Virtual Species Object](#example-sampling-from-a-virtual-species-object)
+  - [Suitability | Centroid | Strict = FALSE](#suitability-centroid-strict-false-1)
+  - [Suitability Truncated | Random | Strict = TRUE](#suitability-truncated-random-strict-true-1)
+  - [Mahalanobis | Edge | Strict = FALSE](#mahalanobis-edge-strict-false-1)
+  - [Mahalanobis Truncated | Centroid | Strict = TRUE](#mahalanobis-truncated-centroid-strict-true)
+
+<hr>
 
 # Description
 
@@ -36,6 +65,8 @@ This vignette covers the complete core workflow:
 
 5.  Directly sampling from virtual species objects (`sample_virtual_data()`).
 
+<br>
+
 # Getting ready
 
 ```{r}
@@ -44,34 +75,29 @@ library(nicheR)
 library(terra)
 ```
 
+<br>
+
 # 1. Defining the Niche Space: `build_ellipsoid()`
-
-**Objective:** To construct a probabilistic ellipsoidal niche in multivariate environmental space using user-defined variable ranges.
-
-**Purpose:** Before we can predict suitability across a landscape, we need a mathematical representation of the species' fundamental niche. This function takes simple minimum and maximum environmental tolerances and computes the centroid ($\mu$) and covariance matrix (σ) needed to define a theoretical multivariate normal (MVN) niche.
 
 ## Example: Building an Ellipsoid
 
 ```{r}
-bios_file <- system.file("extdata", "bio_layers.tif", package = "nicheR")
-bios <- rast("inst/extdata/bio_layers.tif")
+bios_file <- system.file("extdata", "ma_bios.tif", package = "nicheR")
+bios <- rast(bios_file)
+vars <- c("bio_1", "bio_12", "bio_15")
 
 # Define environmental ranges
-range_df <- data.frame(bio1  = c(20, 28),
-                       bio12 = c(820, 1500),
-                       bio15 = c(70, 90))
+range_df <- data.frame(bio_1  = c(22, 28),
+                       bio_12 = c(1000, 3500),
+                       bio_15 = c(50, 70))
 
 # Build ellipsoid niche
 ell <- build_ellipsoid(range = range_df)
 ```
 
+<br>
+
 # 2. Generating the Prediction Surface
-
-**Objective:** To compute the squared Mahalanobis distance ($D^2$) and a monotonic suitability index across a landscape using a probabilistic ellipsoid niche.
-
-**Purpose:** This step translates a theoretical, multi-dimensional niche (defined by a centroid and covariance matrix) into a spatial prediction surface. It establishes the "ground truth" of habitat suitability that we will sample from in later steps.
-
-The `predict()` method for `nicheR_ellipsoid` objects takes environmental data (as a `SpatRaster` or `data.frame`) and calculates distance and suitability.
 
 ## Example: Predicting to a Spatial Raster
 
@@ -83,7 +109,10 @@ pred <- predict(ell,
                 include_suitability = TRUE,
                 suitability_truncated = TRUE,
                 mahalanobis_truncated = TRUE)
+plot(pred)
 ```
+
+<br>
 
 # 3. Standard Occurrence Sampling: sample_data()
 
@@ -101,39 +130,268 @@ The sample_data() function allows you to sample points based on suitability or d
 
 ## Example: Sampling from a Suitability Raster
 
+## Suitability | centroid | Strict = FALSE
+
 ```{r}
-# Sample 100 points, favoring highly suitable habitats (centroid)
-suit_occ_centroid <- sample_data(
-  n_occ = 50,
+# --- Sampling ---
+occ_suit_cent <- sample_data(
+  n_occ = 100,
   prediction = pred,
-  prediction_layer = "suitability_trunc",
+  prediction_layer = "suitability",
   sampling = "centroid",
   method = "suitability",
-  seed = 123
+  seed = 123,
+  strict = FALSE
 )
 
-suit_occ_center_env <- terra::extract(bios, suit_occ_centroid[, c(1:2)]) |> 
-  cbind(suit_occ_centroid[3])
+occ_suit_cent_env <- terra::extract(bios, 
+                                    occ_suit_cent[, c(1:2)]) |> 
+  cbind(occ_suit_cent[3])
 
-# Plot: Standard Centroid Sampling
-plot_ellipsoid(ell, main = "Standard Centroid Sampling",
-               xlim = c(15, 30),
-               ylim = c(790, 6300))
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
 
-add_data(x = as.vector(bios$bio1),
-         y = as.vector(bios$bio12),
-         pch = ".")
-
-add_data(x = suit_occ_center_env$bio1,
-         y = suit_occ_center_env$bio12,
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12",
+               main = "Suitability | Centroid (Bio1 v Bio12)")
+add_data(occ_suit_cent_env, 
+         x = "bio_1", 
+         y = "bio_12", 
          pts_col = "orange",
          pch = 20)
-
-add_data(x = ell$centroid[1],
-         y = ell$centroid[2],
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12", 
          pts_col = "red",
          pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Suitability | Centroid (Bio12 v Bio15)")
+add_data(occ_suit_cent_env,
+         x = "bio_12",
+         y = "bio_15",
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)),
+         x = "bio_12", 
+         y = "bio_15",
+         pts_col = "red", 
+         pch = 15)
+
+# Mahalanobis | edge | Strict = FALSE
 ```
+
+<br>
+
+## Mahalanobis | edge | Strict = FALSE
+
+```{r}
+# --- Sampling ---
+occ_maha_edge <- sample_data(
+  n_occ = 100,
+  prediction = pred,
+  prediction_layer = "Mahalanobis",
+  sampling = "edge",
+  method = "mahalanobis",
+  seed = 123,
+  strict = FALSE
+)
+
+occ_maha_edge_env <- terra::extract(bios, occ_maha_edge[, c(1:2)]) |> 
+  cbind(occ_maha_edge[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12",
+               main = "Mahalanobis | Edge (Bio1 v Bio12)")
+add_data(occ_maha_edge_env, 
+         x = "bio_1",
+         y = "bio_12", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "red",
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Mahalanobis | Edge (Bio12 v Bio15)")
+add_data(occ_maha_edge_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red", 
+         pch = 15)
+
+
+```
+
+<br>
+
+## Suitability Truncated | random | Strict = TRUE
+
+```{r}
+# --- Sampling ---
+occ_suit_trunc_rand <- sample_data(
+  n_occ = 100,
+  prediction = pred,
+  prediction_layer = "suitability_trunc",
+  sampling = "random",
+  method = "suitability",
+  seed = 123,
+  strict = TRUE
+)
+
+occ_suit_trunc_rand_env <- terra::extract(bios, 
+                                          occ_suit_trunc_rand[, c(1:2)]) |> 
+  cbind(occ_suit_trunc_rand[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12",
+               main = "Suit Truncated | Random (Bio1 v Bio12)")
+add_data(occ_suit_trunc_rand_env, 
+         x = "bio_1", 
+         y = "bio_12",
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "red",
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797",
+               xlab = "Bio12",
+               ylab = "Bio15",
+               main = "Suit Truncated | Random (Bio12 v Bio15)")
+add_data(occ_suit_trunc_rand_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red", 
+         pch = 15)
+
+
+```
+
+<br>
+
+## Mahalanobis Truncated | edge | Strict = TRUE
+
+```{r}
+# --- Sampling ---
+occ_maha_trunc_cent <- sample_data(
+  n_occ = 100,
+  prediction = pred,
+  prediction_layer = "Mahalanobis_trunc",
+  sampling = "edge",
+  method = "mahalanobis",
+  seed = 123,
+  strict = TRUE
+)
+
+occ_maha_trunc_cent_env <- terra::extract(bios, 
+                                          occ_maha_trunc_cent[, c(1:2)]) |> 
+  cbind(occ_maha_trunc_cent[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1",
+               ylab = "Bio12",
+               main = "Maha Truncated | Centroid (Bio1 v Bio12)")
+add_data(occ_maha_trunc_cent_env, 
+         x = "bio_1",
+         y = "bio_12", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "red", 
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]),
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Maha Truncated | Centroid (Bio12 v Bio15)")
+add_data(occ_maha_trunc_cent_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red", 
+         pch = 15)
+
+dev.off()
+```
+
+<br>
 
 # 4. Introducing Sampling Bias: sample_biased_data()
 
@@ -143,49 +401,269 @@ add_data(x = ell$centroid[1],
 
 *Note: This function applies a spatial restriction or weighting scheme to simulate uneven sampling effort.*
 
-## Example: Simulating Biased Sampling
+## Prerequisites: Prepare the Bias Layer
 
 ```{r}
-# Create a dummy bias layer (e.g., accessibility score based on distance to roads)
-bias_file <- system.file("extdata", "bias_layers.tif", package = "nicheR")
-bias <- rast(bias_file)
+# Load the bias layer
+biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
+biases <- rast(biases_file)
 
-prep_bias <- prepare_bias(bias_surface = bias,
-                          effect_direction = c("inverse", "direct"))
+# Prepare bias
+prep_biases <- prepare_bias(
+  bias_surface = biases,
+  effect_direction = c("direct", "inverse")
+)
+```
 
-app_bias <- apply_bias(prepared_bias = prep_bias,
-                       prediction = pred,
-                       effect_direction = "direct")
+<br>
 
-# Sample 50 points using the biased prediction layer
-suit_occ_biased <- sample_biased_data(n_occ = 50,
-                                      prediction = app_bias$suitability_biased,
-                                      seed = 456)
+## Suitability | Direct Bias | Strict = FALSE
 
-head(suit_occ_biased)
+```{r}
+# --- Apply Bias & Sample ---
+app_suit_dir <- apply_bias(prepared_bias = prep_biases, 
+                           prediction = pred, 
+                           prediction_layer = "suitability", 
+                           effect_direction = "direct")
 
-suit_occ_bias <- terra::extract(bios, suit_occ_biased[, c(1:2)]) |> 
-  cbind(suit_occ_biased[3])
+occ_suit_dir <- sample_biased_data(n_occ = 100, 
+                                   prediction = app_suit_dir, 
+                                   prediction_layer = "suitability_biased_direct", 
+                                   seed = 123, 
+                                   strict = FALSE)
 
-# Plot: Biased Occurrence Sampling
-plot_ellipsoid(ell, main = "Biased Occurrence Sampling",
-               xlim = c(15, 30),
-               ylim = c(790, 6300))
+occ_suit_dir_env <- terra::extract(bios,
+                                   occ_suit_dir[, c(1:2)]) |>
+  cbind(occ_suit_dir[3])
 
-add_data(x = as.vector(bios$bio1),
-         y = as.vector(bios$bio12),
-         pch = ".")
-
-add_data(x = suit_occ_bias$bio1,
-         y = suit_occ_bias$bio12,
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797",
+               xlab = "Bio1", 
+               ylab = "Bio12",
+               main = "Suitability | Direct Bias (1v12)")
+add_data(occ_suit_dir_env, 
+         x = "bio_1", 
+         y = "bio_12", 
          pts_col = "orange",
          pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1",
+         y = "bio_12", 
+         pts_col = "red",
+         pch = 15)
 
-add_data(x = ell$centroid[1],
-         y = ell$centroid[2],
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15", 
+               main = "Suitability | Direct Bias (12v15)")
+add_data(occ_suit_dir_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)),
+         x = "bio_12",
+         y = "bio_15", 
          pts_col = "red",
          pch = 15)
 ```
+
+<br>
+
+## Suitability Truncated | Inverse Bias | Strict = TRUE
+
+```{r}
+# --- Apply Bias & Sample ---
+app_suit_trunc_inv <- apply_bias(prepared_bias = prep_biases, 
+                                 prediction = pred, 
+                                 prediction_layer = "suitability_trunc", 
+                                 effect_direction = "inverse")
+
+occ_suit_trunc_inv <- sample_biased_data(n_occ = 100, 
+                                         prediction = app_suit_trunc_inv, 
+                                         prediction_layer = "suitability_trunc_biased_inverse", 
+                                         strict = TRUE)
+
+occ_suit_trunc_inv_env <- terra::extract(bios, 
+                                         occ_suit_trunc_inv[, c(1:2)]) |>
+  cbind(occ_suit_trunc_inv[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797",
+               xlab = "Bio1", 
+               ylab = "Bio12", 
+               main = "Suit Truncated | Inverse Bias (1v12)")
+add_data(occ_suit_trunc_inv_env,
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)),
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "red", 
+         pch = 15)
+
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15", 
+               main = "Suit Truncated | Inverse Bias (12v15)")
+add_data(occ_suit_trunc_inv_env,
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12",
+         y = "bio_15", 
+         pts_col = "red",
+         pch = 15)
+```
+
+<br>
+
+## Mahalanobis | Direct Bias | Strict = FALSE
+
+```{r}
+# --- Apply Bias & Sample ---
+app_maha_dir <- apply_bias(prepared_bias = prep_biases, 
+                           prediction = pred, 
+                           prediction_layer = "Mahalanobis",
+                           effect_direction = "direct")
+
+occ_maha_dir <- sample_biased_data(n_occ = 100, 
+                                   prediction = app_maha_dir, 
+                                   prediction_layer = "Mahalanobis_biased_direct", 
+                                   strict = FALSE)
+
+occ_maha_dir_env <- terra::extract(bios, 
+                                   occ_maha_dir[, c(1:2)]) |> 
+  cbind(occ_maha_dir[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12", 
+               main = "Mahalanobis | Direct Bias (1v12)")
+add_data(occ_maha_dir_env, 
+         x = "bio_1",
+         y = "bio_12",
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1",
+         y = "bio_12", 
+         pts_col = "red", 
+         pch = 15)
+
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Mahalanobis | Direct Bias (12v15)")
+add_data(occ_maha_dir_env,
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12",
+         y = "bio_15",
+         pts_col = "red",
+         pch = 15)
+```
+
+<br>
+
+## Mahalanobis Truncated | Inverse Bias | Strict = TRUE
+
+```{r}
+# --- Apply Bias & Sample ---
+app_maha_trunc_inv <- apply_bias(prepared_bias = prep_biases, 
+                                 prediction = pred, 
+                                 prediction_layer = "Mahalanobis_trunc", 
+                                 effect_direction = "inverse")
+
+occ_maha_trunc_inv <- sample_biased_data(n_occ = 100, 
+                                         prediction = app_maha_trunc_inv, 
+                                         prediction_layer = "Mahalanobis_trunc_biased_inverse", 
+                                         strict = TRUE)
+
+occ_maha_trunc_inv_env <- terra::extract(bios, 
+                                         occ_maha_trunc_inv[, c(1:2)]) |>
+  cbind(occ_maha_trunc_inv[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+plot_ellipsoid(ell,
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12", 
+               main = "Maha Truncated | Inverse Bias (1v12)")
+add_data(occ_maha_trunc_inv_env,
+         x = "bio_1",
+         y = "bio_12",
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12",
+         pts_col = "red",
+         pch = 15)
+
+plot_ellipsoid(ell, 
+               background = as.data.frame(bios[[vars]]), 
+               dim = c(2, 3), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Maha Truncated | Inverse Bias (12v15)")
+add_data(occ_maha_trunc_inv_env, 
+         x = "bio_12",
+         y = "bio_15",
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red",
+         pch = 15)
+
+# Clear the plot space when done
+dev.off()
+```
+
+<br>
 
 # 5. Virtual Species Sampling: `sample_virtual_data()`
 
@@ -198,37 +676,275 @@ This function inherently supports the same weighting rules (`centroid`, `edge`, 
 ## Example: Sampling from a Virtual Species Object
 
 ```{r}
-virtual_range <- data.frame(bio1 = c(10, 80),
-                            bio12 = c(500, 1000),
-                            bio15 = c(30, 150))
+virtual_range <- data.frame(bio_1 = c(20, 29),
+                            bio_12 = c(500, 4000),
+                            bio_15 = c(30, 100))
 
 virtual_ell <- build_ellipsoid(range = virtual_range)
 
-occ_virtual <- sample_virtual_data(n_occ = 50,
-                                   object = virtual_ell,
-                                   prediction_layer = "suitability",
-                                   sampling = "centroid",
-                                   method = "suitability",
-                                   seed = 42)
+# Predict suitability
+virtual_pred <- predict(virtual_ell,
+                newdata = bios,
+                include_mahalanobis = TRUE,
+                include_suitability = TRUE,
+                suitability_truncated = TRUE,
+                mahalanobis_truncated = TRUE)
+```
 
-head(occ_virtual)
+<br>
 
-# Plot: Virtual Species Centroid Sampling
-plot_ellipsoid(virtual_ell, main = "Virtual Species Centroid Sampling",
-               xlim = c(5, 85),
-               ylim = c(450, 1050))
+## Suitability | Centroid | Strict = FALSE
 
-add_data(x = occ_virtual$bio1,
-         y = occ_virtual$bio12,
+```{r}
+# --- Sampling ---
+occ_virt_suit_cent <- sample_virtual_data(
+  n_occ = 100,
+  object = virtual_ell,
+  virtual_prediction = virtual_pred,
+  prediction_layer = "suitability",
+  sampling = "centroid",
+  method = "suitability",
+  seed = 123,
+  strict = FALSE
+)
+
+# Extract environmental data
+virt_suit_cent_env <- terra::extract(bios, 
+                                     occ_virt_suit_cent[, c(1:2)]) |> 
+  cbind(occ_virt_suit_cent[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(virtual_ell, 
+               dim = c(1, 2), 
+               pch = ".",
+               col_bg = "#9a9797", 
+               xlab = "Bio1",
+               ylab = "Bio12", 
+               main = "Virtual Suitability | Centroid")
+add_data(virt_suit_cent_env, 
+         x = "bio_1", 
+         y = "bio_12", 
          pts_col = "orange",
          pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12",
+         pts_col = "red",
+         pch = 15)
 
-add_data(x = virtual_ell$centroid[1],
-         y = virtual_ell$centroid[2],
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(virtual_ell,
+               dim = c(2, 3), 
+               pch = ".",
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Virtual Suitability | Centroid")
+add_data(virt_suit_cent_env, 
+         x = "bio_12", 
+         y = "bio_15",
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
          pts_col = "red",
          pch = 15)
 ```
 
-# Summary
+<br>
 
-The `nicheR` sampling functions provide fine-grained control over how occurrence points are simulated across geographic and environmental space. By adjusting the `method` and `sampling` parameters, you can easily shift between theoretical ideal datasets and realistic, biased scenarios.
+## Suitability Truncated | Random | Strict = TRUE
+
+```{r}
+# --- Sampling ---
+occ_virt_suit_trunc_rand <- sample_virtual_data(
+  n_occ = 100,
+  object = virtual_ell,
+  virtual_prediction = virtual_pred,
+  prediction_layer = "suitability_trunc",
+  sampling = "random",
+  method = "suitability",
+  seed = 123,
+  strict = TRUE
+)
+
+# Extract environmental data
+virt_suit_trunc_rand_env <- terra::extract(bios, 
+                                           occ_virt_suit_trunc_rand[, c(1:2)]) |>
+  cbind(occ_virt_suit_trunc_rand[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(virtual_ell, 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1",
+               ylab = "Bio12",
+               main = "Virtual Suit Trunc | Random")
+add_data(virt_suit_trunc_rand_env, 
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_1", 
+         y = "bio_12",
+         pts_col = "red",
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(virtual_ell, 
+               dim = c(2, 3),
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12",
+               ylab = "Bio15", 
+               main = "Virtual Suit Trunc | Random")
+add_data(virt_suit_trunc_rand_env,
+         x = "bio_12",
+         y = "bio_15",
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red",
+         pch = 15)
+```
+
+<br>
+
+## Mahalanobis | Edge | Strict = FALSE
+
+```{r}
+# --- Sampling ---
+occ_virt_maha_edge <- sample_virtual_data(
+  n_occ = 100,
+  object = virtual_ell,
+  virtual_prediction = virtual_pred,
+  prediction_layer = "Mahalanobis",
+  sampling = "edge",
+  method = "mahalanobis",
+  seed = 123,
+  strict = FALSE
+)
+
+# Extract environmental data
+virt_maha_edge_env <- terra::extract(bios, 
+                                     occ_virt_maha_edge[, c(1:2)]) |>
+  cbind(occ_virt_maha_edge[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(virtual_ell, 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12", 
+               main = "Virtual Mahalanobis | Edge")
+add_data(virt_maha_edge_env,
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_1",
+         y = "bio_12", 
+         pts_col = "red",
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(virtual_ell, dim = c(2, 3), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15",
+               main = "Virtual Mahalanobis | Edge")
+add_data(virt_maha_edge_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "red", 
+         pch = 15)
+```
+
+<br>
+
+## Mahalanobis Truncated | Centroid | Strict = TRUE
+
+```{r}
+# --- Sampling ---
+occ_virt_maha_trunc_cent <- sample_virtual_data(
+  n_occ = 100,
+  object = virtual_ell,
+  virtual_prediction = virtual_pred,
+  prediction_layer = "Mahalanobis_trunc",
+  sampling = "centroid",
+  method = "mahalanobis",
+  seed = 123,
+  strict = TRUE
+)
+
+# Extract environmental data
+virt_maha_trunc_cent_env <- terra::extract(bios, 
+                                           occ_virt_maha_trunc_cent[, c(1:2)]) |> 
+  cbind(occ_virt_maha_trunc_cent[3])
+
+# --- Plotting ---
+par(mfrow = c(1, 2)) 
+
+# Plot 1: Bio1 vs Bio12
+plot_ellipsoid(virtual_ell, 
+               dim = c(1, 2), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio1", 
+               ylab = "Bio12", 
+               main = "Virt Maha Trunc | Centroid")
+add_data(virt_maha_trunc_cent_env, 
+         x = "bio_1", 
+         y = "bio_12", 
+         pts_col = "orange", 
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_1",
+         y = "bio_12",
+         pts_col = "red", 
+         pch = 15)
+
+# Plot 2: Bio12 vs Bio15
+plot_ellipsoid(virtual_ell, 
+               dim = c(2, 3), 
+               pch = ".", 
+               col_bg = "#9a9797", 
+               xlab = "Bio12", 
+               ylab = "Bio15", 
+               main = "Virt Maha Trunc | Centroid")
+add_data(virt_maha_trunc_cent_env, 
+         x = "bio_12", 
+         y = "bio_15", 
+         pts_col = "orange",
+         pch = 20)
+add_data(as.data.frame(t(virtual_ell$centroid)), 
+         x = "bio_12",
+         y = "bio_15",
+         pts_col = "red",
+         pch = 15)
+
+# Clear the plot space when done
+dev.off()
+```
