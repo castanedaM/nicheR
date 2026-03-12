@@ -193,7 +193,7 @@ predict.nicheR_ellipsoid <- function(object,
     spatial_cols <- colnames(newdata)[coords_lower %in% spatial_names]
 
     if(length(spatial_cols) > 0){
-      verbose_message(verbose, verbose, "Step: Identified spatial columns: ",
+      verbose_message(verbose, "Step: Identified spatial columns: ",
                       paste(spatial_cols, collapse = ", "),
                       "\n")
       extra_vars <- setdiff(extra_vars, spatial_cols)
@@ -201,7 +201,7 @@ predict.nicheR_ellipsoid <- function(object,
   }
 
   if(length(extra_vars) > 0){
-    verbose_message(verbose, verbose, "Step: Ignoring extra predictor columns: ",
+    verbose_message(verbose, "Step: Ignoring extra predictor columns: ",
                     paste(extra_vars, collapse = ", "),
                     "\n")
   }
