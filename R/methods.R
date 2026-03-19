@@ -8,7 +8,7 @@
 #' @param x A \code{nicheR_ellipsoid} object.
 #' @param digits Integer. Number of decimal places used when printing numeric
 #'   values. Default is 3.
-#' @param ... Additional arguments (currently unused).
+#' @param ... Additional arguments.
 #'
 #' @details
 #' This is an S3 method for objects of class \code{"nicheR_ellipsoid"}.
@@ -71,6 +71,7 @@ print.nicheR_ellipsoid <- function(x, digits = 3, ...) {
 #'   print method.
 #'
 #' @method print nicheR_community
+#' @importFrom stats sd
 #' @export
 
 print.nicheR_community <- function(x, digits = 3, ...) {
@@ -84,7 +85,7 @@ print.nicheR_community <- function(x, digits = 3, ...) {
   cat("  Number of ellipses: ", x$details$n, "\n", sep = "")
   cat("  Smallest prop.:     ", round(x$details$smallest_proportion, digits),
       "\n", sep = "")
-  
+
   ## Only print these if they aren't NA
   if (!is.na(x$details$largest_proportion)) {
     cat("  Largest prop.:      ", round(x$details$largest_proportion, digits),
@@ -98,7 +99,7 @@ print.nicheR_community <- function(x, digits = 3, ...) {
   }
   if (!is.na(x$details$resolution)) {
     cat("  Resolution:         ", x$details$resolution, "\n", sep = "")
-  } 
+  }
   if (!is.na(x$details$seed)) {
     cat("  Random seed:        ", x$details$seed, "\n", sep = "")
   }
@@ -130,11 +131,11 @@ print.nicheR_community <- function(x, digits = 3, ...) {
   sd_vol    <- sd(all_volumes)
 
   ## Print centroids
-  cat("  Centroid positions | mean (±SD):\n")
+  cat("  Centroid positions | mean (+/-SD):\n")
   for (i in seq_along(mean_cent)) {
     cat("   ", names(mean_cent)[i], ": ",
         round(mean_cent[i], digits),
-        " (±", round(sd_cent[i], digits), ")\n", sep = "")
+        " (+/-", round(sd_cent[i], digits), ")\n", sep = "")
   }
 
   ## Print volumes
@@ -148,7 +149,7 @@ print.nicheR_community <- function(x, digits = 3, ...) {
 
 
 
-# Predcit methods ------------------------------------------------------
+# Predict methods ------------------------------------------------------
 #' Predict method for a nicheR Community
 #'
 #' @description
@@ -164,7 +165,7 @@ print.nicheR_community <- function(x, digits = 3, ...) {
 #'   \code{"Mahalanobis"} (default), \code{"suitability"},
 #'   \code{"Mahalanobis_trunc"}, or \code{"suitability_trunc"}.
 #' @param verbose Logical. If \code{TRUE}, prints progress messages.
-#'   Default = \code{TRUE}.
+#'   Default is \code{TRUE}.
 #'
 #' @return
 #' If \code{newdata} is a \code{SpatRaster}, returns a \code{SpatRaster}
@@ -173,6 +174,8 @@ print.nicheR_community <- function(x, digits = 3, ...) {
 #' plus one column per ellipse.
 #'
 #' @method predict nicheR_community
+#' @importFrom utils txtProgressBar setTxtProgressBar
+#' @importFrom terra rast
 #' @export
 
 predict.nicheR_community <- function(object,
@@ -200,15 +203,15 @@ predict.nicheR_community <- function(object,
 
   # Variable matching check
   var_names <- object$reference$var_names
-  nd_names <- if (is_raster) names(newdata) else colnames(newdata)
-  
+  nd_names  <- if (is_raster) names(newdata) else colnames(newdata)
+
   missing_vars <- setdiff(var_names, nd_names)
-  
+
   if (length(missing_vars) > 0) {
     stop("'newdata' is missing required variables: ",
          paste(var_names, collapse = ", "))
   }
-  
+
   verbose_message(
     verbose,
     paste0("Starting: using newdata of class: ", class(newdata)[1], "...\n")
@@ -221,7 +224,7 @@ predict.nicheR_community <- function(object,
   trunc_m   <- prediction == "Mahalanobis_trunc"
 
   # Number of ellipses in the community
-  n_ell <- length(object$ellipse_community)
+  n_ell     <- length(object$ellipse_community)
   ell_names <- paste0("ell_", seq_len(n_ell))
 
   verbose_message(
@@ -236,18 +239,16 @@ predict.nicheR_community <- function(object,
   }
 
   results_list <- lapply(seq_len(n_ell), function(i) {
-    # Call the existing method for a single ellipsoid
-    p <- predict.nicheR_ellipsoid(object = object$ellipse_community[[i]],
-                                  newdata = newdata,
-                                  include_suitability = inc_suit,
+    p <- predict.nicheR_ellipsoid(object               = object$ellipse_community[[i]],
+                                  newdata              = newdata,
+                                  include_suitability  = inc_suit,
                                   suitability_truncated = trunc_s,
-                                  include_mahalanobis = inc_mahal,
+                                  include_mahalanobis  = inc_mahal,
                                   mahalanobis_truncated = trunc_m,
-                                  verbose = FALSE)
+                                  verbose              = FALSE)
 
     if (verbose) utils::setTxtProgressBar(pb, i)
 
-    # Extract the specific column/layer requested
     res <- p[[prediction]]
 
     if (is_raster) {
@@ -265,11 +266,8 @@ predict.nicheR_community <- function(object,
   if (is_raster) {
     return(terra::rast(results_list))
   } else {
-    # Combine results into a data frame
-    results_list <- do.call(cbind, results_list)
-    colnames(results_list) <- ell_names
-    
-    # Return original data (with spatial cols if present) + new predictions
-    return(cbind(as.data.frame(newdata), results_list))
+    results_df <- do.call(cbind, results_list)
+    colnames(results_df) <- ell_names
+    return(cbind(as.data.frame(newdata), results_df))
   }
 }
