@@ -75,7 +75,7 @@
 #' Bioclimatic variables for part of the Americas
 #'
 #' A \code{SpatRaster} containing 8 bioclimatic variables representing
-#' present-day climatic conditions for an area that covers parto of South
+#' present-day climatic conditions for an area that covers parts of South
 #' and North America. Variables were obtained at a 10 arc-minute resolution.
 #' Sourced from WorldClim 2.1: \url{https://worldclim.org/data/worldclim21.html}
 #'
@@ -93,7 +93,7 @@
 #'
 #' @name ma_bios
 #'
-#' @return No return value. Used with function \code{\link[terra]{rast}} to 
+#' @return No return value. Used with function \code{\link[terra]{rast}} to
 #' load the GeoTIFF file from the package's \code{inst/extdata} folder.
 #'
 #' @examples

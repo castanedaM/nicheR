@@ -47,6 +47,15 @@ Install the development version from GitHub:
 ``` r
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("castanedaM/nicheR")
+#> ── R CMD build ─────────────────────────────────────────────────────────────────
+#>       ✔  checking for file 'C:\Users\mcguz\AppData\Local\Temp\RtmpqoT3GM\remotes47f0717947c3\castanedaM-nicheR-a461380/DESCRIPTION'
+#>       ─  preparing 'nicheR': (856ms)
+#>    checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
+#>       ─  checking for LF line-endings in source and make files and shell scripts
+#>   ─  checking for empty or unneeded directories
+#>   ─  building 'nicheR_0.0.11.tar.gz'
+#>      
+#> 
 library(nicheR)
 ```
 

@@ -105,10 +105,31 @@ update_ellipsoid_covariance <- function(object,
 }
 
 
-#' Resolves user input when to many columns or layers
+#' Resolve prediction input to a canonical form
 #'
+#' @description
+#' Internal helper that normalizes the \code{prediction} argument accepted by
+#' sampling functions into a consistent list with a type tag, a resolved data
+#' frame or raster, and the name of the prediction column or layer. Handles
+#' \code{data.frame}, single- and multi-layer \code{SpatRaster}, and list
+#' inputs.
 #'
-#' @export
+#' @param prediction A \code{SpatRaster}, \code{data.frame}, or list containing
+#'   the prediction surface.
+#' @param prediction_layer Character. Name of the column or layer to extract.
+#'   Required when \code{prediction} contains multiple layers or columns.
+#'
+#' @return A named list with three elements:
+#' \itemize{
+#'   \item \code{type}: Character. One of \code{"data.frame"} or
+#'   \code{"SpatRaster"}.
+#'   \item \code{df} or \code{rast}: The resolved data frame or single-layer
+#'   \code{SpatRaster}.
+#'   \item \code{pred_name}: Character. The name of the resolved prediction
+#'   column or layer.
+#' }
+#'
+#' @noRd
 resolve_prediction <- function(prediction, prediction_layer){
 
   # ---- Case 1: prediction is a data.frame -----------------------------------
