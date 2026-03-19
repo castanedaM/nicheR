@@ -30,6 +30,8 @@
 #' An object of class \code{nicheR_community} containing the generated
 #' ellipses, the reference object, and generation metadata.
 #'
+#'@importFrom stats runif
+#'
 #' @export
 
 random_ellipses <- function(object,
@@ -251,6 +253,8 @@ nested_ellipses <- function(object,
 #' degrees of similarity to the reference. The distribution of the generated
 #' ellipses is influenced by the proximity to the reference and the density
 #' of the background points.
+#'
+#'@importFrom stats runif
 #'
 #' @export
 

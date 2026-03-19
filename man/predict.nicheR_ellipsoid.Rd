@@ -13,9 +13,7 @@
   include_mahalanobis = TRUE,
   mahalanobis_truncated = FALSE,
   keep_data = NULL,
-  verbose = TRUE,
-  n_virtual = 1000,
-  seed = 1
+  verbose = TRUE
 )
 }
 \arguments{
@@ -24,76 +22,58 @@
 
 \item{newdata}{Environmental predictors. One of:
 \itemize{
-  \item \code{terra::SpatRaster} (or \code{raster} classes, coerced to \code{SpatRaster})
-  \item \code{data.frame}, \code{tibble}, or \code{matrix} with columns named as \code{object$var_names}
-  \item \code{NULL} to generate virtual environmental samples (E-space)
+  \item A \code{SpatRaster} (or legacy \code{raster} classes, coerced
+  automatically).
+  \item A \code{data.frame}, \code{tibble}, or \code{matrix} with columns
+  named to match \code{object$var_names}.
 }}
 
-\item{adjust_truncation_level}{Optional numeric confidence level in (0, 1)
-used to override \code{object$truncation_level} when computing truncated
-outputs.}
+\item{adjust_truncation_level}{Optional numeric confidence level in
+\code{(0, 1)} to override \code{object$cl} when computing truncated
+outputs. Default is \code{NULL} (uses the level stored in \code{object}).}
 
-\item{include_suitability}{Logical; if \code{TRUE}, return suitability
-(\eqn{\exp(-0.5 D^2)}).}
+\item{include_suitability}{Logical. If \code{TRUE} (default), returns
+suitability values (\eqn{\exp(-0.5 D^2)}).}
 
-\item{suitability_truncated}{Logical; if \code{TRUE}, return truncated
-suitability where values outside the chi-square contour are set to 0.}
+\item{suitability_truncated}{Logical. If \code{TRUE}, returns a truncated
+suitability layer where values outside the chi-square contour are set to
+\code{0}. Default is \code{FALSE}.}
 
-\item{include_mahalanobis}{Logical; if \code{TRUE}, return Mahalanobis distance
-(\eqn{D^2}).}
+\item{include_mahalanobis}{Logical. If \code{TRUE} (default), returns
+Mahalanobis distance (\eqn{D^2}).}
 
-\item{mahalanobis_truncated}{Logical; if \code{TRUE}, return truncated
-Mahalanobis distance where values outside the chi-square contour are set to
-\code{NA}.}
+\item{mahalanobis_truncated}{Logical. If \code{TRUE}, returns a truncated
+Mahalanobis layer where values outside the chi-square contour are set to
+\code{NA}. Default is \code{FALSE}.}
 
-\item{keep_data}{Logical or \code{NULL}. If \code{TRUE}, include the original
-predictors in the output. Default is \code{FALSE} for \code{SpatRaster} input,
-and \code{TRUE} for tabular input and virtual data.}
+\item{keep_data}{Logical or \code{NULL}. If \code{TRUE}, includes the
+original predictors in the output. Default is \code{NULL}: \code{FALSE}
+for \code{SpatRaster} input, \code{TRUE} for tabular input.}
 
-\item{verbose}{Logical; if \code{TRUE}, print progress messages.}
-
-\item{n_virtual}{Integer. Number of virtual samples to generate when
-\code{newdata = NULL}. Default is 1000.}
-
-\item{seed}{Integer. Random seed used when \code{newdata = NULL}. Default is 1.}
+\item{verbose}{Logical. If \code{TRUE} (default), prints progress messages.}
 }
 \value{
-If \code{newdata} is a \code{terra::SpatRaster}, returns a \code{terra::SpatRaster}
-with requested layers (and optionally original predictors if \code{keep_data = TRUE}).
-If \code{newdata} is tabular or \code{NULL}, returns a \code{data.frame} with class
-\code{"nicheR_prediction"} containing requested prediction columns (and optionally
-original predictors if \code{keep_data = TRUE}).
+If \code{newdata} is a \code{SpatRaster}, returns a \code{SpatRaster} with
+the requested prediction layers (and optionally the original predictor
+layers if \code{keep_data = TRUE}).
+
+If \code{newdata} is tabular, returns a \code{data.frame} of class
+\code{"nicheR_prediction"} with the requested prediction columns (and
+optionally the original predictor columns if \code{keep_data = TRUE}).
 }
 \description{
 Computes Mahalanobis distance and optional suitability values from a
 \code{nicheR_ellipsoid} for either (1) environmental samples provided as a
-\code{data.frame}/\code{matrix}, (2) a \code{terra::SpatRaster} stack of
+\code{data.frame} or \code{matrix}, (2) a \code{SpatRaster} stack of
 predictors, or (3) virtual samples drawn in environmental space when
 \code{newdata = NULL}.
 }
 \details{
 Suitability is computed as \eqn{\exp(-0.5 D^2)}, where \eqn{D^2} is the
-Mahalanobis distance. Truncated outputs use a chi-square cutoff based on the
-ellipsoid truncation level. By default, the truncation level stored in
-\code{object} is used, but it can be overridden with
-\code{adjust_truncation_level}.
+squared Mahalanobis distance from the niche centroid. Truncated outputs use
+a chi-square cutoff based on the ellipsoid confidence level (\code{cl}).
 
-If \code{newdata = NULL}, the function generates \code{n_virtual} samples in
-environmental space using \code{\link{virtual_data}} and returns predictions
-for those samples as a \code{data.frame}.
-
-For non-raster inputs, common coordinate columns (e.g., \code{lon}, \code{lat})
-are detected and can be retained when \code{keep_data = TRUE}. Predictor
-variables must match \code{object$var_names}. Extra columns are ignored.
-}
-\examples{
-# Example with tabular data
-rng <- data.frame(bio1 = c(10, 20), bio2 = c(20, 30))
-ell <- build_ellipsoid(rng, cl = 0.95, verbose = FALSE)
-nd  <- data.frame(bio1 = c(12, 18), bio2 = c(22, 28))
-pred <- predict(ell, newdata = nd, verbose = FALSE)
-
-# Virtual E-space samples
-vpred <- predict(ell, newdata = NULL, n_virtual = 2000, seed = 1, verbose = FALSE)
-
+For tabular inputs, coordinate columns (e.g., \code{x}, \code{y},
+\code{lon}, \code{lat}) are detected and retained when
+\code{keep_data = TRUE}. Extra non-predictor columns are ignored.
 }

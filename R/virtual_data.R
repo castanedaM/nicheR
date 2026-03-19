@@ -46,6 +46,8 @@
 #' A matrix with \code{n} rows and columns corresponding to the
 #' environmental variables (dimensions) of the input \code{object}.
 #'
+#'@importFrom stats runif rnorm
+#'
 #' @export
 
 virtual_data <- function(object,

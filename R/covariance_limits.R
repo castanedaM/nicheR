@@ -14,6 +14,8 @@
 #'
 #' @return A numeric vector with min and max covariance limits.
 #'
+#'@importFrom stats uniroot
+#'
 #' @noRd
 
 covariance_pairs <- function(varcov_matrix, i = 1, j = 2, tol = 1e-6) {

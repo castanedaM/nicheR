@@ -18,7 +18,7 @@ reference ellipsoid in the community.}
 \code{"Mahalanobis_trunc"}, or \code{"suitability_trunc"}.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints progress messages.
-Default = \code{TRUE}.}
+Default is \code{TRUE}.}
 }
 \value{
 If \code{newdata} is a \code{SpatRaster}, returns a \code{SpatRaster}

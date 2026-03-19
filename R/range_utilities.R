@@ -86,6 +86,7 @@ ranges_from_data <- function(data, expand_min = NULL, expand_max = NULL) {
 #' s <- c(var1 = 2, var2 = 15)
 #' ranges_from_stats(mean = m, sd = s, cl = 0.95,
 #'                   expand_min = list(var1 = 10))
+#' @importFrom stats qnorm
 
 ranges_from_stats <- function(mean, sd, cl = 0.95, expand_min = NULL,
                               expand_max = NULL) {

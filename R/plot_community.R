@@ -22,6 +22,8 @@
 #' @param ... Additional arguments passed to the base \code{plot} function
 #'   (e.g., \code{xlim}, \code{ylim}, \code{xlab}, \code{ylab}).
 #'
+#'@importFrom grDevices rainbow
+#'
 #' @export
 
 plot_community <- function(object,

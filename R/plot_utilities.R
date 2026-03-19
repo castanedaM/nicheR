@@ -62,6 +62,9 @@ ellipsoid_boundary_2d <- function(object,
 #'
 #' @return Invisibly returns \code{NULL}.
 #'
+#' @importFrom graphics par
+#' @importFrom utils combn
+#'
 #' @export
 plot_ellipsoid_pairs <- function(object, ...) {
 

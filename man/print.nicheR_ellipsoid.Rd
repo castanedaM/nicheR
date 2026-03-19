@@ -12,7 +12,7 @@
 \item{digits}{Integer. Number of decimal places used when printing numeric
 values. Default is 3.}
 
-\item{...}{Additional arguments (currently unused).}
+\item{...}{Additional arguments.}
 }
 \value{
 The input object \code{x}, returned invisibly.
