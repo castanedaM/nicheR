@@ -1,68 +1,89 @@
 
-# Data collatetion and preparation ----------------------------------------
-wc <- geodata::worldclim_global(var = "bio",
-                                res = 10,
-                                path = tempdir())
+devtools::load_all()
 
-bios <- wc[[c(1, 12, 15)]]
-names(bios) <- c("bio1", "bio12", "bio15")
+
+# Data collection and preparation ----------------------------------------
+
+bios <- terra::rast("inst/extdata/ma_bios.tif")
+bios <- bios[[c("bio_1", "bio_12", "bio_15")]]
 
 bios_df <- as.data.frame(bios, xy = TRUE)
 
-range <- data.frame(bio1 = c(-5, 10),
-                    bio12 = c(500, 750),
-                    bio15 = c(30, 150))
-
 # Bias layers
-bias <- prepare_bias(bias_surface = wc[[c(6, 11)]],
-                     effect_direction = "direct",
+# For this example our bias_layers have the speciens richeness and nightitme
+# species richeness as it increases is a good thing, but nighttime as it increrases is a bad thing, so the effct of nighttime has to be inverse
+bias <- prepare_bias(bias_surface = terra::rast("inst/extdata/ma_biases.tif"),
+                     effect_direction = c("direct", "inverse"),
                      include_processed_layers = TRUE)
 
 
+# Here you can see how the standariszation happened and what inverse and not was applied
 bias$combination_formula
+
+# To see the inside of the bias object prepare bias created you can access it with opertion $ and the layer has a name composit bias. for more deatils go to the vigneette about bias (coming)
 bias$composite_surface
 
+# Visuale the resulting bias, this includes the standarization of the original bias layers and the coposite bias since the argument include_processed_layers was TRUE, by daulft composite is alwyas returned.
+terra::plot(bias$processed_layers)
 terra::plot(bias$composite_surface)
 
+
 # Build Ellipsoid ---------------------------------------------------------
+# Now we build our elliposid at it simplest we give it a range
+range <- data.frame(bio_1 = c(20, 25),
+                    bio_12 = c(1000, 1500),
+                    bio_15 = c(60, 75))
 
 ell <- build_ellipsoid(range = range)
+
+# This is the information contained in that object
 names(ell)
+
+# It also has a pretty print
 ell
 
+# You can plot using function in nicheR designed in baser r to simplify the plotting
 plot_ellipsoid(ell)
 plot_ellipsoid_pairs(ell)
-# to do: plot_ellipsoid_grid or plot_all_ellipsoids
 
-plot_ellipsoid(ell, background = bios) # has to fail
+# To visualize with the bacgound you need to use the data frame of your bios, and it is alwyas recommended to sample the bacgorund for quicker plotting, this is set to NUll so if large it will take a long time. and change dim to see others.
+plot_ellipsoid(ell,
+               background = bios_df, dim = c(1,2),
+               bg_sample = 5000)
+
+plot_ellipsoid(ell,
+               background = bios_df, dim = c(1,3),
+               bg_sample = 5000)
+
+# Or use the pairs
+plot_ellipsoid_pairs(ell, background = bios_df, bg_sample = 5000, col_ell = "red")
 
 # Predict Suitability -----------------------------------------------------
 
-bios_df_v <- virtual_data(ell, n = 1000, truncate = FALSE)
-head(bios_df_v)
+# Now lets predict suitbaility
 
-ell_predict_v <- predict(ell) #should fail
-ell_predict_v <- predict(ell, bios_df_v)
-
-plot_ellipsoid(ell, background = ell_predict_v)
-
-# RASTER
-ell_predict_r <- predict(ell, newdata = bios,
+# When RASTER data in
+ell_predict_r <- predict(ell, #ellipsoid object
+                         newdata = bios, #backgorund
+                         # what layers to incude and if truncation aka only
+                         # inside the elliposid is wanted as a return output,
+                         # deafualt to FALSE
                          suitability_truncated   = TRUE,
                          mahalanobis_truncated   = TRUE,
-                         keep_data = TRUE)
-ell_predict_r #default sutibility and mahalanobis, no truncation
+                         keep_data = TRUE #if you want to keep your original data
+)
 
+# Plot all predictions, and sicne keep_data was true, this will aslo include the bios layers
 terra::plot(ell_predict_r)
 
 
-# DATA FRAME
-ell_predict_df <- predict(ell, newdata = bios_df,
+# DATA FRAME input
+ell_predict_df <- predict(ell,
+                          newdata = bios_df,
                           suitability_truncated   = TRUE)
 head(ell_predict_df) # default suitability and mahalanobis, no truncation
 
 ell_predict_df_r <- as.data.frame(ell_predict_r, xy = TRUE)
-
 
 # For DF
 set.seed(123)
@@ -71,19 +92,19 @@ set.seed(123)
 plot_ellipsoid(ell,
                background = ell_predict_df,
                pch = 20,
-               bg_sample = 10000)
-add_data(data = ell_predict_df, x = "bio1", y = "bio12",
+               bg_sample = 5000)
+add_data(data = ell_predict_df, x = "bio_1", y = "bio_12",
          col_layer = "suitability",
          rev_pal = T,
          pal = terrain.colors(100),
-         bg_sample = 10000, pch = 20)
+         bg_sample = 10000,
+         pch = 20)
 add_ellipsoid(ell, col_ell = "red")
 
 # TRUCATED ZOOMED IN
 plot_ellipsoid(ell)
-add_data(data = ell_predict_df, x = "bio1", y = "bio12",
-         col_layer = "suitability_trunc", rev_pal = T,
-         bg_sample = 50000, pch = 20)
+add_data(data = ell_predict_df, x = "bio_1", y = "bio_12",
+         col_layer = "suitability_trunc", rev_pal = T, pch = 20)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
 
@@ -95,12 +116,13 @@ biased_predict_r <- apply_bias(prepared_bias = bias,
 
 # Sample data -------------------------------------------------------------
 
-# UNBIASED SAMPLING - Raster
+# UNBIASED SAMPLING - Raster if we dont want to use the bias layers we use sample_data
 sample_data_r <- sample_data(n_occ = 100,
                              prediction = ell_predict_r,
                              prediction_layer = "suitability",
                              sampling = "centroid",
-                             method = "suitability")
+                             method = "suitability",
+                             strict = TRUE)
 head(sample_data_r)
 # To do: check for suitability prediction layer with mahalanobis method
 
@@ -115,17 +137,39 @@ head(sample_data_df_cn)
 
 plot_ellipsoid(ell, main = "Sampled Center Unbiased")
 add_data(data = ell_predict_df,
-         x = "bio1", y = "bio12",
+         x = "bio_1", y = "bio_12",
          pts_col = "grey",
          pch = 20,
          bg_sample = 8000)
 add_data(data = sample_data_df_cn,
-         x = "bio1", y = "bio12",
+         x = "bio_1", y = "bio_12",
          pts_col = "black",
          pch = 4,
          lwd = 2)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
+# And important difference is that in the privous example the sample values can still be outside the ellispois since the sampling was not restricted, to restrict set stric = true and use the trucated layer of suitbiality/ mahalanobis accordingly
+sample_data_df_cn <- sample_data(n_occ = 100,
+                                 prediction = ell_predict_df,
+                                 prediction_layer = "suitability_trunc",
+                                 sampling = "centroid",
+                                 method = "mahalanobis",
+                                 strict = TRUE)
+head(sample_data_df_cn)
+
+
+plot_ellipsoid(ell, main = "Sampled Center Unbiased")
+add_data(data = ell_predict_df,
+         x = "bio_1", y = "bio_12",
+         pts_col = "grey",
+         pch = 20,
+         bg_sample = 8000)
+add_data(data = sample_data_df_cn,
+         x = "bio_1", y = "bio_12",
+         pts_col = "black",
+         pch = 4,
+         lwd = 2)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
 # BIASED SAMPLING - Raster
 sample_data_b <-
@@ -133,33 +177,11 @@ sample_data_b <-
                      prediction = biased_predict_r,
                      prediction_layer = "suitability_biased_direct")
 
+# Notice how even with raster input the ourput is a data frame, this are not spactial points.
 head(sample_data_b)
 
 
-# VIRTUAL SAMPLING - virtual
-sample_data_v_c <- sample_virtual_data(n_occ = 100,
-                                       virtual_prediction = ell_predict_v,
-                                       prediction_layer = "suitability",
-                                       sampling = "centroid")
-
-sample_data_v_e <- sample_virtual_data(n_occ = 100,
-                                       virtual_prediction = ell_predict_v,
-                                       prediction_layer = "suitability",
-                                       sampling = "edge")
-
-head(sample_data_v_c)
-
-
-plot_ellipsoid(ell, main = "Sampled Center Unbiased")
-add_data(x = ell_predict_v$bio1, y = ell_predict_v$bio12,
-         pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_v_c$bio1, y = sample_data_v_c$bio12,
-         pts_col = "black", pch = 4, lwd = 2)
-add_ellipsoid(ell, col_ell = "red", lwd = 2)
-
-
-
-# UNBIASED SAMPLING - Data frame - Edge
+# UNBIASED SAMPLING - Data frame - Edge, notice that if layer is truncated your message will also say strict beacome true based on detection
 sample_data_df_ed <- sample_data(n_occ = 100,
                                  prediction = ell_predict_df,
                                  prediction_layer = "suitability_trunc",
@@ -167,17 +189,17 @@ sample_data_df_ed <- sample_data(n_occ = 100,
                                  method = "suitability")
 
 plot_ellipsoid(ell,
-               main = "Sampled Center Unbiased",
+               main = "Sampled edge Unbiased",
                # background = bios_df,
                # bg_sample = 10000,
                pch = 20)
 add_data(data = ell_predict_df,
-         x = "bio1", y = "bio12",
+         x = "bio_1", y = "bio_12",
          pts_col = "grey",
          pch = 20,
          bg_sample = 8000)
 add_data(data = sample_data_df_ed,
-         x = "bio1", y = "bio12",
+         x = "bio_1", y = "bio_12",
          pts_col = "black",
          pch = 4,
          lwd = 2)
@@ -185,42 +207,38 @@ add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
 
 # PLOT FOR CENTER AND EDGE - normal data
-# par(mfrow = c(2,1))
-plot_ellipsoid(ell, main = "Sampled Edge Unbiased",
-               background = bios_df)
-add_data(x = ell_predict_df$bio1, y = ell_predict_df$bio12,
-         pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_df_ed$bio1, y = sample_data_df_ed$bio12,
-         pts_col = "black", pch = 4, lwd = 2)
-add_ellipsoid(ell, col_ell = "red", lwd = 2)
-
-
-plot_ellipsoid(ell, main = "Sampled Center Unbiased",
-               background = bios_df[, c(3,4)])
-add_data(x = ell_predict_df$bio1, y = ell_predict_df$bio12,
-         pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_df_cn$bio1, y = sample_data_df_cn$bio12,
-         pts_col = "black", pch = 4, lwd = 2)
-add_ellipsoid(ell, col_ell = "red", lwd = 2)
-
-
-# PLOT FOR - VIRTUAL DATA
 par(mfrow = c(2,1))
-plot_ellipsoid(ell, main = "Sampled Center Unbiased")
-add_data(x = ell_predict_v$bio1, y = ell_predict_v$bio12,
-         pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_v_c$bio1, y = sample_data_v_c$bio12,
-         pts_col = "black", pch = 4, lwd = 2)
+plot_ellipsoid(ell,
+               main = "Sampled center Unbiased")
+add_data(data = ell_predict_df,
+         x = "bio_1", y = "bio_12",
+         pts_col = "grey",
+         pch = 20,
+         bg_sample = 8000)
+add_data(data = sample_data_df_ed,
+         x = "bio_1", y = "bio_12",
+         pts_col = "black",
+         pch = 4,
+         lwd = 2)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
-plot_ellipsoid(ell, main = "Sampled Edge Unbiased")
-add_data(x = ell_predict_v$bio1, y = ell_predict_v$bio12,
-         pts_col = "grey", pch = 20, pts_sample = 8000)
-add_data(x = sample_data_v_e$bio1, y = sample_data_v_e$bio12,
-         pts_col = "black", pch = 4, lwd = 2)
+
+
+plot_ellipsoid(ell,
+               main = "Sampled edge Unbiased",
+               pch = 20)
+add_data(data = ell_predict_df,
+         x = "bio_1", y = "bio_12",
+         pts_col = "grey",
+         pch = 20,
+         bg_sample = 8000)
+add_data(data = sample_data_df_ed,
+         x = "bio_1", y = "bio_12",
+         pts_col = "black",
+         pch = 4,
+         lwd = 2)
 add_ellipsoid(ell, col_ell = "red", lwd = 2)
 
 
-# To do: do an example with uniform virtual data
-
+# All of this can also be done purely with virtual data.. coming soon example
 
