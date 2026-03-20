@@ -83,8 +83,11 @@ plot_ellipsoid_pairs <- function(object, ...) {
   par(mfrow = c(n_rows, n_cols))
 
   for (i in seq_len(n_pairs)) {
+
     plot_ellipsoid(object = object,
                    dim = pairs_idx[i, ],
+                   main = paste0(object$var_names[pairs_idx[i, 1]],
+                                 "vs.", object$var_names[pairs_idx[i, 2]]),
                    ...)
   }
 

@@ -127,18 +127,13 @@ sample_data <- function(n_occ,
       }
     }
 
-    df <- terra::as.data.frame(r, xy = TRUE)
+    df <- terra::as.data.frame(prediction, xy = TRUE)
 
     if(nrow(df) == 0L){
       stop("No cells available after extracting the prediction surface.")
     }
 
-    pred_cols <- setdiff(names(df), c("x", "y"))
-    if(length(pred_cols) != 1L){
-      stop("Unexpected: raster extraction did not produce exactly one prediction column.")
-    }
-
-    pred_name <- pred_cols[1]
+    pred_name <- names(r)
     df$pred <- df[[pred_name]]
 
   } else {

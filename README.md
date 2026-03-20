@@ -47,10 +47,15 @@ Install the development version from GitHub:
 ``` r
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("castanedaM/nicheR")
+#> terra (1.8-93 -> 1.9-1) [CRAN]
+#> package 'terra' successfully unpacked and MD5 sums checked
+#> 
+#> The downloaded binary packages are in
+#>  C:\Users\mcguz\AppData\Local\Temp\RtmpKq7Dbh\downloaded_packages
 #> ── R CMD build ─────────────────────────────────────────────────────────────────
-#>       ✔  checking for file 'C:\Users\mcguz\AppData\Local\Temp\RtmpqoT3GM\remotes47f0717947c3\castanedaM-nicheR-a461380/DESCRIPTION'
-#>       ─  preparing 'nicheR': (856ms)
-#>    checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
+#>       ✔  checking for file 'C:\Users\mcguz\AppData\Local\Temp\RtmpKq7Dbh\remotes99b8876308c\castanedaM-nicheR-3465bde/DESCRIPTION'
+#>       ─  preparing 'nicheR': (1.1s)
+#>    checking DESCRIPTION meta-information ...     checking DESCRIPTION meta-information ...   ✔  checking DESCRIPTION meta-information
 #>       ─  checking for LF line-endings in source and make files and shell scripts
 #>   ─  checking for empty or unneeded directories
 #>   ─  building 'nicheR_0.0.11.tar.gz'
