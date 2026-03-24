@@ -22,21 +22,21 @@ knitr::opts_chunk$set(
 
 ## Summary
 
--   [Description](https://www.google.com/search?q=%23description)
+-   [Description](#description)
 
--   [Getting ready](https://www.google.com/search?q=%23getting-ready)
+-   [Getting ready](#getting-ready)
 
--   [1. Defining the Niche Space: build_ellipsoid()](https://www.google.com/search?q=%231-defining-the-niche-space-build_ellipsoid)
+-   [Defining the Niche Space](#defining-the-niche-space)
 
--   [2. Generating the Prediction Surface: predict()](https://www.google.com/search?q=%232-generating-the-prediction-surface-predict)
+-   [Generating the Prediction Surface](#generating-the-prediction-surface)
 
--   [3. Standard Occurrence Sampling: sample_data()](https://www.google.com/search?q=%233-standard-occurrence-sampling-sample_data)
+-   [Standard Occurrence Sampling](#standard-occurrence-sampling)
 
-    -   [Generating the Samples](https://www.google.com/search?q=%23generating-the-samples)
+    -   [Generating the Samples](#generating-the-samples)
 
-    -   [Visualizing in E-Space](https://www.google.com/search?q=%23visualizing-in-e-space)
+    -   [Visualizing in E-Space](#visualizing-in-e-space)
 
-    -   [Visualizing in G-Space](https://www.google.com/search?q=%23visualizing-in-g-space)
+    -   [Visualizing in G-Space](#visualizing-in-g-space)
 
 <hr>
 
@@ -52,6 +52,8 @@ This vignette covers the first three steps of the core workflow:
 
 3.  Sampling standard occurrence points and comparing their distributions in both environmental space (e-space) and geographic space (g-space) (`sample_data()`).
 
+<br>
+
 # Getting ready
 
 First, we need to load the core packages required for our spatial and niche operations.
@@ -62,9 +64,15 @@ library(nicheR)
 library(terra)
 ```
 
-# 1. Defining the Niche Space: `build_ellipsoid()`
+<br>
+
+# Defining the Niche Space
+
+`build_ellipsoid()`
 
 The first step in simulating or modeling species distributions is defining the environmental conditions the species can tolerate (its fundamental niche). We do this by defining ranges for environmental variables and building a niche ellipsoid.
+
+<br>
 
 ## Key Arguments
 
@@ -85,9 +93,15 @@ range_df <- data.frame(bio_1  = c(22, 28),
 ell <- build_ellipsoid(range = range_df)
 ```
 
-# 2. Generating the Prediction Surface: `predict()`
+<br>
+
+# Generating the Prediction Surface
+
+`predict()`
 
 Once the niche space is defined, we project it onto a geographic landscape (a `SpatRaster` of environmental variables). This yields spatial predictions of habitat suitability and environmental distance (Mahalanobis distance).
+
+<br>
 
 ## Key Arguments
 
@@ -115,9 +129,15 @@ pred <- predict(ell,
 plot(pred)
 ```
 
-# 3. Standard Occurrence Sampling: `sample_data()`
+<br>
+
+# Standard Occurrence Sampling
+
+`sample_data()`
 
 **Objective:** To generate presence points from a continuous prediction surface (e.g., habitat suitability or Mahalanobis distance) using weighted random sampling.
+
+<br>
 
 ## Key Arguments
 
@@ -142,6 +162,8 @@ plot(pred)
     -   `"mahalanobis"` — weights by Mahalanobis distance from the centroid.
 
 -   **`strict`**: Logical. If `TRUE`, the algorithm strictly forbids sampling in pixels outside the fundamental niche boundaries.
+
+<br>
 
 ## Generating the Samples
 
@@ -201,11 +223,15 @@ occ_maha_trunc_edge <- sample_data(
 )
 ```
 
-## Visualizing in E-Space (Environmental Space)
+<br>
+
+## Visualizing in E-Space
 
 **E-Space** represents the n*-*dimensional coordinate system defined by your environmental variables. By plotting our sampled points over the `build_ellipsoid()` object, we can see exactly where our sampled occurrences fall relative to the species' fundamental niche tolerances.
 
 Notice how `"centroid"` sampling clusters points near the red square (the optimal niche center), while `"edge"` sampling pushes points outward toward the borders of the ellipsoid.
+
+<br>
 
 ### Dimension 1: Bio1 vs. Bio12
 
@@ -241,6 +267,8 @@ add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_12", pts_col = "r
 dev.off()
 ```
 
+<br>
+
 ### Dimension 2: Bio1 vs. Bio115
 
 Next, we swap out our Y-axis to visualize the exact same points, but now looking at their distribution relative to Precipitation Seasonality (Bio15).
@@ -251,31 +279,33 @@ par(mfrow = c(2, 2), mar = c(4, 4, 3, 2))
 # Plot 1: Suitability | Centroid
 plot_ellipsoid(ell, background = as.data.frame(bios[[vars]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1", ylab = "Bio15", main = "Suitability | Centroid | Strict = FALSE")
-add_data(env_suit_cent, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(occ_suit_cent, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 
 # Plot 2: Mahalanobis | Edge
 plot_ellipsoid(ell, background = as.data.frame(bios[[vars]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1", ylab = "Bio15", main = "Mahalanobis | Edge | Strict = FALSE")
-add_data(env_maha_edge, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(occ_maha_edge, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 
 # Plot 3: Suitability Truncated | Random
 plot_ellipsoid(ell, background = as.data.frame(bios[[vars]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1", ylab = "Bio15", main = "Suitability Truncated | Random | Strict = TRUE")
-add_data(env_suit_trunc_rand, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(occ_suit_trunc_rand, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 
 # Plot 4: Mahalanobis Truncated | Edge
 plot_ellipsoid(ell, background = as.data.frame(bios[[vars]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1", ylab = "Bio15", main = "Mahalanobis Truncated | Edge | Strict = TRUE")
-add_data(env_maha_trunc_edge, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(occ_maha_trunc_edge, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 
 dev.off()
 ```
 
-## Visualizing in G-Space (Geographic Space)
+<br>
+
+## Visualizing in G-Space
 
 **G-Space** represents the physical, real-world landscape defined by spatial coordinates (Longitude vs. Latitude). Here, we plot the exact same four datasets on top of their respective prediction maps.
 
