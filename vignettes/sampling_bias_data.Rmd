@@ -20,25 +20,29 @@ knitr::opts_chunk$set(
 )
 ```
 
+<hr>
+
 ## Summary
 
--   [Description](https://www.google.com/search?q=%23description)
+-   [Description](#description)
 
--   [Getting ready](https://www.google.com/search?q=%23getting-ready)
+-   [Getting ready](#getting-ready)
 
--   [1. Defining the Niche Space: build_ellipsoid()](https://www.google.com/search?q=%231-defining-the-niche-space-build_ellipsoid)
+-   [Defining the Niche Space](#defining-the-niche-space)
 
--   [2. Generating the Prediction Surface: predict()](https://www.google.com/search?q=%232-generating-the-prediction-surface-predict)
+-   [Generating the Prediction Surface](#generating-the-prediction-surface)
 
--   [3. Introducing Sampling Bias: sample_biased_data()](https://www.google.com/search?q=%233-introducing-sampling-bias-sample_biased_data)
+-   [Introducing Sampling Bias](#introducing-sampling-bias)
 
-    -   [Preparing and Applying Bias](https://www.google.com/search?q=%23preparing-and-applying-bias)
+    -   [Applying Bias to Predictions](#applying-bias-to-predictions)
+    
+    -   [Preparing the Bias Layer](#preparing-the-bias-layer)
 
-    -   [Generating the Samples](https://www.google.com/search?q=%23generating-the-samples)
+    -   [Generating the Samples](#generating-the-samples)
 
-    -   [Visualizing in E-Space](https://www.google.com/search?q=%23visualizing-in-e-space)
+    -   [Visualizing in E-Space](#visualizing-in-e-space)
 
-    -   [Visualizing in G-Space](https://www.google.com/search?q=%23visualizing-in-g-space)
+    -   [Visualizing in G-Space](#visualizing-in-g-space)
 
 <hr>
 
@@ -54,6 +58,8 @@ This vignette covers the workflow for simulating spatially biased occurrence dat
 
 3.  Simulating biased sampling efforts to reflect real-world uneven data collection (`sample_biased_data()`).
 
+<br>
+
 # Getting ready
 
 First, we load the core packages required for our spatial and niche operations.
@@ -64,7 +70,11 @@ library(nicheR)
 library(terra)
 ```
 
-# 1. Defining the Niche Space: `build_ellipsoid()`
+<br>
+
+# Defining the Niche Space
+
+`build_ellipsoid()`
 
 We begin by defining the fundamental niche of our species based on absolute environmental tolerances.
 
@@ -83,9 +93,15 @@ range_df <- data.frame(bio_1  = c(22, 28),
 ell <- build_ellipsoid(range = range_df)
 ```
 
-# 2. Generating the Prediction Surface: `predict()`
+<br>
+
+# Generating the Prediction Surface
+
+`predict()`
 
 Once the niche space is defined, we project it onto a geographic landscape (a `SpatRaster` of environmental variables). This yields spatial predictions of habitat suitability and environmental distance (Mahalanobis distance).
+
+<br>
 
 ## Key Arguments
 
@@ -113,11 +129,17 @@ pred <- predict(ell,
 plot(pred)
 ```
 
-# 3. Introducing Sampling Bias: `sample_bias_data()`
+<br>
+
+# Introducing Sampling Bias
+
+`sample_bias_data()`
 
 **Objective:** To simulate spatially biased occurrence data from a prediction layer.
 
 **Purpose:** Real-world biodiversity data is rarely collected systematically. Biologists often sample near roads, rivers, or research stations. This workflow allows you to simulate spatial sampling bias to test how robust your ecological models are to imperfect detection and clustered collection efforts.
+
+<br>
 
 ## Key Functions & Arguments:
 
@@ -127,11 +149,17 @@ plot(pred)
 
 -   **`sample_biased_data()`**: Draws the actual points from the newly integrated biased surface.
 
-## Preparing the Bias Layer: `prepare_bias()`
+<br>
+
+## Preparing the Bias Layer
+
+`prepare_bias()`
 
 Before applying spatial bias to our ecological predictions, we must convert raw bias proxies (e.g., distance to roads, human population density) into standardized probability surfaces.
 
 The `prepare_bias()` function standardizes one or more raw raster layers (min-max normalization to a 0-1 scale) and allows you to define how each layer restricts sampling. If multiple layers are provided, it multiplies them together to create a single composite bias surface.
+
+<br>
 
 ### Key Arguments
 
@@ -162,11 +190,17 @@ prep_biases <- prepare_bias(
 )
 ```
 
-## Applying Bias to Predictions: `apply_bias()`
+<br>
+
+## Applying Bias to Predictions
+
+`apply_bias()`
 
 Once the composite bias surface is prepared, it must be integrated with your habitat suitability or environmental distance maps.
 
 The `apply_bias()` function mathematically merges your niche prediction with the bias surface, aligning grids if necessary, and cropping the output to the exact domain of your suitability map.
+
+<br>
 
 ### Key Arguments
 
@@ -218,6 +252,8 @@ app_maha_trunc_inv <- apply_bias(
 )
 ```
 
+<br>
+
 ## Generating the Samples
 
 Now we sample 100 occurrences from each of our newly biased prediction layers and extract the underlying environmental conditions so we can map them in E-Space.
@@ -252,9 +288,13 @@ occ_maha_trunc_inv <- sample_biased_data(n_occ = 100,
 env_maha_trunc_inv <- terra::extract(bios, occ_maha_trunc_inv[, c(1:2)])
 ```
 
-### Visualizing in E-Space (Environmental Space)
+<br>
+
+### Visualizing in E-Space
 
 Because these points are driven by geographic bias (e.g., proximity to a road) rather than purely optimal biology, their distribution in E-Space will often look scattered or artificially clustered away from the true niche centroid.
+
+<br>
 
 #### Dimension 1: Bio1 vs. Bio12
 
@@ -288,6 +328,8 @@ add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_12", pts_col = "r
 dev.off()
 ```
 
+<br>
+
 #### Dimension 1: Bio1 vs. Bio12
 
 ```{r}
@@ -320,7 +362,9 @@ add_data(as.data.frame(t(ell$centroid)), x = "bio_1", y = "bio_15", pts_col = "r
 dev.off()
 ```
 
-### Visualizing in G-Space (Geographic Space)
+<br>
+
+### Visualizing in G-Space
 
 In G-Space, we plot our occurrences over the *biased* prediction surfaces created by `apply_bias()`. This visualizes exactly how the spatial restriction of the sampling effort forces the points into specific geographic clusters, regardless of the underlying fundamental habitat quality.
 
