@@ -287,7 +287,7 @@ plot_ellipsoid(ell, background = ell_predict_df, pch = 20, bg_sample = 5000)
 add_data(data      = ell_predict_df, x = "bio_1", y = "bio_12",
          col_layer = "suitability",
          rev_pal   = TRUE,
-         pal       = terrain.colors(100),
+         pal       = hcl.colors(100, palette = "Viridis"),
          bg_sample = 10000,
          pch       = 20)
 add_ellipsoid(ell, col_ell = "red")
