@@ -2,7 +2,7 @@
 title: "Sampling occurrence data with bias"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Sampling occurrence data}
+  %\VignetteIndexEntry{Sampling occurrence data with bias}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
