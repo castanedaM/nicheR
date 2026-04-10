@@ -35,7 +35,7 @@ Description: Provides a robust set of tools for researchers and modelers to
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/castanedaM/NicheR
+URL: https://github.com/castanedaM/NicheR, https://castanedam.github.io/nicheR/
 BugReports: https://github.com/castanedaM/NicheR/issues
 RoxygenNote: 7.3.3
 Suggests: 
