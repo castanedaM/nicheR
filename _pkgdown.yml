@@ -1,0 +1,39 @@
+url: https://castanedam.github.io/nicheR/
+template:
+  light-switch: true
+  params:
+     bootswatch: united
+  bootstrap: 5
+  bslib:
+    bg: "#ffffff" # white background
+    fg: "#212529" # black text
+    primary: "#007bff" # primary elements: blue
+    input-bg: "#ffffff"     # color search bar
+    input-color: "#212529"  # color text search bar
+    navbar-light-bg: "#007bff" #color for navbar when light
+    navbar-dark-bg: "#00008B" #color for navbar when dark
+
+# navigation bar configuration
+navbar:
+  left:
+    - icon: fa-home
+      href: index.html
+    - text: "Functions"
+      href: reference/index.html
+    - icon: fas fa-book
+      text: "Articles"
+      menu:
+      -  text: "1. Build ellipsoid"
+         href: articles/creating_ellipsoid_based_niches.html
+      -  text: "2. Make a Prediction"
+         href: articles/predict.html
+      -  text: "3. Generate Occurence Data"
+         href: articles/sampling_occurrence_data.html
+      -  text: "4. Working With Bias"
+         href: articles/sampling_bias_data.html
+      -  text: "5. Virtual Community Simulations"
+         href: articles/virtual_communities.html
+  components:
+    home: ~
+
+
