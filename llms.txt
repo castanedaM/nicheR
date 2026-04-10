@@ -1,0 +1,721 @@
+# nicheR
+
+### Ellipsoid-based virtual niches in E-space and G-space
+
+**nicheR** is an R package for building, visualizing, predicting, and
+sampling **ellipsoid-based ecological niches** using environmental data.
+
+It provides:
+
+- Explicit ellipsoid construction in n-dimensional environmental space
+- Efficient suitability detection using Mahalanobis distance
+- Flexible virtual occurrence sampling strategies (centroid, edge,
+  random)
+- Bias surface preparation and application for realistic sampling
+  simulation
+- Visualization tools in environmental space (E-space) and geographic
+  space (G-space)
+- A unified, fully scriptable R-native workflow
+
+Inspired by the conceptual foundations of **NicheA** and the flexibility
+of the **virtualspecies** package, **nicheR** provides a reproducible
+framework for virtual species simulation and niche theory exploration.
+
+------------------------------------------------------------------------
+
+## Authors
+
+- Mariana Castaneda-Guzman
+- Connor Hughes
+- Paanwaris Paansri
+- Marlon Cobos
+
+------------------------------------------------------------------------
+
+## Installation
+
+Install the development version from GitHub:
+
+``` r
+if (!require("devtools")) install.packages("devtools")
+devtools::install_github("castanedaM/nicheR")
+#> terra (1.8-93 -> 1.9-1) [CRAN]
+#> package 'terra' successfully unpacked and MD5 sums checked
+#> 
+#> The downloaded binary packages are in
+#>  C:\Users\mcguz\AppData\Local\Temp\RtmpKq7Dbh\downloaded_packages
+#> ── R CMD build ─────────────────────────────────────────────────────────────────
+#>       ✔  checking for file 'C:\Users\mcguz\AppData\Local\Temp\RtmpKq7Dbh\remotes99b8876308c\castanedaM-nicheR-3465bde/DESCRIPTION'
+#>       ─  preparing 'nicheR': (1.1s)
+#>    checking DESCRIPTION meta-information ...     checking DESCRIPTION meta-information ...   ✔  checking DESCRIPTION meta-information
+#>       ─  checking for LF line-endings in source and make files and shell scripts
+#>   ─  checking for empty or unneeded directories
+#>   ─  building 'nicheR_0.0.11.tar.gz'
+#>      
+#> 
+library(nicheR)
+```
+
+------------------------------------------------------------------------
+
+## Why nicheR?
+
+The field of distributional ecology is evolving rapidly, with new
+algorithms, parameterization strategies, and hypotheses emerging at a
+fast pace. Evaluating these ideas requires software that can isolate
+mechanisms, account for bias, and clearly link ecological theory to
+model behavior.
+
+Virtual niche simulations help researchers test ideas by creating
+controlled datasets that make model behavior easier to interpret. In
+practice, building ellipsoid-based virtual niches in R has typically
+required combining several packages to define niches, map them to
+geography, and visualize results — making analyses harder to reproduce
+and build on.
+
+**nicheR** addresses this gap by offering a single, integrated, R-native
+framework that streamlines virtual niche construction, prediction,
+visualization, and occurrence data generation into one reproducible
+workflow.
+
+### Related work
+
+Three tools have shaped virtual species and niche simulation in
+ENM/SDMs:
+
+- **NicheA** — a Java-based software that pioneered environmental-space
+  niche visualization and explicitly linked niche theory with
+  simulation. An important conceptual foundation for nicheR.
+- **[virtualspecies](https://github.com/Farewe/virtualspecies)** — a
+  widely adopted R package (200+ citations) for simulating virtual
+  species and benchmarking SDMs and ENMs within R.
+- **[evniche](https://github.com/marlonecobos/evniche/)** — a
+  theoretically rigorous R package focused on environmental-space
+  representations and ellipsoid-based niche concepts.
+
+nicheR builds directly on these approaches, unifying their strengths in
+a well-documented R package. A Shiny GUI for interactive niche
+exploration is also under active development.
+
+------------------------------------------------------------------------
+
+## Conceptual Framework
+
+nicheR operates across two complementary spaces:
+
+- **E-space (Environmental Space)**: Ellipsoids represent multivariate
+  environmental tolerances. This is where niches are defined,
+  visualized, and compared.
+
+- **G-space (Geographic Space)**: Predictions are projected across
+  raster layers to map suitable geographic regions and generate virtual
+  occurrence data.
+
+This dual-space structure allows explicit separation between niche
+definition, projection, and sampling processes, making it
+straightforward to test ecological hypotheses under controlled,
+reproducible conditions.
+
+------------------------------------------------------------------------
+
+## Workflow Overview
+
+A typical nicheR workflow follows these steps:
+
+1.  **Prepare environmental data** — load and subset raster layers
+2.  **Prepare bias layers** *(optional)* — define sampling biases with
+    directional effects
+3.  **Build an ellipsoid** — define the niche from environmental ranges
+4.  **Predict suitability** — project the ellipsoid onto raster or data
+    frame inputs
+5.  **Apply bias** *(optional)* — weight predictions by a composite bias
+    surface
+6.  **Sample occurrences** — draw virtual occurrence records using
+    various strategies
+
+------------------------------------------------------------------------
+
+## Quick Start
+
+``` r
+library(nicheR)
+library(terra)
+#> Warning: package 'terra' was built under R version 4.4.3
+#> terra 1.8.93
+
+# Load environmental layers, here we use three WorldClim bioclimatic variables
+# for the Mesoamerica region included as example data in the package
+bios <- terra::rast(system.file("extdata/ma_bios.tif", package = "nicheR"))
+bios <- bios[[c("bio_1", "bio_12", "bio_15")]]
+
+# Convert to data frame for E-space operations (keeping x/y coordinates)
+bios_df <- as.data.frame(bios, xy = TRUE)
+```
+
+------------------------------------------------------------------------
+
+## Preparing Bias Layers
+
+Bias layers represent external factors that influence sampling
+detectability or effort, independent of the species’ actual niche. Each
+layer is assigned a direction: `"direct"` means higher values increase
+sampling probability (e.g., higher species richness → most likely good
+habitat), while `"inverse"` means higher values decrease it (e.g.,
+higher light pollution → more urbanization → less likely to have good
+habitat).
+
+[`prepare_bias()`](https://castanedam.github.io/nicheR/reference/prepare_bias.md)
+standardizes all layers to \[0, 1\], applies the directional
+transformations, and combines them into a single composite bias surface.
+Setting `include_processed_layers = TRUE` returns the standardized
+individual layers alongside the composite, which is useful for
+inspecting how each layer contributed.
+
+``` r
+bias <- prepare_bias(bias_surface             = terra::rast(system.file("extdata/ma_biases.tif", package = "nicheR")),
+                     effect_direction         = c("direct", "inverse"),
+                     include_processed_layers = TRUE)
+#> Starting: prepare_bias()
+#> Step: splitting SpatRaster into layers...
+#> Step: bias_surface is a SpatRaster. Using first layer as template surface...
+#> Step: mask_na = FALSE. Expanding template to union extent (keeping finest resolution).
+#> Step: standarizing (min/max) and applying direction of effect to 2 bias layer/s...
+#> Step: building standarized (min/max) directional composite bias surface (mask_na = FALSE)...
+#> Done: prepare_bias()
+
+# Inspect the formula used to combine layers and the resulting composite
+bias$combination_formula
+#> [1] "sp_richness * (1-nighttime)"
+bias$composite_surface
+#> class       : SpatRaster 
+#> size        : 150, 240, 1  (nrow, ncol, nlyr)
+#> resolution  : 0.1666667, 0.1666667  (x, y)
+#> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> source(s)   : memory
+#> name        : standarized_composite_bias_surface 
+#> min value   :                          0.0000000 
+#> max value   :                          0.9507549
+
+# Visualize: standardized individual layers and the composite bias surface
+# The composite reflects both the direct (species richness) and inverse
+# (nighttime light) effects combined into a single sampling probability surface
+terra::plot(bias$processed_layers)
+```
+
+![](reference/figures/README-unnamed-chunk-4-1.png)
+
+``` r
+terra::plot(bias$composite_surface)
+```
+
+![](reference/figures/README-unnamed-chunk-4-2.png)
+
+> **Vignette:** For a detailed walkthrough of bias surface construction,
+> directional effects, and how bias interacts with predictions and
+> sampling, see: *\[insert link later Bias: preparation, prediction, and
+> sampling\]*
+
+------------------------------------------------------------------------
+
+## Building an Ellipsoid
+
+The ellipsoid is the core object in nicheR. It represents the virtual
+species’ niche as a multivariate ellipse in environmental space, defined
+by a centroid and a covariance matrix that determine its position, size,
+and orientation. At minimum, you define it with a range data frame, two
+rows giving the minimum and maximum for each environmental variable.
+nicheR computes the centroid, covariance matrix, semi-axes lengths, and
+niche volume automatically.
+
+``` r
+range <- data.frame(bio_1  = c(20, 25),
+                    bio_12 = c(1000, 1500),
+                    bio_15 = c(60, 75))
+
+ell <- build_ellipsoid(range = range)
+#> Starting: building ellipsoidal niche from ranges...
+#> Step: computing covariance matrix...
+#> Step: computing additional ellipsoidal niche metrics...
+#> Done: created ellipsoidal niche.
+
+# The ellipsoid object contains niche geometry and metrics
+names(ell)
+#>  [1] "dimensions"        "var_names"         "centroid"         
+#>  [4] "cov_matrix"        "Sigma_inv"         "chol_Sigma"       
+#>  [7] "eigen"             "cl"                "chi2_cutoff"      
+#> [10] "semi_axes_lengths" "axes_coordinates"  "volume"           
+#> [13] "cov_limits"
+
+# Pretty-printed summary of the ellipsoid
+ell
+#> nicheR Ellipsoid Object
+#> -----------------------
+#> Dimensions:        3D
+#> Chi-square cutoff: 11.345
+#> Centroid (mu):     22.5, 1250, 67.5
+#> 
+#> Covariance matrix:
+#>        bio_1   bio_12 bio_15
+#> bio_1  0.694    0.000   0.00
+#> bio_12 0.000 6944.444   0.00
+#> bio_15 0.000    0.000   6.25
+#> 
+#> Ellipsoid semi-axis lengths:
+#>   280.685, 8.421, 2.807
+#> 
+#> Ellipsoid axis endpoints:
+#>  Axis 1:
+#>          bio_1   bio_12 bio_15
+#> vertex_a  22.5  969.315   67.5
+#> vertex_b  22.5 1530.685   67.5
+#> 
+#>  Axis 2:
+#>          bio_1 bio_12 bio_15
+#> vertex_a  22.5   1250 59.079
+#> vertex_b  22.5   1250 75.921
+#> 
+#>  Axis 3:
+#>           bio_1 bio_12 bio_15
+#> vertex_a 19.693   1250   67.5
+#> vertex_b 25.307   1250   67.5
+#> 
+#> Ellipsoid volume:  27788.51
+```
+
+### Visualizing the Ellipsoid
+
+nicheR includes base-R plotting functions for visualizing the ellipsoid
+in E-space. You can plot individual dimension pairs or all pairs at
+once. Adding the environmental background helps contextualize where the
+niche sits relative to available conditions, in this example the
+ellipsoid occupies a warm (bio_1: 20–25), moderately seasonal corner of
+the broader Mesoamerican climate space.
+
+``` r
+# Basic E-space plots, no background, shows ellipsoid geometry only
+plot_ellipsoid(ell)
+plot_ellipsoid_pairs(ell)
+```
+
+![](reference/figures/README-unnamed-chunk-6-1.png)
+
+``` r
+
+# With environmental background, bg_sample controls how many background
+# points are drawn for speed; increase for publication-quality plots
+plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000)
+```
+
+![](reference/figures/README-unnamed-chunk-6-2.png)
+
+``` r
+plot_ellipsoid(ell, background = bios_df, dim = c(1, 3), bg_sample = 5000)
+```
+
+![](reference/figures/README-unnamed-chunk-6-3.png)
+
+``` r
+
+# Pairwise plot showing all dimension combinations simultaneously
+plot_ellipsoid_pairs(ell, background = bios_df, bg_sample = 5000, col_ell = "red")
+```
+
+![](reference/figures/README-unnamed-chunk-6-4.png)
+
+> **Vignette:** For details on ellipsoid construction, covariance-based
+> rotation, niche volume, and advanced visualization options, see:
+> *\[insert link later, Building ellipsoids\]*
+
+------------------------------------------------------------------------
+
+## Predicting Suitability
+
+Once the ellipsoid is built,
+[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+projects it onto environmental data to produce suitability and
+Mahalanobis distance surfaces. Suitability is highest at the niche
+centroid and decreases toward the boundary. Truncated outputs (`_trunc`)
+set values to zero (for suitbaility) or NA (for Mahalanobis) outside the
+ellipsoid, which is useful for enforcing strict niche-boundary sampling
+downstream.
+
+Both raster (`SpatRaster`) and data frame inputs are supported and
+return matching output types.
+
+### Raster input
+
+``` r
+# Returns a SpatRaster with: bio layers (from keep_data = TRUE),
+# Mahalanobis distance, suitability, and their truncated versions
+ell_predict_r <- predict(ell,
+                         newdata               = bios,
+                         suitability_truncated = TRUE,
+                         mahalanobis_truncated = TRUE,
+                         keep_data             = TRUE)
+#> Starting: suitability prediction using newdata of class: SpatRaster...
+#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
+#> Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, bio_15, Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc
+
+terra::plot(ell_predict_r)
+```
+
+![](reference/figures/README-unnamed-chunk-7-1.png)
+
+### Data frame input
+
+``` r
+# Returns the original data frame with appended prediction columns
+ell_predict_df <- predict(ell,
+                          newdata               = bios_df,
+                          suitability_truncated = TRUE)
+#> Starting: suitability prediction using newdata of class: data.frame...
+#> Step: Identified spatial columns: x, y
+#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
+#> Done: Prediction completed successfully. Returned columns: x, y, bio_1, bio_12, bio_15, Mahalanobis, suitability, suitability_trunc
+
+head(ell_predict_df)
+#>           x        y    bio_1 bio_12   bio_15 Mahalanobis  suitability
+#> 1 -99.91667 29.91667 18.16097    680 39.75968    197.0208 1.649975e-43
+#> 2 -99.75000 29.91667 18.06556    703 38.44158    206.5053 1.438645e-45
+#> 3 -99.58333 29.91667 17.95946    725 37.43598    213.9931 3.404050e-47
+#> 4 -99.41667 29.91667 18.01018    734 36.24147    223.7044 2.649735e-49
+#> 5 -99.25000 29.91667 18.14458    748 34.95365    233.0873 2.430781e-51
+#> 6 -99.08333 29.91667 18.36623    771 33.73626    240.0447 7.498064e-53
+#>   suitability_trunc
+#> 1                 0
+#> 2                 0
+#> 3                 0
+#> 4                 0
+#> 5                 0
+#> 6                 0
+```
+
+### Visualizing predictions in E-space
+
+Plotting predictions in E-space makes it easy to see how suitability is
+distributed relative to the niche boundary. In the non-truncated view,
+all background points are colored by suitability, showing a gradient
+from low to high as points approach the ellipsoid center. The truncated
+view zooms into the ellipsoid itself, revealing only the environmentally
+suitable area with the suitability gradient inside.
+
+``` r
+# Non-truncated: full background colored by suitability gradient
+plot_ellipsoid(ell, background = ell_predict_df, pch = 20, bg_sample = 5000)
+add_data(data      = ell_predict_df, x = "bio_1", y = "bio_12",
+         col_layer = "suitability",
+         rev_pal   = TRUE,
+         pal       = terrain.colors(100),
+         bg_sample = 10000,
+         pch       = 20)
+add_ellipsoid(ell, col_ell = "red")
+```
+
+![](reference/figures/README-unnamed-chunk-9-1.png)
+
+``` r
+
+# Truncated: only points inside the ellipsoid are shown, colored by suitability
+plot_ellipsoid(ell)
+add_data(data      = ell_predict_df, x = "bio_1", y = "bio_12",
+         col_layer = "suitability_trunc",
+         rev_pal   = TRUE,
+         pch       = 20)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
+```
+
+![](reference/figures/README-unnamed-chunk-9-2.png)
+
+> **Vignette:** For a full guide to prediction outputs, truncation
+> logic, raster vs. data frame workflows, and E-space vs. G-space
+> visualization, see: *\[insert link later, Prediction and sampling\]*
+
+------------------------------------------------------------------------
+
+## Applying Bias to Predictions
+
+[`apply_bias()`](https://castanedam.github.io/nicheR/reference/apply_bias.md)
+weights the suitability prediction by the composite bias surface to
+produce a biased suitability layer. This simulates how real occurrence
+records are collected under imperfect, non-random sampling — where
+detection probability is influenced by external factors like
+accessibility, observer effort, or habitat visibility. Note that the
+resulting layer is no longer a strict probability surface, but reflects
+the joint effect of niche suitability and sampling bias.
+
+``` r
+biased_predict_r <- apply_bias(prepared_bias    = bias,
+                               prediction       = ell_predict_r,
+                               prediction_layer = "suitability")
+#> Starting: apply_bias()
+#> Step: applying bias with 'direct' effect to to "suitability" layer...
+#> Done: apply_bias(). Note: values are no longer probabilities
+```
+
+> **Vignette:** For details on bias-weighted prediction, comparing
+> biased vs. unbiased outputs, and downstream effects on occurrence
+> sampling, see: *\[insert link later, Bias: preparation, prediction,
+> and sampling\]*
+
+------------------------------------------------------------------------
+
+## Sampling Virtual Occurrences
+
+nicheR provides two sampling functions:
+[`sample_data()`](https://castanedam.github.io/nicheR/reference/sample_data.md)
+for unbiased sampling directly from suitability or Mahalanobis surfaces,
+and
+[`sample_biased_data()`](https://castanedam.github.io/nicheR/reference/sample_biased_data.md)
+for sampling from a bias-weighted prediction surface.
+
+Three **sampling strategies** control where within the niche occurrences
+are drawn from:
+
+- `"centroid"` — samples preferentially near the niche center (most
+  suitable conditions)
+- `"edge"` — samples preferentially near the niche boundary (marginal
+  conditions)
+- `"random"` — samples uniformly across the suitable area
+
+Two **weighting methods** control the probability used to draw samples:
+
+- `"suitability"` — weights by suitability score
+- `"mahalanobis"` — weights by Mahalanobis distance from the centroid
+
+Using a truncated prediction layer with `strict = TRUE` ensures all
+sampled points fall strictly within the ellipsoid boundary.
+
+### Unbiased sampling — centroid strategy
+
+``` r
+sample_data_df_cn <- sample_data(n_occ            = 100,
+                                 prediction       = ell_predict_df,
+                                 prediction_layer = "suitability_trunc",
+                                 sampling         = "centroid",
+                                 method           = "mahalanobis",
+                                 strict           = TRUE)
+#> Starting: sample_data()
+#> Done: sampled 100 points.
+head(sample_data_df_cn)
+#>               x         y    bio_1 bio_12   bio_15 Mahalanobis suitability
+#> 28985 -69.25000  9.916667 23.26291   1088 61.30188   10.763926 0.004598786
+#> 3464  -82.75000 27.583333 22.72719   1270 59.50328   10.363531 0.005618080
+#> 23124 -86.08333 13.916667 22.98272   1486 64.65534    9.650503 0.008024537
+#> 14661 -96.58333 19.750000 22.68390   1452 69.76368    6.744352 0.034314882
+#> 21683 -86.25000 14.916667 23.34570   1265 59.64027   10.946360 0.004197862
+#> 16251 -71.58333 18.750000 21.45765   1426 65.06884    6.970795 0.030641581
+#>       suitability_trunc
+#> 28985       0.004598786
+#> 3464        0.005618080
+#> 23124       0.008024537
+#> 14661       0.034314882
+#> 21683       0.004197862
+#> 16251       0.030641581
+```
+
+### Unbiased sampling — edge strategy
+
+``` r
+sample_data_df_ed <- sample_data(n_occ            = 100,
+                                 prediction       = ell_predict_df,
+                                 prediction_layer = "suitability_trunc",
+                                 sampling         = "edge",
+                                 method           = "suitability")
+#> Starting: sample_data()
+#> Step: auto-detected a likely truncated prediction surface. Setting 'strict = TRUE' and removing NA and zero values. You can override this behavior with the 'strict' argument...
+#> Done: sampled 100 points.
+```
+
+### Biased sampling
+
+``` r
+# Sampling from the bias-weighted suitability surface
+# Even with raster input, the output is always a data frame of occurrence records
+sample_data_b <- sample_biased_data(n_occ            = 100,
+                                    prediction       = biased_predict_r,
+                                    prediction_layer = "suitability_biased_direct")
+#> Starting: sample_biased_data()
+#> Done: sampled 100 points from biased prediction layer
+head(sample_data_b)
+#>               x        y suitability_biased_direct
+#> 21920 -86.75000 14.75000                0.13386436
+#> 22157 -87.25000 14.58333                0.10606525
+#> 28756 -67.41667 10.08333                0.07180988
+#> 23603 -86.25000 13.58333                0.01719372
+#> 21919 -86.91667 14.75000                0.18853642
+#> 4191  -81.58333 27.08333                0.01815162
+```
+
+### Comparing centroid and edge sampling
+
+The centroid strategy concentrates records near the niche center, while
+the edge strategy spreads records toward the ellipsoid boundary. Both
+are plotted against the environmental background to illustrate the
+difference in spatial distribution within E-space, black crosses (×) are
+the sampled occurrences, grey points are the background, and the red
+ellipse is the niche boundary.
+
+``` r
+par(mfrow = c(2, 1))
+
+# Centroid sampling, occurrences cluster toward the niche center
+plot_ellipsoid(ell, main = "Centroid Sampling — Unbiased")
+add_data(data    = ell_predict_df, x = "bio_1", y = "bio_12",
+         pts_col = "grey", pch = 20, bg_sample = 8000)
+add_data(data    = sample_data_df_cn, x = "bio_1", y = "bio_12",
+         pts_col = "black", pch = 4, lwd = 2)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
+
+# Edge sampling, occurrences spread toward the niche boundary
+plot_ellipsoid(ell, main = "Edge Sampling — Unbiased")
+add_data(data    = ell_predict_df, x = "bio_1", y = "bio_12",
+         pts_col = "grey", pch = 20, bg_sample = 8000)
+add_data(data    = sample_data_df_ed, x = "bio_1", y = "bio_12",
+         pts_col = "black", pch = 4, lwd = 2)
+add_ellipsoid(ell, col_ell = "red", lwd = 2)
+```
+
+![](reference/figures/README-unnamed-chunk-14-1.png)
+
+> **Vignette:** For a full guide to sampling strategies, methods, strict
+> vs. non-strict modes, and biased sampling workflows, see: *\[insert
+> link later, Prediction and sampling\]*
+
+------------------------------------------------------------------------
+
+## Hypothesis Testing
+
+nicheR includes functions for testing ecological hypotheses using
+virtual niche data. The community function allows users to evaluate
+hypotheses about niche overlap, divergence, and community-level patterns
+by comparing ellipsoids across species or conditions under controlled
+virtual scenarios.
+
+> **Vignette:** For details on hypothesis testing with virtual niches
+> and community-level comparisons, see: *\[insert link later, Hypothesis
+> testing: community niche analyses\]*
+
+------------------------------------------------------------------------
+
+## Coming Soon
+
+Detailed vignettes are currently in development:
+
+- *Building ellipsoids* — construction, covariance, rotation, and niche
+  volume
+- *Prediction and sampling* — raster and data frame workflows,
+  truncation, sampling strategies
+- *Bias* — preparation, directional effects, bias-weighted prediction
+  and sampling
+- *Hypothesis testing* — community niche analyses and virtual niche
+  comparisons
+
+An interactive **Shiny GUI** for point-and-click niche construction,
+prediction, and occurrence sampling is also planned, with a focus on
+preserving full reproducibility by exporting session-generated R
+scripts.
+
+------------------------------------------------------------------------
+
+## Contributing
+
+We welcome contributions. If you have suggestions, bug reports, feature
+requests, or code improvements, please open an issue or submit a pull
+request on GitHub.
+
+When contributing:
+
+- Document functions using roxygen2
+- Include minimal reproducible examples
+- Add tests when appropriate
+
+Thank you for helping improve **nicheR**.
+
+# Package index
+
+## All functions
+
+- [`add_data()`](https://castanedam.github.io/nicheR/reference/add_data.md)
+  : Add occurrence points or other data to an existing E-space plot
+- [`add_ellipsoid()`](https://castanedam.github.io/nicheR/reference/add_ellipsoid.md)
+  : Add an ellipsoid boundary to an existing E-space plot
+- [`apply_bias()`](https://castanedam.github.io/nicheR/reference/apply_bias.md)
+  : Apply sampling bias to suitability surfaces
+- [`back_data`](https://castanedam.github.io/nicheR/reference/back_data.md)
+  : Background environmental data for examples
+- [`build_ellipsoid()`](https://castanedam.github.io/nicheR/reference/build_ellipsoid.md)
+  : Build a probabilistic ellipsoidal niche from ranges
+- [`conserved_ellipses()`](https://castanedam.github.io/nicheR/reference/conserved_ellipses.md)
+  : Generate ellipses via multivariate normal biased sampling
+- [`covariance_limits()`](https://castanedam.github.io/nicheR/reference/covariance_limits.md)
+  : Calculate safe covariance ranges for positive definiteness
+- [`ellipsoid_calculator()`](https://castanedam.github.io/nicheR/reference/ellipsoid_calculator.md)
+  : Calculate n-dimensional ellipsoid metrics
+- [`ellipsoid_volume()`](https://castanedam.github.io/nicheR/reference/ellipsoid_volume.md)
+  : Compute ellipsoid hypervolume
+- [`ma_bios`](https://castanedam.github.io/nicheR/reference/ma_bios.md)
+  : Bioclimatic variables for part of the Americas
+- [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)
+  : Generate nested ellipses based on a reference ellipse
+- [`plot_community()`](https://castanedam.github.io/nicheR/reference/plot_community.md)
+  : Plot a nicheR Community of Ellipses
+- [`plot_ellipsoid()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid.md)
+  : Plot a nicheR ellipsoid in environmental space
+- [`plot_ellipsoid_pairs()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
+  : Plot all pairwise 2D ellipsoid projections
+- [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_community.md)
+  : Predict method for a nicheR Community
+- [`predict(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_ellipsoid.md)
+  : Predict suitability and Mahalanobis distance from a nicheR ellipsoid
+- [`prepare_bias()`](https://castanedam.github.io/nicheR/reference/prepare_bias.md)
+  : Prepare sampling bias surfaces
+- [`print(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_community.md)
+  : Print a nicheR Community Object
+- [`print(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_ellipsoid.md)
+  : Print a nicheR Ellipsoid Object
+- [`random_ellipses()`](https://castanedam.github.io/nicheR/reference/random_ellipses.md)
+  : Generate random ellipses constrained by a point cloud and a
+  reference ellipse
+- [`ranges_from_data()`](https://castanedam.github.io/nicheR/reference/range_utilities.md)
+  [`ranges_from_stats()`](https://castanedam.github.io/nicheR/reference/range_utilities.md)
+  : Compute variable ranges from data or statistics with optional
+  expansion
+- [`read_nicheR()`](https://castanedam.github.io/nicheR/reference/read_nicheR.md)
+  : Read a nicheR object from disk
+- [`ref_ellipse`](https://castanedam.github.io/nicheR/reference/ref_ellipse.md)
+  : Reference ellipse for virtual community examples
+- [`sample_biased_data()`](https://castanedam.github.io/nicheR/reference/sample_biased_data.md)
+  : Sample occurrence data from a bias-weighted prediction surface
+- [`sample_data()`](https://castanedam.github.io/nicheR/reference/sample_data.md)
+  : Sample occurrence data from a prediction surface
+- [`sample_virtual_data()`](https://castanedam.github.io/nicheR/reference/sample_virtual_data.md)
+  : Sample occurrence data from a virtual prediction surface
+- [`save_nicheR()`](https://castanedam.github.io/nicheR/reference/save_nicheR.md)
+  : Save a nicheR object to disk
+- [`update_covariance()`](https://castanedam.github.io/nicheR/reference/update_covariance.md)
+  : Update covariance values and calculate remaining safe limits
+- [`update_ellipsoid_covariance()`](https://castanedam.github.io/nicheR/reference/update_ellipsoid_covariance.md)
+  : Update covariances in a nicheR ellipsoid and recompute metrics
+- [`virtual_data()`](https://castanedam.github.io/nicheR/reference/virtual_data.md)
+  : Generate data based on a ellipsoidal niche
+
+# Articles
+
+### All vignettes
+
+- [Bias surface](https://castanedam.github.io/nicheR/articles/bias.md):
+- [Creating Ellipsoid Based
+  Niches](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.md):
+- [Visualizing ellipsoids in environmental
+  space](https://castanedam.github.io/nicheR/articles/plotting_vignette.md):
+- [Predicting suitability and Mahalanobis
+  distance](https://castanedam.github.io/nicheR/articles/predict.md):
+- [Sampling occurrence data with
+  bias](https://castanedam.github.io/nicheR/articles/sampling_bias_data.md):
+- [Sampling occurrence
+  data](https://castanedam.github.io/nicheR/articles/sampling_occurrence_data.md):
+- [Sampling occurrence data with virtual
+  data](https://castanedam.github.io/nicheR/articles/sampling_virtual_data.md):
+- [Virtual community
+  simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.md):

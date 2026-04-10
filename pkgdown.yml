@@ -1,0 +1,16 @@
+pandoc: 3.1.11
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  bias: bias.html
+  creating_ellipsoid_based_niches: creating_ellipsoid_based_niches.html
+  plotting_vignette: plotting_vignette.html
+  predict: predict.html
+  sampling_bias_data: sampling_bias_data.html
+  sampling_occurrence_data: sampling_occurrence_data.html
+  sampling_virtual_data: sampling_virtual_data.html
+  virtual_communities: virtual_communities.html
+last_built: 2026-04-10T16:11Z
+urls:
+  reference: https://castanedam.github.io/nicheR/reference
+  article: https://castanedam.github.io/nicheR/articles

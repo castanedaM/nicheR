@@ -1,0 +1,66 @@
+# Calculate safe covariance ranges for positive definiteness
+
+Identifies the maximum and minimum covariance values that maintain a
+positive definite (PD) variance-covariance matrix. For niches with more
+than two dimensions, it independently shrinks the positive and negative
+theoretical limits until the "all-maximum" and "all-minimum" covariance
+scenarios are globally valid.
+
+## Usage
+
+``` r
+covariance_limits(varcov_matrix, tol = 1e-6)
+```
+
+## Arguments
+
+- varcov_matrix:
+
+  A square numerical matrix with variances on diagonal.
+
+- tol:
+
+  Small value to subtract from limits to ensure strict PD.
+
+## Value
+
+A data frame with columns `min` and `max`, where each row represents a
+pair of dimensions named using the column names of the input matrix.
+
+## Details
+
+The function begins by calculating the deterministic 2D limits for each
+pair of variables (\\\|cov\_{ij}\| \< \sqrt{\sigma_i^2 \cdot
+\sigma_j^2}\\).
+
+In higher dimensions (\> 2), satisfying all pairwise limits is necessary
+but not sufficient to ensure the entire matrix is PD. Specifically,
+contradictory negative correlations can lead to non-transitivity errors.
+To provide a "safe zone" for users, the function independently shrinks
+the maximum and minimum bounds by 1
+
+It tests the "all-maximum" and "all-minimum" matrices using Cholesky
+decomposition. If a test fails, the respective bounds are reduced until
+a globally valid state is found. This independent approach ensures that
+geometric constraints in the negative correlation space do not
+unnecessarily penalize the limits in the positive correlation space.
+
+## Examples
+
+``` r
+# Example 1: 2D Matrix (Standard Deterministic Limits)
+v_mat_2d <- matrix(c(10, 0, 0, 5), nrow = 2)
+colnames(v_mat_2d) <- c("temp", "precip")
+covariance_limits(v_mat_2d)
+#>                   min      max
+#> temp-precip -7.071067 7.071067
+
+# Example 2: 3D Matrix (Independent Shrinkage Exploration)
+v_mat_3d <- matrix(c(10, 0, 0, 0, 5, 0, 0, 0, 7), nrow = 3)
+colnames(v_mat_3d) <- c("temp", "precip", "hum")
+covariance_limits(v_mat_3d)
+#>                   min      max
+#> temp-precip -3.535533 7.071067
+#> temp-hum    -4.183300 8.366599
+#> precip-hum  -2.958039 5.916079
+```
