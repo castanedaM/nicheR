@@ -104,8 +104,8 @@ argument</a></li>
 </ul>
 </li>
 <li>
-<a href="#niche-conservatism-in-communities">Niche conservatism in
-communities</a>
+<a href="#simulating-niche-conservatism-in-communities">Simulating
+niche conservatism in communities</a>
 <ul>
 <li><a href="#effect-of-background-density">Effect of background
 density</a></li>
@@ -135,10 +135,10 @@ outcomes</a></li>
 <p>This vignette shows how to simulate virtual communities using
 functions in the nicheR package. For our purposes, we will consider a
 community a set of species niches (ellipses) that are distributed in a
-given environmental space. The simulation of virtual communities is
-useful to generate hypothetical scenarios of community assembly and
-explore patterns derived from the way species are distributed in
-envrionmental and geographical space.</p>
+given environmental space (E-space). The simulation of virtual
+communities is useful to generate hypothetical scenarios of community
+assembly and explore patterns derived from the way species are
+distributed in envrionmental and geographic space (G-space).</p>
 <p>The main functions that automate community simulations in
 <code>nicheR</code> are:</p>
 <ul>
@@ -162,17 +162,17 @@ similar to the reference niche. A scenario of niche conservatism.</li>
 <h2 id="getting-ready">Getting ready<a class="anchor" aria-label="anchor" href="#getting-ready"></a>
 </h2>
 <p>If <code>nicheR</code> has not been installed yet, please do so. See
-the <a href="index.html">Main guide</a> for installation
+the <a href="../index.html">Main guide</a> for installation
 instructions.</p>
 <p>Use the following lines of code to load <code>nicheR</code> and other
 packages needed for this vignette, and to set a working directory (if
 necessary).</p>
-<p>Note: We will display functions from other packages as
+<p><u>Note</u>: We will display functions from other packages as
 <code>package::function()</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load packages</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/castanedaM/NicheR" class="external-link">nicheR</a></span><span class="op">)</span></span>
-<span><span class="co">#library(terra)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Current directory</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -192,7 +192,8 @@ comunity simulations. The data are included in the <code>nicheR</code>
 package and consist of an <code>nicheR_ellipsoid</code> object with a
 reference niche defined by two environmental variables (bio1 and bio12)
 and these envrionmental variables for North America to represent the
-background for our simulations.</p>
+background for our simulations. For details on how to create the
+reference niche, see the vignette <a href="creating_ellipsoid_based_niches.html">1. Build ellipsoid</a>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Reference niche</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
@@ -350,14 +351,14 @@ of the random ellipses in environmental space. We will use the
 <h3 id="effect-of-background-density">Effect of background density<a class="anchor" aria-label="anchor" href="#effect-of-background-density"></a>
 </h3>
 <p>As the <code><a href="../reference/random_ellipses.html">random_ellipses()</a></code> function uses the background as
-a reference to pick ellipse centroids, the density of the background
-data can affect the distribution of these ellipses. If the background
-data is dense in certain areas of the environmental space, it may lead
-to a higher concentration of ellipses in those areas, while sparse
-background data may result in fewer ellipses being generated in those
-regions. This can influence the overall structure and diversity of the
-simulated community, as well as the patterns observed in niche overlap
-and species interactions.</p>
+a reference to pick ellipse centroids, <strong>the density of the
+background data can affect the distribution of these ellipses</strong>.
+If the background data is dense in certain areas of the environmental
+space, it may lead to a higher concentration of ellipses in those areas,
+while sparse background data may result in fewer ellipses being
+generated in those regions. This can influence the overall structure and
+diversity of the simulated community, as well as the patterns observed
+in niche overlap and species interactions.</p>
 <p>The example below shows how the density of the background can affect
 the distribution of random ellipses in the environmental space. We will
 simulate two communities: (1) using the full background as reference,
@@ -402,11 +403,11 @@ background has a higher concentration of ellipses in areas where the
 background data is denser, whereas the community created with thinned
 background has a more even distribution of ellipses. This highlights the
 importance of considering this factor when simulating communities using
-random ellipses. Play with the value for the argument
-<code>resolution</code> to see how it can affect the distribution of
-ellipses in the community. Keep in mind that the largest the value for
-this argument, the more points will be available for the function to
-pick centroids.</p>
+random ellipses.</p>
+<p>Play with the value for the argument <code>resolution</code> to see
+how it can affect the distribution of ellipses in the community. Keep in
+mind that the largest the value for this argument, the more points will
+be available for the function to pick centroids.</p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -504,9 +505,10 @@ intermediate size. Finally, when <code>smallest_proportion</code> is
 small and <code>largest_proportion</code> is large, the ellipses tend to
 be more variable in size. This highlights how the size of the ellipses
 can affect the structure of the community and the “interactions” among
-species niches (ellipses). Play with the values for these arguments to
-explore different scenarios and pick the ones that are more convinient
-for your research.</p>
+species niches (ellipses).</p>
+<p>Play with the values for these arguments to explore different
+scenarios and pick the ones that are more convinient for your
+research.</p>
 <p><br></p>
 </div>
 </div>
@@ -632,11 +634,11 @@ the mean volume of the ellipses in the community with a large
 <p>Another important arument in the <code><a href="../reference/nested_ellipses.html">nested_ellipses()</a></code>
 function is <code>bias</code>, which determines the degree of bias
 towards generating smaller or larger ellipses in the community. A value
-of <code>bias</code> clusters ellipses toward the border of the
-reference ellipse, whereas a value greater than 1 clusters them toward
-the centroid of the reference ellipse. We will keep the value for
-<code>smallest_proportion</code> the same in both cases to better
-visualize the effect of the argument <code>bias</code>.</p>
+of <code>bias</code> &lt; 1 and close to zero clusters ellipses toward
+the border of the reference ellipse, whereas a value greater than 1
+clusters them toward the centroid of the reference ellipse. We will keep
+the value for <code>smallest_proportion</code> the same in both cases to
+better visualize the effect of the argument <code>bias</code>.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulating the community with a bias towards the border</span></span>
 <span><span class="va">nest_comm_small_bias</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nested_ellipses.html">nested_ellipses</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">ref_ellipse</span>, n <span class="op">=</span> <span class="fl">20</span>,</span>
@@ -685,7 +687,7 @@ pick the one that helps you explore your questions.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="niche-conservatism-in-communities">Niche conservatism in communities<a class="anchor" aria-label="anchor" href="#niche-conservatism-in-communities"></a>
+<h2 id="simulating-niche-conservatism-in-communities">Simulating niche conservatism in communities<a class="anchor" aria-label="anchor" href="#simulating-niche-conservatism-in-communities"></a>
 </h2>
 <p>The function <code>conserved_ellipses</code> creates a ellipses based
 on a reference ellipse aiming for a set of results that are similar to
@@ -873,10 +875,10 @@ Mahalanobis distance and suitability derived from the ellipses. The
 function <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> can be used with
 <code>nicheR_community</code> objects to obtain predictions. The
 difference between predict for community objects and that for
-<code>nicheR_ellipsoid</code> objects is that only one type of
-<code>prediction</code> can be obtained at a time. The options for the
-<code>prediction</code> argument for <code>nicheR_community</code>
-objects are:</p>
+<code>nicheR_ellipsoid</code> objects (see <a href="predict.html">2.
+Make a Prediction</a>) is that only one type of <code>prediction</code>
+can be obtained at a time. The options for the <code>prediction</code>
+argument for <code>nicheR_community</code> objects are:</p>
 <ul>
 <li>
 <code>Mahalanobis</code>: Mahalanobis distance from the centroid of
@@ -884,11 +886,11 @@ ellipses to every point in <code>newdata</code>.</li>
 <li>
 <code>suitability</code>: mutivariate normal probability for every
 point in <code>newdata</code>, derived from the Mahalanobis distance,
-interpreted as suitability. Values outside the ellipse are returned as
-<code>NA</code>.</li>
+interpreted as suitability.</li>
 <li>
 <code>Mahalanobis_trunc</code>: the same Mahalanobis distance but
-truncated to the limit of the ellipses.</li>
+truncated to the limit of the ellipses. Values outside the ellipse are
+returned as <code>NA</code>.</li>
 <li>
 <code>suitability_trunc</code>: the same suitability but truncated
 to the limit of the ellipses. Values outside the ellipse are returned as
@@ -907,7 +909,7 @@ implementations for both types of objects below.</p>
 <h3 id="predict-to-data-frames">Predict to data frames<a class="anchor" aria-label="anchor" href="#predict-to-data-frames"></a>
 </h3>
 <p>The most intuitive way to work with ellipses is in environmental
-space. This is because ecologicla niches are defined in this space.
+space. This is because ecological niches are defined in this space.
 Since envrionmental values can easily be organized in a data fame,
 predictions for those objects are easy to obtain. See a quick example
 below, using one of the communities generated in which we assumed niche
@@ -954,70 +956,58 @@ conservatism and background data as <code>newdata</code>.</p>
 produced for all ellipses, and in the returned results, every prediction
 is added as a new column to <code>newdata</code>. We will plot results
 for only the first and second ellipses to show clearly the differences
-between Mahalanobis and suitability predictions.</p>
+between Mahalanobis and suitability predictions. We will use the
+<code><a href="../reference/plot_ellipsoid.html">plot_ellipsoid()</a></code> function to plot the predictions in
+environmental space. The argument <code>col_layer</code> is used to
+specify which prediction to use for the colors in the plot. We will use
+different color palettes for Mahalanobis and suitability predictions to
+better visualize the differences between them.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plotting the results</span></span>
-<span><span class="co">## Colors for mahalanobis distance</span></span>
-<span><span class="va">blue_pal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Oslo"</span>, rev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">### Map columns with values for colors</span></span>
-<span><span class="va">col_maha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">3</span><span class="op">:</span><span class="fl">4</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span>  <span class="co"># 3 and 4 have values for ellipse 1 and 2</span></span>
-<span>  <span class="va">val_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">maha_cons_pred</span><span class="op">[[</span><span class="va">x</span><span class="op">]</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="va">color_indices</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/findInterval.html" class="external-link">findInterval</a></span><span class="op">(</span><span class="va">maha_cons_pred</span><span class="op">[[</span><span class="va">x</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>                                <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">val_range</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">val_range</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span>
-<span>                                    length.out <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
-<span>                                all.inside <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="va">blue_pal</span><span class="op">[</span><span class="va">color_indices</span><span class="op">]</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## Colors for suitability </span></span>
-<span><span class="va">vir_pal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Viridis"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">### Map columns with values for colors</span></span>
-<span><span class="va">col_suit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">3</span><span class="op">:</span><span class="fl">4</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span>  <span class="co"># 3 and 4 have values for ellipse 1 and 2</span></span>
-<span>  <span class="va">val_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">suit_cons_pred</span><span class="op">[[</span><span class="va">x</span><span class="op">]</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="va">color_indices</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/findInterval.html" class="external-link">findInterval</a></span><span class="op">(</span><span class="va">suit_cons_pred</span><span class="op">[[</span><span class="va">x</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>                                <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">val_range</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">val_range</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span>
-<span>                                    length.out <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
-<span>                                all.inside <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="va">vir_pal</span><span class="op">[</span><span class="va">color_indices</span><span class="op">]</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
 <span><span class="co">## Plotting area parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, cex <span class="op">=</span> <span class="fl">0.6</span>, mar <span class="op">=</span> <span class="va">mars</span><span class="op">)</span>  <span class="co"># adjust margins for visualization</span></span>
 <span></span>
-<span><span class="co">## plots</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">maha_cons_pred</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,  <span class="co"># plot the variables as points</span></span>
-<span>     col <span class="op">=</span> <span class="va">col_maha</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,  <span class="co"># color points according to Mahalanobis distance</span></span>
-<span>     pch <span class="op">=</span> <span class="fl">16</span>, xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Mahalanobis Distance Ellipse 1"</span><span class="op">)</span></span>
+<span><span class="co">## plot mahalanobis distance predictions for ellipse 1</span></span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,  <span class="co"># the relevant ellipse</span></span>
+<span>               prediction <span class="op">=</span> <span class="va">maha_cons_pred</span>,  <span class="co"># mahalanobis distance prediction</span></span>
+<span>               col_layer <span class="op">=</span> <span class="st">"ell_1"</span>,  <span class="co"># ellipse prediction to use for colors</span></span>
+<span>               pal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Oslo"</span><span class="op">)</span>,  <span class="co"># color palette</span></span>
+<span>               rev_pal <span class="op">=</span> <span class="cn">TRUE</span>,  <span class="co"># reversing the palette</span></span>
+<span>               col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>,  <span class="co"># color and line for ellipse</span></span>
+<span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
+<span>               ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
+<span>               main <span class="op">=</span> <span class="st">"Mahalanobis Distance Ellipse 1"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/add_ellipsoid.html">add_ellipsoid</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"#e10000"</span><span class="op">)</span></span>
+<span><span class="co"># plot mahalanobis distance predictions for ellipse 2</span></span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>               prediction <span class="op">=</span> <span class="va">maha_cons_pred</span>,</span>
+<span>               col_layer <span class="op">=</span> <span class="st">"ell_2"</span>,</span>
+<span>               pal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Oslo"</span><span class="op">)</span>,</span>
+<span>               rev_pal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>               col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>,  <span class="co"># color and line for ellipse</span></span>
+<span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
+<span>               ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
+<span>               main <span class="op">=</span> <span class="st">"Mahalanobis Distance Ellipse 2"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">maha_cons_pred</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,  <span class="co"># plot the variables as points</span></span>
-<span>     col <span class="op">=</span> <span class="va">col_maha</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,  <span class="co"># color points according to Mahalanobis distance</span></span>
-<span>     pch <span class="op">=</span> <span class="fl">16</span>, xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Mahalanobis Distance Ellipse 2"</span><span class="op">)</span></span>
+<span><span class="co"># plot suitability predictions for ellipse 1</span></span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>               prediction <span class="op">=</span> <span class="va">suit_cons_pred</span>,  <span class="co"># suitability prediction</span></span>
+<span>               col_layer <span class="op">=</span> <span class="st">"ell_1"</span>,</span>
+<span>               pal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Viridis"</span><span class="op">)</span>,</span>
+<span>               col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
+<span>               ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
+<span>               main <span class="op">=</span> <span class="st">"Suitability Ellipse 1"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/add_ellipsoid.html">add_ellipsoid</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"#e10000"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">suit_cons_pred</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,  <span class="co"># plot the variables as points</span></span>
-<span>     col <span class="op">=</span> <span class="va">col_suit</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,  <span class="co"># color points according to Mahalanobis distance</span></span>
-<span>     pch <span class="op">=</span> <span class="fl">16</span>, xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Suitability Ellipse 1"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/add_ellipsoid.html">add_ellipsoid</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"#e10000"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">suit_cons_pred</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,  <span class="co"># plot the variables as points</span></span>
-<span>     col <span class="op">=</span> <span class="va">col_suit</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,  <span class="co"># color points according to Mahalanobis distance</span></span>
-<span>     pch <span class="op">=</span> <span class="fl">16</span>, xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Suitability Ellipse 2"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/add_ellipsoid.html">add_ellipsoid</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"#e10000"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># plot suitability predictions for ellipse 2</span></span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>               prediction <span class="op">=</span> <span class="va">suit_cons_pred</span>,  <span class="co"># suitability prediction</span></span>
+<span>               col_layer <span class="op">=</span> <span class="st">"ell_2"</span>,</span>
+<span>               pal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Viridis"</span><span class="op">)</span>,</span>
+<span>               col_ell <span class="op">=</span> <span class="st">"#e10000"</span>, lwd <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
+<span>               ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
+<span>               main <span class="op">=</span> <span class="st">"Suitability Ellipse 2"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="virtual_communities_files/figure-html/predict_plot-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 <p>The plots shown are simple, but show clear patterns. For reference,
@@ -1036,7 +1026,7 @@ ellipsoids) as models of ecological niche.</p>
 allows us to see goegraphic representations of our predictions. The
 geographic patterns of our predictions are relevant for questions about
 species geographic distributions. The code below shows how to produce
-this predictions. We will use the smae community and the raster layers
+this predictions. We will use the same community and the raster layers
 from which our background derives (originally form <a href="https://www.worldclim.org/" class="external-link">WorldClim</a>, inlcuded as data in the
 <code>nicheR</code> package).</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
@@ -1110,23 +1100,23 @@ from which our background derives (originally form <a href="https://www.worldcli
 <p>The raster plots show us the geographic patterns of Mahalanobis
 distances and suitability, which are much more complex than the ones in
 environmental space. Exploring this plots can help identify clusters of
-highly suitable areas, for instance. High suitability is expected to
-favor the presence of a species, which is why geographic projections of
-ecological niche models are used for explorations of potential
+areas with high suitability, for instance. High suitability is expected
+to favor the presence of a species, which is why geographic projections
+of ecological niche models are used for explorations of potential
 distributional areas.</p>
 <p><br></p>
 </div>
 <div class="section level3">
 <h3 id="truncating-predictions">Truncating predictions<a class="anchor" aria-label="anchor" href="#truncating-predictions"></a>
 </h3>
-<p>An important decision to make when stauding what conditions are good
+<p>An important decision to make when studying what conditions are good
 for a species to mantain populations for long periods of time is when
-environments stop being suitable. Here is where ellipsoids shyne as
+environments stop being suitable. Here is where ellipsoids shine as
 models of suitability, because their formulation gives us that
 threshold. The limit of the ellipses we created, are the theoretical
 limits for what is suitable and not suitable.</p>
 <p>The options for <code>prediction</code> in our <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>
-function include results for Mahalanobis and suitanility that can be
+function include results for Mahalanobis and suitability that can be
 “truncated” using that ellipsoid limit. For Mahalanobis distances,
 truncation implies that all conditions outside the ellipsoid limit
 become NA. Whereas, for suitability, all values outside the limit become
@@ -1180,29 +1170,27 @@ truncated results include zero.</p>
 <p>Let’s explore the results using plots. First, the truncated results
 as they are produced.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Colors for suitability</span></span>
-<span><span class="co">## Map ellipse 1 column with values for colors</span></span>
-<span><span class="va">val_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">suit_cons_predt</span><span class="op">$</span><span class="va">ell_1</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">color_indices</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/findInterval.html" class="external-link">findInterval</a></span><span class="op">(</span></span>
-<span>  <span class="va">suit_cons_predt</span><span class="op">$</span><span class="va">ell_1</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="va">val_range</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">val_range</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, length.out <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>,</span>
-<span>  all.inside <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">col_suitt</span> <span class="op">&lt;-</span> <span class="va">vir_pal</span><span class="op">[</span><span class="va">color_indices</span><span class="op">]</span></span>
-<span></span>
-<span></span>
-<span><span class="co"># Plotting area parameters</span></span>
+<code class="sourceCode R"><span><span class="co"># Plotting area parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, cex <span class="op">=</span> <span class="fl">0.6</span>, mar <span class="op">=</span> <span class="va">mars</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co">## the binary for the background</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">suit_cons_predt</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,  <span class="co"># plot the variables as points</span></span>
-<span>     col <span class="op">=</span> <span class="va">col_suitt</span>,  <span class="co"># color points according to Mahalanobis distance</span></span>
-<span>     pch <span class="op">=</span> <span class="fl">16</span>, xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Suitability Trunc. E Space"</span><span class="op">)</span></span>
+<span><span class="co">## the truncated results for the background</span></span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">cons_comm</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>               prediction <span class="op">=</span> <span class="va">suit_cons_predt</span>,  <span class="co"># suitability prediction</span></span>
+<span>               col_layer <span class="op">=</span> <span class="st">"ell_1"</span>,</span>
+<span>               pal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Viridis"</span><span class="op">)</span>,</span>
+<span>               col_ell <span class="op">=</span> <span class="st">"NA"</span>, lwd <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Mean Annual Temperature)"</span>,</span>
+<span>               ylab <span class="op">=</span> <span class="st">"Bio12 (Annual Precipitation)"</span>,</span>
+<span>               main <span class="op">=</span> <span class="st">"Suitability Trunc. E Space"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co">## the binary raster</span></span>
+<span><span class="co">## custom color palette for raster predictions</span></span>
+<span><span class="va">tr_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gray"</span>, <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, palette <span class="op">=</span> <span class="st">"Viridis"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tr_breacks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1e-6</span>, <span class="fl">1</span>, length.out <span class="op">=</span> <span class="fl">101</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## the truncated raster</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">suit_cons_predrt</span><span class="op">$</span><span class="va">ell_1</span>,</span>
+<span>            col <span class="op">=</span> <span class="va">tr_cols</span>, breaks <span class="op">=</span> <span class="va">tr_breacks</span>,</span>
+<span>            type <span class="op">=</span> <span class="st">"continuous"</span>,</span>
 <span>            axes <span class="op">=</span> <span class="cn">FALSE</span>, box <span class="op">=</span> <span class="cn">TRUE</span>, mar <span class="op">=</span> <span class="va">marsr</span>,</span>
 <span>            main <span class="op">=</span> <span class="st">"Suitability Trunc. G Space"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="virtual_communities_files/figure-html/trunc_plot-1.png" class="r-plt" alt="" width="95%"></p>

@@ -11,8 +11,8 @@
 - [Simulating nested communities](#simulating-nested-communities)
   - [Effect of proportion argument](#effect-of-proportion-argument)
   - [Effect of bias argument](#effect-of-bias-argument)
-- [Niche conservatism in
-  communities](#niche-conservatism-in-communities)
+- [Simulating niche conservatism in
+  communities](#simulating-niche-conservatism-in-communities)
   - [Effect of background density](#effect-of-background-density)
   - [Effect of proportion arguments](#effect-of-proportion-arguments)
 - [Predictions for communities](#predictions-for-communities)
@@ -29,10 +29,10 @@
 This vignette shows how to simulate virtual communities using functions
 in the nicheR package. For our purposes, we will consider a community a
 set of species niches (ellipses) that are distributed in a given
-environmental space. The simulation of virtual communities is useful to
-generate hypothetical scenarios of community assembly and explore
-patterns derived from the way species are distributed in envrionmental
-and geographical space.
+environmental space (E-space). The simulation of virtual communities is
+useful to generate hypothetical scenarios of community assembly and
+explore patterns derived from the way species are distributed in
+envrionmental and geographic space (G-space).
 
 The main functions that automate community simulations in `nicheR` are:
 
@@ -54,19 +54,19 @@ The main functions that automate community simulations in `nicheR` are:
 ## Getting ready
 
 If `nicheR` has not been installed yet, please do so. See the [Main
-guide](https://castanedam.github.io/nicheR/articles/index.md) for
-installation instructions.
+guide](https://castanedam.github.io/nicheR/index.md) for installation
+instructions.
 
 Use the following lines of code to load `nicheR` and other packages
 needed for this vignette, and to set a working directory (if necessary).
 
-Note: We will display functions from other packages as
+*Note*: We will display functions from other packages as
 `package::function()`.
 
 ``` r
 # Load packages
 library(nicheR)
-#library(terra)
+library(terra)
 
 # Current directory
 getwd()
@@ -87,7 +87,9 @@ comunity simulations. The data are included in the `nicheR` package and
 consist of an `nicheR_ellipsoid` object with a reference niche defined
 by two environmental variables (bio1 and bio12) and these envrionmental
 variables for North America to represent the background for our
-simulations.
+simulations. For details on how to create the reference niche, see the
+vignette [1. Build
+ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.md).
 
 ``` r
 # Reference niche
@@ -269,11 +271,11 @@ plot_community(rand_comm, background = back_data[, vars],
 As the
 [`random_ellipses()`](https://castanedam.github.io/nicheR/reference/random_ellipses.md)
 function uses the background as a reference to pick ellipse centroids,
-the density of the background data can affect the distribution of these
-ellipses. If the background data is dense in certain areas of the
-environmental space, it may lead to a higher concentration of ellipses
-in those areas, while sparse background data may result in fewer
-ellipses being generated in those regions. This can influence the
+**the density of the background data can affect the distribution of
+these ellipses**. If the background data is dense in certain areas of
+the environmental space, it may lead to a higher concentration of
+ellipses in those areas, while sparse background data may result in
+fewer ellipses being generated in those regions. This can influence the
 overall structure and diversity of the simulated community, as well as
 the patterns observed in niche overlap and species interactions.
 
@@ -330,10 +332,12 @@ background has a higher concentration of ellipses in areas where the
 background data is denser, whereas the community created with thinned
 background has a more even distribution of ellipses. This highlights the
 importance of considering this factor when simulating communities using
-random ellipses. Play with the value for the argument `resolution` to
-see how it can affect the distribution of ellipses in the community.
-Keep in mind that the largest the value for this argument, the more
-points will be available for the function to pick centroids.
+random ellipses.
+
+Play with the value for the argument `resolution` to see how it can
+affect the distribution of ellipses in the community. Keep in mind that
+the largest the value for this argument, the more points will be
+available for the function to pick centroids.
 
   
 
@@ -440,9 +444,10 @@ size. Finally, when `smallest_proportion` is small and
 `largest_proportion` is large, the ellipses tend to be more variable in
 size. This highlights how the size of the ellipses can affect the
 structure of the community and the “interactions” among species niches
-(ellipses). Play with the values for these arguments to explore
-different scenarios and pick the ones that are more convinient for your
-research.
+(ellipses).
+
+Play with the values for these arguments to explore different scenarios
+and pick the ones that are more convinient for your research.
 
   
 
@@ -590,11 +595,11 @@ Another important arument in the
 [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)
 function is `bias`, which determines the degree of bias towards
 generating smaller or larger ellipses in the community. A value of
-`bias` clusters ellipses toward the border of the reference ellipse,
-whereas a value greater than 1 clusters them toward the centroid of the
-reference ellipse. We will keep the value for `smallest_proportion` the
-same in both cases to better visualize the effect of the argument
-`bias`.
+`bias` \< 1 and close to zero clusters ellipses toward the border of the
+reference ellipse, whereas a value greater than 1 clusters them toward
+the centroid of the reference ellipse. We will keep the value for
+`smallest_proportion` the same in both cases to better visualize the
+effect of the argument `bias`.
 
 ``` r
 # Simulating the community with a bias towards the border
@@ -651,7 +656,7 @@ helps you explore your questions.
 
   
 
-## Niche conservatism in communities
+## Simulating niche conservatism in communities
 
 The function `conserved_ellipses` creates a ellipses based on a
 reference ellipse aiming for a set of results that are similar to the
@@ -869,17 +874,20 @@ function
 [`predict()`](https://rspatial.github.io/terra/reference/predict.html)
 can be used with `nicheR_community` objects to obtain predictions. The
 difference between predict for community objects and that for
-`nicheR_ellipsoid` objects is that only one type of `prediction` can be
-obtained at a time. The options for the `prediction` argument for
-`nicheR_community` objects are:
+`nicheR_ellipsoid` objects (see [2. Make a
+Prediction](https://castanedam.github.io/nicheR/articles/predict.md)) is
+that only one type of `prediction` can be obtained at a time. The
+options for the `prediction` argument for `nicheR_community` objects
+are:
 
 - `Mahalanobis`: Mahalanobis distance from the centroid of ellipses to
   every point in `newdata`.
 - `suitability`: mutivariate normal probability for every point in
   `newdata`, derived from the Mahalanobis distance, interpreted as
-  suitability. Values outside the ellipse are returned as `NA`.
+  suitability.
 - `Mahalanobis_trunc`: the same Mahalanobis distance but truncated to
-  the limit of the ellipses.
+  the limit of the ellipses. Values outside the ellipse are returned as
+  `NA`.
 - `suitability_trunc`: the same suitability but truncated to the limit
   of the ellipses. Values outside the ellipse are returned as zero.
 
@@ -896,7 +904,7 @@ implementations for both types of objects below.
 ### Predict to data frames
 
 The most intuitive way to work with ellipses is in environmental space.
-This is because ecologicla niches are defined in this space. Since
+This is because ecological niches are defined in this space. Since
 envrionmental values can easily be organized in a data fame, predictions
 for those objects are easy to obtain. See a quick example below, using
 one of the communities generated in which we assumed niche conservatism
@@ -947,71 +955,60 @@ Now let’s check how the results look like in a plot. Predictions are
 produced for all ellipses, and in the returned results, every prediction
 is added as a new column to `newdata`. We will plot results for only the
 first and second ellipses to show clearly the differences between
-Mahalanobis and suitability predictions.
+Mahalanobis and suitability predictions. We will use the
+[`plot_ellipsoid()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid.md)
+function to plot the predictions in environmental space. The argument
+`col_layer` is used to specify which prediction to use for the colors in
+the plot. We will use different color palettes for Mahalanobis and
+suitability predictions to better visualize the differences between
+them.
 
 ``` r
 # Plotting the results
-## Colors for mahalanobis distance
-blue_pal <- hcl.colors(100, palette = "Oslo", rev = TRUE)
-
-### Map columns with values for colors
-col_maha <- lapply(3:4, function(x) {  # 3 and 4 have values for ellipse 1 and 2
-  val_range <- range(maha_cons_pred[[x]], na.rm = TRUE)
-  color_indices <- findInterval(maha_cons_pred[[x]],
-                                seq(val_range[1], val_range[2],
-                                    length.out = 100),
-                                all.inside = TRUE)
-  blue_pal[color_indices]
-})
-
-## Colors for suitability 
-vir_pal <- hcl.colors(100, palette = "Viridis")
-
-### Map columns with values for colors
-col_suit <- lapply(3:4, function(x) {  # 3 and 4 have values for ellipse 1 and 2
-  val_range <- range(suit_cons_pred[[x]], na.rm = TRUE)
-  color_indices <- findInterval(suit_cons_pred[[x]],
-                                seq(val_range[1], val_range[2],
-                                    length.out = 100),
-                                all.inside = TRUE)
-  vir_pal[color_indices]
-})
-
 ## Plotting area parameters
 par(mfrow = c(2, 2), cex = 0.6, mar = mars)  # adjust margins for visualization
 
-## plots
-plot(maha_cons_pred[, vars],  # plot the variables as points
-     col = col_maha[[1]],  # color points according to Mahalanobis distance
-     pch = 16, xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Mahalanobis Distance Ellipse 1")
+## plot mahalanobis distance predictions for ellipse 1
+plot_ellipsoid(object = cons_comm[[3]][[1]],  # the relevant ellipse
+               prediction = maha_cons_pred,  # mahalanobis distance prediction
+               col_layer = "ell_1",  # ellipse prediction to use for colors
+               pal = hcl.colors(100, palette = "Oslo"),  # color palette
+               rev_pal = TRUE,  # reversing the palette
+               col_ell = "#e10000", lwd = 2,  # color and line for ellipse
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Mahalanobis Distance Ellipse 1")
 
-add_ellipsoid(cons_comm[[3]][[1]], lwd = 2, col = "#e10000")
+# plot mahalanobis distance predictions for ellipse 2
+plot_ellipsoid(object = cons_comm[[3]][[2]],
+               prediction = maha_cons_pred,
+               col_layer = "ell_2",
+               pal = hcl.colors(100, palette = "Oslo"),
+               rev_pal = TRUE,
+               col_ell = "#e10000", lwd = 2,  # color and line for ellipse
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Mahalanobis Distance Ellipse 2")
 
-plot(maha_cons_pred[, vars],  # plot the variables as points
-     col = col_maha[[2]],  # color points according to Mahalanobis distance
-     pch = 16, xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Mahalanobis Distance Ellipse 2")
+# plot suitability predictions for ellipse 1
+plot_ellipsoid(object = cons_comm[[3]][[1]],
+               prediction = suit_cons_pred,  # suitability prediction
+               col_layer = "ell_1",
+               pal = hcl.colors(100, palette = "Viridis"),
+               col_ell = "#e10000", lwd = 2,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Suitability Ellipse 1")
 
-add_ellipsoid(cons_comm[[3]][[2]], lwd = 2, col = "#e10000")
-
-plot(suit_cons_pred[, vars],  # plot the variables as points
-     col = col_suit[[1]],  # color points according to Mahalanobis distance
-     pch = 16, xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Suitability Ellipse 1")
-
-add_ellipsoid(cons_comm[[3]][[1]], lwd = 2, col = "#e10000")
-
-plot(suit_cons_pred[, vars],  # plot the variables as points
-     col = col_suit[[2]],  # color points according to Mahalanobis distance
-     pch = 16, xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Suitability Ellipse 2")
-
-add_ellipsoid(cons_comm[[3]][[2]], lwd = 2, col = "#e10000")
+# plot suitability predictions for ellipse 2
+plot_ellipsoid(object = cons_comm[[3]][[2]],
+               prediction = suit_cons_pred,  # suitability prediction
+               col_layer = "ell_2",
+               pal = hcl.colors(100, palette = "Viridis"),
+               col_ell = "#e10000", lwd = 2,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Suitability Ellipse 2")
 ```
 
 ![](virtual_communities_files/figure-html/predict_plot-1.png)
@@ -1034,7 +1031,7 @@ important implication of this is that it allows us to see goegraphic
 representations of our predictions. The geographic patterns of our
 predictions are relevant for questions about species geographic
 distributions. The code below shows how to produce this predictions. We
-will use the smae community and the raster layers from which our
+will use the same community and the raster layers from which our
 background derives (originally form
 [WorldClim](https://www.worldclim.org/), inlcuded as data in the
 `nicheR` package).
@@ -1118,25 +1115,25 @@ terra::plot(suit_cons_predr$ell_2,
 The raster plots show us the geographic patterns of Mahalanobis
 distances and suitability, which are much more complex than the ones in
 environmental space. Exploring this plots can help identify clusters of
-highly suitable areas, for instance. High suitability is expected to
-favor the presence of a species, which is why geographic projections of
-ecological niche models are used for explorations of potential
+areas with high suitability, for instance. High suitability is expected
+to favor the presence of a species, which is why geographic projections
+of ecological niche models are used for explorations of potential
 distributional areas.
 
   
 
 ### Truncating predictions
 
-An important decision to make when stauding what conditions are good for
+An important decision to make when studying what conditions are good for
 a species to mantain populations for long periods of time is when
-environments stop being suitable. Here is where ellipsoids shyne as
+environments stop being suitable. Here is where ellipsoids shine as
 models of suitability, because their formulation gives us that
 threshold. The limit of the ellipses we created, are the theoretical
 limits for what is suitable and not suitable.
 
 The options for `prediction` in our
 [`predict()`](https://rspatial.github.io/terra/reference/predict.html)
-function include results for Mahalanobis and suitanility that can be
+function include results for Mahalanobis and suitability that can be
 “truncated” using that ellipsoid limit. For Mahalanobis distances,
 truncation implies that all conditions outside the ellipsoid limit
 become NA. Whereas, for suitability, all values outside the limit become
@@ -1197,29 +1194,27 @@ Let’s explore the results using plots. First, the truncated results as
 they are produced.
 
 ``` r
-# Colors for suitability
-## Map ellipse 1 column with values for colors
-val_range <- range(suit_cons_predt$ell_1, na.rm = TRUE)
-color_indices <- findInterval(
-  suit_cons_predt$ell_1,
-  seq(val_range[1], val_range[2], length.out = 100),
-  all.inside = TRUE
-)
-col_suitt <- vir_pal[color_indices]
-
-
 # Plotting area parameters
 par(mfrow = c(1, 2), cex = 0.6, mar = mars)
 
-## the binary for the background
-plot(suit_cons_predt[, vars],  # plot the variables as points
-     col = col_suitt,  # color points according to Mahalanobis distance
-     pch = 16, xlab = "Bio1 (Mean Annual Temperature)",
-     ylab = "Bio12 (Annual Precipitation)",
-     main = "Suitability Trunc. E Space")
+## the truncated results for the background
+plot_ellipsoid(object = cons_comm[[3]][[1]],
+               prediction = suit_cons_predt,  # suitability prediction
+               col_layer = "ell_1",
+               pal = hcl.colors(100, palette = "Viridis"),
+               col_ell = "NA", lwd = 0,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Suitability Trunc. E Space")
 
-## the binary raster
+## custom color palette for raster predictions
+tr_cols <- c("gray", hcl.colors(100, palette = "Viridis"))
+tr_breacks <- c(0, seq(1e-6, 1, length.out = 101))
+
+## the truncated raster
 terra::plot(suit_cons_predrt$ell_1,
+            col = tr_cols, breaks = tr_breacks,
+            type = "continuous",
             axes = FALSE, box = TRUE, mar = marsr,
             main = "Suitability Trunc. G Space")
 ```
