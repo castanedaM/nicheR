@@ -13,8 +13,8 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 10,
-  fig.height = 10,
+  fig.width = 7,
+  fig.height = 5,
   dpi = 100,
   out.width = "95%"
 )
@@ -301,7 +301,7 @@ Once you are satisfied with your generated occurrence points, you can easily sav
 
 ```{r}
 # Save the basic generated occurrence data frame to your local directory
-saveRDS(occ_basic, file = "data/virtual_occurrences.rds")
+saveRDS(occ_basic, file = "data/generate_occurrences.rds")
 
 # To load this data back into a future session:
 # my_occurrences <- readRDS("data/virtual_occurrences.rds")
