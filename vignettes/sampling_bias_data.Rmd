@@ -25,23 +25,14 @@ knitr::opts_chunk$set(
 ## Summary
 
 -   [Description](#description)
-
 -   [Getting ready](#getting-ready)
-
 -   [Defining the Niche Space](#defining-the-niche-space)
-
 -   [Generating the Prediction Surface](#generating-the-prediction-surface)
-
 -   [Introducing Sampling Bias](#introducing-sampling-bias)
-
     -   [Applying Bias to Predictions](#applying-bias-to-predictions)
-    
     -   [Preparing the Bias Layer](#preparing-the-bias-layer)
-
     -   [Generating the Samples](#generating-the-samples)
-
     -   [Visualizing in E-Space](#visualizing-in-e-space)
-
     -   [Visualizing in G-Space](#visualizing-in-g-space)
 
 <hr>
