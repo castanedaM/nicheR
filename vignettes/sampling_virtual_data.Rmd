@@ -23,21 +23,13 @@ knitr::opts_chunk$set(
 # Summary
 
 -   [Description](#description)
-
 -   [Getting ready](#getting-ready)
-
 -   [Defining the Niche Space](#defining-the-niche-space)
-
 -   [Virtual Data Generation](#virtual-data-generation)
-
 -   [Generating the Prediction Surface](#generating-the-prediction-surface)
-
 -   [Sampling Virtual Data](#sampling-virtual-data)
-
     -   [Generating the Samples](#generating-the-samples)
-
     -   [Visualizing in E-Space](#visualizing-in-e-space)
-
     -   [A Note on G-Space](#a-note-on-g-space)
 
 <hr>
