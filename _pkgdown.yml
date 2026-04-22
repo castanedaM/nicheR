@@ -28,11 +28,13 @@ navbar:
       -  text: "2. Make a Prediction"
          href: articles/predict.html
       -  text: "3. Generate Occurence Data"
-         href: articles/sampling_occurrence_data.html
+         href: articles/generate_occurrence_data.html
       -  text: "4. Working With Bias"
          href: articles/sampling_bias_data.html
       -  text: "5. Virtual Community Simulations"
          href: articles/virtual_communities.html
+      -  text: "6. Plotting"
+         href: articles/plotting_vignette.html
   components:
     home: ~
 
