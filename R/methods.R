@@ -38,6 +38,14 @@ print.nicheR_ellipsoid <- function(x, digits = 3, ...) {
   cat("\nCovariance matrix:\n")
   print(round(x$cov_matrix, digits))
 
+  cat("\nCovariance Limits:\n")
+  cov_lims <- x$cov_limits
+  rownames(cov_lims) <- apply(
+    combn(x$var_names, 2), 2,
+    function(pair) paste(pair, collapse = "-")
+  )
+  print(round(cov_lims, digits))
+
   cat("\nEllipsoid semi-axis lengths:\n  ",
       paste(round(x$semi_axes_lengths, digits), collapse = ", "),
       "\n", sep = "")
