@@ -7,5 +7,5 @@
 .DS_Store
 .quarto
 inst/doc
-/doc/
+/docs/
 /Meta/
