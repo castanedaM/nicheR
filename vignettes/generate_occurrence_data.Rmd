@@ -1,8 +1,8 @@
 ---
-title: "Sampling occurrence data"
+title: "Generate occurrence data"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Sampling occurrence data}
+  %\VignetteIndexEntry{Generate occurrence data}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
