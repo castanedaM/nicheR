@@ -3,8 +3,10 @@ title: "Predicting suitability and Mahalanobis distance"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Predicting suitability and Mahalanobis distance}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -98,6 +100,9 @@ The example data included in `nicheR` consists of a `nicheR_ellipsoid` object re
 # Reference niche (nicheR_ellipsoid object)
 data("ref_ellipse", package = "nicheR")
 
+# Reference 3-dimentainal niche
+data("example_sp_4", package = "nicheR")
+
 # Background environmental data (data.frame)
 data("back_data", package = "nicheR")
 
@@ -154,7 +159,8 @@ When `newdata` is a `SpatRaster`, `predict()` returns a `SpatRaster` where each 
 
 ```{r raster_predict_basic}
 pred_rast <- predict(ref_ellipse,
-                     newdata = ma_bios[[ref_ellipse$var_names]])
+                     newdata = ma_bios[[ref_ellipse$var_names]],
+                     keep_data = TRUE)
 
 pred_rast
 names(pred_rast)
@@ -696,25 +702,16 @@ Blue cells represent areas where environmental conditions fall within the niche,
 
 The examples above use a two-dimensional ellipsoid defined by bio1 and bio12. `nicheR` works with any number of dimensions and both predictions and pairwise visualizations scale accordingly. Here we build a three-dimensional ellipsoid from known ranges for bio1 (Mean Annual Temperature), bio12 (Annual Precipitation), and bio15 (Precipitation Seasonality), and predict suitability over the background.
 
-```{r ellipse_3d}
-range_3d <- data.frame(bio_1  = c(27, 35),
-                       bio_12 = c(1000, 1500),
-                       bio_15 = c(60, 75))
-
-ellipse_3d <- build_ellipsoid(range = range_3d)
-
-print(ellipse_3d)
-```
-
 <br>
 
 ```{r pred_3d}
-suit_3d <- predict(ellipse_3d,
-                   newdata = back_data[, ellipse_3d$var_names],
-                   include_mahalanobis   = FALSE,
+suit_3d <- predict(example_sp_4,
+                   newdata = ma_bios[[example_sp_4$var_names]],
+                   include_mahalanobis   = TRUE,
                    include_suitability   = TRUE,
                    suitability_truncated = TRUE,
-                   verbose = FALSE)
+                   verbose = FALSE,
+                   keep_data = TRUE)
 
 colnames(suit_3d)
 head(suit_3d)
@@ -752,7 +749,7 @@ par(original_par)
 Prediction outputs are standard R objects and can be saved using standard functions. For `nicheR_ellipsoid` objects, use the `save_nicheR` and `read_nicheR` functions.
 
 ```{r save_import, eval=FALSE}
-temp_ellipse <- file.path(tempdir(), "ref_ellipse.rds")
+temp_ellipse <- file.path("data/", "ref_ellipse.rds")
 save_nicheR(ref_ellipse, file = temp_ellipse)
 
 ref_ellipse_imported <- read_nicheR(temp_ellipse)
@@ -761,11 +758,17 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
 <br>
 
 ```{r save_preds, eval=FALSE}
-temp_df   <- file.path(tempdir(), "predictions_df.csv")
-temp_rast <- file.path(tempdir(), "predictions_rast.tif")
+temp_df   <- file.path("inst/extdata/", "predictions_df.csv")
+temp_rast <- file.path("inst/extdata/", "predictions_rast.tif")
+
+temp_3d_df   <- file.path("inst/extdata/", "predictions_3d_df.csv")
+temp_3d_rast <- file.path("inst/extdata/", "predictions_3d_rast.tif")
 
 write.csv(pred_df, file = temp_df, row.names = FALSE)
 terra::writeRaster(pred_rast, filename = temp_rast)
+
+write.csv(suit_3d, file = temp_3d_df, row.names = FALSE)
+terra::writeRaster(suit_3d, filename = temp_3d_rast)
 
 pred_df_imported   <- read.csv(temp_df)
 pred_rast_imported <- terra::rast(temp_rast)
