@@ -101,7 +101,7 @@ A typical nicheR workflow follows these steps:
 1. **Build an ellipsoid** — define the niche from environmental ranges
 2. **Predict suitability** — project the ellipsoid onto raster or data frame inputs
 3. **Prepare bias layers** *(optional)* — define and apply sampling biases
-4. **Sample occurrences** — draw virtual occurrence records using various strategies
+4. **Generate occurrences** — draw virtual occurrence records using various strategies
 5. **Simulate communities** *(optional)* — generate multi-species virtual communities
 
 A brief description of each step is presented below. For complete

@@ -86,7 +86,7 @@ A typical nicheR workflow follows these steps:
     frame inputs
 3.  **Prepare bias layers** *(optional)* — define and apply sampling
     biases
-4.  **Sample occurrences** — draw virtual occurrence records using
+4.  **Generate occurrences** — draw virtual occurrence records using
     various strategies
 5.  **Simulate communities** *(optional)* — generate multi-species
     virtual communities
