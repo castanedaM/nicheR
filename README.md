@@ -6,9 +6,7 @@
 [![R-CMD-check](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# nicheR: An R package for elliposid-based niche construction
-
-# <img src='man/figures/nicheR_logo.png' align='right' height='25%' width='25%'/>
+# nicheR: An R package for elliposid-based niche construction<a href="https://castanedam.github.io/nicheR/"><img src="man/figures/logo.png" align="right" height="120" alt="nicheR website" /></a>
 
 ## Background
 
