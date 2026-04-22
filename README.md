@@ -6,9 +6,24 @@
 [![R-CMD-check](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# nicheR <img src='man/figures/nicheR_logo.png' align='right' height='25%' width='25%'/>
+# nicheR: An R package for elliposid-based niche construction
 
-### Ellipsoid-based virtual niches in E-space and G-space
+# <img src='man/figures/nicheR_logo.png' align='right' height='25%' width='25%'/>
+
+## Background
+
+The field of distributional ecology is evolving rapidly, with new
+algorithms, parameterization strategies, and hypotheses emerging at a
+fast pace. Evaluating these ideas requires software that can isolate
+mechanisms, account for bias, and clearly link ecological theory to
+model behavior.
+
+Virtual niche simulations help researchers test ideas by creating
+controlled datasets that make model behavior easier to interpret. In
+practice, building ellipsoid-based virtual niches in R has typically
+required combining several packages to define niches, map them to
+geography, and visualize results — making analyses harder to reproduce
+and build on.
 
 **nicheR** is an R package for building and visualizing
 **ellipsoid-based ecological niches** using environmental data.
@@ -17,6 +32,21 @@ Inspired by the conceptual foundations of **NicheA** and the flexibility
 of the **virtualspecies** package, **nicheR** provides a reproducible
 framework that connects niche construction, prediction, sampling, and
 visualization in one integrated workflow.
+
+## Related work
+
+Three tools have shaped virtual species and niche simulation in
+ENM/SDMs:
+
+- **NicheA** — a Java-based software that pioneered environmental-space
+  niche visualization and explicitly linked niche theory with
+  simulation. An important conceptual foundation for nicheR.
+- **[virtualspecies](https://github.com/Farewe/virtualspecies)** — a
+  widely adopted R package (200+ citations) for simulating virtual
+  species and benchmarking SDMs and ENMs within R.
+- **[evniche](https://github.com/marlonecobos/evniche/)** — a
+  theoretically rigorous R package focused on environmental-space
+  representations and ellipsoid-based niche concepts.
 
 <br>
 
@@ -243,27 +273,6 @@ vignette("virtual_communities")
 # Guide to visualizing ellipsoids in environmental space
 vignette("plotting_vignette")
 ```
-
-<br>
-
-## Related work
-
-Three tools have shaped virtual species and niche simulation in
-ENM/SDMs:
-
-- **NicheA** — a Java-based software that pioneered environmental-space
-  niche visualization and explicitly linked niche theory with
-  simulation. An important conceptual foundation for nicheR.
-- **[virtualspecies](https://github.com/Farewe/virtualspecies)** — a
-  widely adopted R package (200+ citations) for simulating virtual
-  species and benchmarking SDMs and ENMs within R.
-- **[evniche](https://github.com/marlonecobos/evniche/)** — a
-  theoretically rigorous R package focused on environmental-space
-  representations and ellipsoid-based niche concepts.
-
-nicheR builds directly on these approaches, unifying their strengths in
-a well-documented R package. A Shiny GUI for interactive niche
-exploration is also under active development.
 
 <br>
 
