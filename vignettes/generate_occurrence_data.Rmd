@@ -118,7 +118,7 @@ points(occ_basic[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 ### **2. Environmental Space Bio1 vs. Bio12** {#sec-2.-environmental-space-bio1-vs.-bio12}
 
-Now, let's shift our view from geography to climate. Here, we plot the exact same 100 individuals, but instead of mapping their physical location, we map the climate they are experiencing. The gray dust represents the available background climate in our study area. The large ellipse is the fundamental niche boundary. The **red square** is the centroid—the "perfect" climate for the species. The **orange dots** are our generated occurrences.
+Now, let's shift our view from geography to climate. Here, we plot the exact same 100 individuals, but instead of mapping their physical location, we map the climate they are experiencing. The gray dust represents the available background climate in our study area. The large ellipse is the fundamental niche boundary. The **red square** is the niche centroid for the species. The **orange dots** are our generated occurrences.
 
 ```{r}
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[vars]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", 
