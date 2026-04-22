@@ -702,6 +702,17 @@ Blue cells represent areas where environmental conditions fall within the niche,
 
 The examples above use a two-dimensional ellipsoid defined by bio1 and bio12. `nicheR` works with any number of dimensions and both predictions and pairwise visualizations scale accordingly. Here we build a three-dimensional ellipsoid from known ranges for bio1 (Mean Annual Temperature), bio12 (Annual Precipitation), and bio15 (Precipitation Seasonality), and predict suitability over the background.
 
+
+```{r ellipse_3d}
+range_3d <- data.frame(bio_1  = c(27, 35),
+                       bio_12 = c(1000, 1500),
+                       bio_15 = c(60, 75))
+
+ellipse_3d <- build_ellipsoid(range = range_3d)
+
+ellipse_3d
+```
+
 <br>
 
 ```{r pred_3d}
