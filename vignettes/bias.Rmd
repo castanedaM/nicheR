@@ -20,23 +20,21 @@ knitr::opts_chunk$set(
 )
 ```
 
+<hr>
+
 # Summary
 
 -   [Description](#description)
-
+-   [Getting ready](#getting-ready)
 -   [Preparing the Bias Layer](#preparing-the-bias-layer)
-
     -   [Function Arguments](#function-arguments)
-
     -   [Direct vs. Inverse Bias Preparation](#direct-vs.-inverse-bias-preparation)
-
 -   [Applying Bias to Predictions](#applying-bias-to-predictions)
-
     -   [Function Arguments](#function-arguments)
-
     -   [Comparing Applied Biases](#comparing-applied-biases)
+-   [Save and export](#save-and-export)
 
-\<hr\>
+<hr>
 
 # Description {#description}
 
@@ -50,13 +48,44 @@ The `nicheR` package allows you to simulate these spatial sampling biases. This 
 
 <br>
 
+# Getting ready {#getting-ready}
+
+First, we load the core packages required for our spatial and niche operations. For this vignette, we assume you have already defined a nicheR_ellipsoid object.
+
+```{r get_ready, results='hide', message=FALSE, warning=FALSE}
+library(nicheR)
+library(terra)
+
+# 1. Load reference niche (nicheR_ellipsoid object)
+data("ref_ellipse", package = "nicheR")
+
+# 2. Load pre-calculated prediction surface (from previous vignette)
+# This SpatRaster contains "suitability", "Mahalanobis", "suitability_trunc", etc.
+pred <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
+```
+
+<br>
+
 # Preparing the Bias Layer {#preparing-the-bias-layer}
 
 Raw bias proxies (e.g., species richness, nighttime lights, distance to roads) come in varying scales and units. `prepare_bias()` resamples, aligns, and min-max standardizes these layers to a strict [0, 1] scale. If multiple layers are provided, it allows you to assign unique directional effects to each before multiplying them into a single composite surface.
 
+```{r, results='hide', message=FALSE, warning=FALSE}
+# Load a sample bias layer containing 'sp_richness' and 'nighttime'
+biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
+raw_bias <- rast(biases_file)
+
+# --- Plotting the Output ---
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
+
+# Plot the raw inputs
+terra::plot(raw_bias[["sp_richness"]], main = "Species Richness")
+terra::plot(raw_bias[["nighttime"]], main = "Nighttime Lights")
+```
+
 <br>
 
-### Function Arguments
+### Function Arguments {#function-arguments}
 
 -   **`bias_surface`**: A `SpatRaster` (single or multi-layer) or a list of `SpatRaster` objects representing your raw bias proxies.
 
@@ -90,30 +119,13 @@ In this example, our `raw_bias` raster contains two layers: `sp_richness` and `n
 
 Ecologically, sampling effort is likely highest in areas with known high species richness, but lowest in highly urbanized areas. Therefore, we will assign a `"direct"` effect to richness and an `"inverse"` effect to nighttime lights to create a realistic composite bias surface.
 
-```{r}
-library(nicheR)
-library(terra)
-
-# Load a sample bias layer containing 'sp_richness' and 'nighttime'
-biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
-raw_bias <- rast(biases_file)
-
+```{r, results='hide', message=FALSE, warning=FALSE}
 # Prepare a composite bias surface mapping unique directions to each layer
 prep_composite <- prepare_bias(bias_surface = raw_bias, 
                                effect_direction = c("direct", "inverse"), 
                                verbose = FALSE)
-
-# --- Plotting the Output ---
-par(mfrow = c(1, 3), mar = c(4, 4, 3, 2))
-
-# Plot the raw inputs
-plot(raw_bias[["sp_richness"]], main = "Species Richness")
-plot(raw_bias[["nighttime"]], main = "Nighttime Lights")
-
 # Plot the resulting unified bias probability surface
-plot(prep_composite$composite_surface, main = "Composite Bias Surface")
-
-dev.off()
+terra::plot(prep_composite$composite_surface, main = "Composite Bias Surface")
 ```
 
 *Notice how the final composite surface creates "hotspots" for sampling in areas that feature both high species richness AND low urbanization, accurately reflecting the combined `effect_direction` parameter.*
@@ -149,31 +161,30 @@ Once your bias surface is scaled between 0 and 1, you must integrate it with you
 Below, we take a standard suitability prediction and restrict it using the composite bias layer we just prepared. We will apply it as a `"direct"` multiplier, meaning areas with high composite bias scores will retain their suitability, while areas with low bias scores will be penalized.
 
 ```{r}
-# (Assuming 'pred' is a previously generated suitability raster from build_ellipsoid)
-# Let's generate a quick prediction for this example
-bios_file <- system.file("extdata", "ma_bios.tif", package = "nicheR")
-bios <- rast(bios_file)
-range_df <- data.frame(bio_1 = c(22, 28), bio_12 = c(1000, 3500), bio_15 = c(50, 70))
-ell <- build_ellipsoid(range = range_df)
-pred <- predict(ell, newdata = bios, include_suitability = TRUE)
-
 # Apply the composite bias to our suitability layer
 applied_bias <- apply_bias(prepared_bias = prep_composite, 
                            prediction = pred, 
-                           prediction_layer = "suitability", 
-                           effect_direction = "direct",
-                           verbose = FALSE)
+                           prediction_layer = "suitability",
+                           effect_direction = "direct")
 
 # --- Plotting the Output ---
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
 
 # Original Biological Suitability
-plot(pred[["suitability"]], main = "Habitat Suitability")
+terra::plot(pred[["suitability"]], main = "Habitat Suitability")
 
 # Suitability mathematically restricted by our composite sampling bias
-plot(applied_bias[[1]], main = "Suitability + Composite Bias")
-
-dev.off()
+terra::plot(applied_bias[[1]], main = "Suitability + Composite Bias")
 ```
 
 *In the final comparison, observe how the spatial footprint of the species shrinks based on the bias layer. When drawing points from the `applied_bias` raster using `sample_biased_data()`, the algorithm is forced to ignore large swaths of highly suitable habitat simply because the simulated sampling effort (driven by nighttime lights and richness) in those areas is too low.*
+
+# Save and export
+
+```{r}
+temp_rast <- file.path("inst/extdata/", "applied_bias_rast.tif")
+
+terra::writeRaster(applied_bias[[1]], filename = temp_rast)
+```
+
+
