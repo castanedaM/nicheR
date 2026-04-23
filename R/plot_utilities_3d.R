@@ -47,7 +47,7 @@ plot_ellipsoid_3d <- function(object,
 
   # Argument Checks
   if (!requireNamespace("rgl", quietly = TRUE)) {
-    stop("Package 'rgl' required for 3D.")
+    stop("Package 'rgl' is required, please install it before trying again.")
   }
   if (!inherits(object, "nicheR_ellipsoid")) {
     stop("Provide a valid 'nicheR_ellipsoid' object.")
@@ -114,4 +114,27 @@ plot_ellipsoid_3d <- function(object,
   } else {
     rgl::shade3d(ell_mesh, col = col_ell, alpha = alpha_ell)
   }
+}
+
+#' Add data to an existing 3D E-space plot
+#'
+#' @param data A data frame or matrix containing the points.
+#' @param dim Integer vector of length 3. Indices of dimensions to plot.
+#' @param col_layer Character or \code{NULL}. Column for coloring.
+#' @param ... Additional arguments passed to \code{rgl::points3d}.
+#'
+#' @export
+add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
+  if (!requireNamespace("rgl", quietly = TRUE)) {
+    stop("Package 'rgl' is required, please install it before trying again.")
+  }
+  if (missing(data) || !is.data.frame(data) && !is.matrix(data)) {
+    stop("Provide a valid data frame or matrix for 'data'.")
+  }
+
+  # variable selection
+  vars <- colnames(data)[dim]
+
+  # Lean point addition
+  rgl::points3d(data[, vars], ...)
 }
