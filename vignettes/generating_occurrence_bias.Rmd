@@ -13,8 +13,8 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 10,
-  fig.height = 10,
+  fig.width = 8,
+  fig.height = 5,
   dpi = 100,
   out.width = "95%"
 )
@@ -90,16 +90,17 @@ Once the spatial points (Longitude/Latitude) are generated, we must use `terra::
 
 ```{r}
 # Generate 100 occurrences from the biased suitability layer
-occ_biased <- sample_biased_data(
+occ_biased_xy <- sample_biased_data(
   n_occ = 100, 
   prediction = pred_biased, 
-  prediction_layer = "suitability_biased", 
+  prediction_layer = "suitability_biased_direct", 
   strict = FALSE,
   seed = 123
 )
 
 # Extract the environmental climate data at these physical coordinates
-env_biased <- terra::extract(bios, occ_biased[, c("x", "y")])
+occ_biased <- terra::extract(bios, occ_biased_xy[, c("x", "y")])
+env_biased <- terra::extract(bios, occ_biased_xy[, c("x", "y")])
 ```
 
 <br>
@@ -112,13 +113,13 @@ When we visualize biased occurrences, we are looking for the "distortion" caused
 par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
 
 # Plot 1: G-Space (Map with biased suitability)
-plot(pred_biased[["suitability_biased"]], main = "G-Space: Biased Map", col = grDevices::terrain.colors(50))
-points(occ_biased[, c("x", "y")], pch = 20, col = "black", cex = 1.2)
+plot(pred_biased[["suitability_biased_direct"]], main = "G-Space: Biased Map", col = grDevices::terrain.colors(50))
+points(occ_biased_xy[, c("x", "y")], pch = 20, col = "black", cex = 1.2)
 
 # Plot 2: E-Space (Temperature vs Precipitation)
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[vars]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1 (Temp)", ylab = "Bio12 (Precip)", main = "E-Space: Biased Temp vs Precip")
-add_data(env_biased, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(occ_biased, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 
 # Plot 3: E-Space (Temperature vs Seasonality)
@@ -126,8 +127,6 @@ plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[vars]]), dim = c(1
                xlab = "Bio1 (Temp)", ylab = "Bio15 (Seasonality)", main = "E-Space: Biased Temp vs Season")
 add_data(env_biased, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
-
-dev.off()
 ```
 
 **What to look for in the plots above:**
