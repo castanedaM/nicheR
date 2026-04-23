@@ -19,7 +19,7 @@ Authors@R: c(
       role = "aut"
     ),
     person(
-      "Marlon", "Cobos",
+      "Marlon E.", "Cobos",
       email = "", 
       role = "aut"
     )
@@ -32,17 +32,18 @@ Description: Provides a robust set of tools for researchers and modelers to
     in both environmental and geographic space. Inspired by methodologies in
     NicheA and the virtualspecies R package, NicheR aims to streamline the
     process of niche conceptualization and data generation for ecological studies.
-License: MIT + file LICENSE
-Encoding: UTF-8
-LazyData: true
 URL: https://github.com/castanedaM/NicheR, https://castanedam.github.io/nicheR/
 BugReports: https://github.com/castanedaM/NicheR/issues
-RoxygenNote: 7.3.3
-Suggests: 
-    knitr,
-    rmarkdown
-VignetteBuilder: knitr
 Depends:
     R (>= 3.5)
 Imports:
-    terra
+    terra,
+Suggests: 
+    rgl (>= 1.3),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+RoxygenNote: 7.3.3
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
