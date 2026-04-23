@@ -21,7 +21,8 @@
 #' @param pch Point symbol for background/prediction points.
 #'    Default is \code{1}.
 #' @param col_ell Color of the ellipsoid. Default is \code{"#000000"}.
-#' @param alpha_ell Transparency of the ellipsoid boundary.
+#' @param alpha_ell Transparency of the ellipsoid boundary. Default is
+#'    \code{0.5}.
 #' @param col_bg Color for background points.
 #' @param fixed_lims Named list with \code{xlim}, \code{ylim}, and \code{zlim}.
 #' @param ... Additional graphical parameters.
@@ -137,4 +138,46 @@ add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
 
   # Lean point addition
   rgl::points3d(data[, vars], ...)
+}
+
+
+
+#' Add an ellipsoid to an existing 3D E-space plot
+#'
+#' @param object A \code{nicheR_ellipsoid} object.
+#' @param dim Integer vector of length 3.
+#' @param wire Logical. If \code{TRUE}, plots wireframe, otherwise plots a
+#'    shaded volume. Default is \code{FALSE}.
+#' @param col_ell Color of the ellipsoid. Default is \code{"#000000"}.
+#' @param alpha_ell Transparency of the ellipsoid boundary. Default is
+#'    \code{0.5}.
+#' @param ... Additional arguments passed to \code{rgl::wire3d} or
+#'    \code{rgl::shade3d}.
+#'
+#' @export
+add_ellipsoid_3d <- function(object,
+                             dim = c(1, 2, 3),
+                             wire = FALSE,
+                             col_ell = "#000000",
+                             alpha_ell = 0.5,
+                             ...) {
+  if (!requireNamespace("rgl", quietly = TRUE)) {
+    stop("Package 'rgl' is required, please install it before trying again.")
+  }
+  if (!inherits(object, "nicheR_ellipsoid")) {
+    stop("Provide a valid 'nicheR_ellipsoid' object.")
+  }
+  if (length(dim) != 3) {
+    stop("'dim' must be a numeric vector of length 3.")
+  }
+
+  ell_mesh <- rgl::ellipse3d(x = object$cov_matrix[dim, dim],
+                             centre = object$centroid[dim],
+                             t = sqrt(object$chi2_cutoff))
+
+  if (isTRUE(wire)) {
+    rgl::wire3d(ell_mesh, col = col_ell, alpha = alpha_ell, ...)
+  } else {
+    rgl::shade3d(ell_mesh, col = col_ell, alpha = alpha_ell, ...)
+  }
 }

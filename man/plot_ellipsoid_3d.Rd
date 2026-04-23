@@ -53,7 +53,8 @@ Default is \code{1}.}
 
 \item{col_ell}{Color of the ellipsoid. Default is \code{"#000000"}.}
 
-\item{alpha_ell}{Transparency of the ellipsoid boundary.}
+\item{alpha_ell}{Transparency of the ellipsoid boundary. Default is
+\code{0.5}.}
 
 \item{col_bg}{Color for background points.}
 
