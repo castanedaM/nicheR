@@ -77,20 +77,30 @@
 #' ecological niche modeling, such as building niche ellipsoids and
 #' simulating virtual communities in the \code{nicheR} package.
 #'
-#' @format Data frames containing occurrence points. While the exact number of
-#' rows varies per dataset, they typically share the following variables:
+#' @format An object of class \code{nicheR_ellipsoid} (which is a \code{list})
+#' with 13 elements:
 #' \describe{
-#'   \item{longitude}{Numeric. Longitude in decimal degrees (WGS84).}
-#'   \item{latitude}{Numeric. Latitude in decimal degrees (WGS84).}
-#'   \item{species}{Character (Optional). The identifier for the species.}
+#'   \item{dimensions}{Integer. Number of dimensions (2).}
+#'   \item{var_names}{Character vector. Names of variables (\code{"bio_1"}, \code{"bio_12"}).}
+#'   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
+#'   \item{cov_matrix}{Matrix. The \eqn{2 \times 2} covariance matrix (\eqn{\Sigma}).}
+#'   \item{Sigma_inv}{Matrix. The precision matrix (inverse covariance).}
+#'   \item{chol_Sigma}{Matrix. Cholesky decomposition of the covariance.}
+#'   \item{eigen}{List. Eigenvectors and eigenvalues of the covariance.}
+#'   \item{cl}{Numeric. Confidence level used (e.g., 0.99).}
+#'   \item{chi2_cutoff}{Numeric. The chi-square quantile for the given \code{cl}.}
+#'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
+#'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
+#'   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
+#'   \item{cov_limits}{List. Axis-aligned minimum and maximum limits.}
 #' }
 #'
 #' @details
-#' \code{example_sp_1}, \code{example_sp_2}, \code{example_sp_3}, and
-#' \code{example_sp_4} represent typical presence-only occurrence records.
-#' They can be extracted against background environmental data (like
-#' \code{\link{back_data}}) to fit \code{nicheR_ellipsoid} objects or test
-#' overlap functions.
+#' This object serves as a template for testing community simulation functions
+#' like \code{\link{conserved_ellipses}}. It was generated using
+#' \code{\link{build_ellipsoid}} with a centroid at (23.75, 1750) and
+#' specific covariance structures to reflect a typical temperature-precipitation
+#' relationship.
 #'
 #' @name example_species
 #' @aliases example_sp_1 example_sp_2 example_sp_3 example_sp_4
