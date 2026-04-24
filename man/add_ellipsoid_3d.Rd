@@ -8,8 +8,8 @@ add_ellipsoid_3d(
   object,
   dim = c(1, 2, 3),
   wire = FALSE,
-  col_ell = "#000000",
-  alpha_ell = 0.5,
+  col_ell = "#800000",
+  alpha_ell = 1,
   ...
 )
 }
@@ -23,8 +23,8 @@ shaded volume. Default is \code{FALSE}.}
 
 \item{col_ell}{Color of the ellipsoid. Default is \code{"#000000"}.}
 
-\item{alpha_ell}{Transparency of the ellipsoid boundary. Default is
-\code{0.5}.}
+\item{alpha_ell}{Transparency of the ellipsoid. Default is
+\code{1}. Not applied if \code{wire = TRUE}.}
 
 \item{...}{Additional arguments passed to \code{rgl::wire3d} or
 \code{rgl::shade3d}.}
