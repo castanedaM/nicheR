@@ -4,7 +4,7 @@
 \alias{add_data_3d}
 \title{Add data to an existing 3D E-space plot}
 \usage{
-add_data_3d(data, dim = c(1, 2, 3), col_layer = NULL, ...)
+add_data_3d(data, dim = c(1, 2, 3), col_layer = NULL, alpha = 1, ...)
 }
 \arguments{
 \item{data}{A data frame or matrix containing the points.}
@@ -12,6 +12,8 @@ add_data_3d(data, dim = c(1, 2, 3), col_layer = NULL, ...)
 \item{dim}{Integer vector of length 3. Indices of dimensions to plot.}
 
 \item{col_layer}{Character or \code{NULL}. Column for coloring.}
+
+\item{alpha}{Transparency for the points. Default is \code{1}.}
 
 \item{...}{Additional arguments passed to \code{rgl::points3d}.}
 }
