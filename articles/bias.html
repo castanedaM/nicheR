@@ -36,9 +36,10 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/creating_ellipsoid_based_niches.html">1. Build ellipsoid</a></li>
     <li><a class="dropdown-item" href="../articles/predict.html">2. Make a Prediction</a></li>
-    <li><a class="dropdown-item" href="../articles/sampling_occurrence_data.html">3. Generate Occurence Data</a></li>
+    <li><a class="dropdown-item" href="../articles/generate_occurrence_data.html">3. Generate Occurence Data</a></li>
     <li><a class="dropdown-item" href="../articles/sampling_bias_data.html">4. Working With Bias</a></li>
     <li><a class="dropdown-item" href="../articles/virtual_communities.html">5. Virtual Community Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/plotting_vignette.html">6. Plotting</a></li>
   </ul>
 </li>
       </ul>
@@ -67,8 +68,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Bias surface</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Bias surface</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/castanedaM/NicheR/blob/master/vignettes/bias.Rmd" class="external-link"><code>vignettes/bias.Rmd</code></a></small>
@@ -77,31 +77,33 @@
 
     
     
+<hr>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
-<li><p><a href="#description">Description</a></p></li>
+<li><a href="#description">Description</a></li>
+<li><a href="#getting-ready">Getting ready</a></li>
 <li>
-<p><a href="#preparing-the-bias-layer">Preparing the Bias
-Layer</a></p>
+<a href="#preparing-the-bias-layer">Preparing the Bias Layer</a>
 <ul>
-<li><p><a href="#function-arguments">Function Arguments</a></p></li>
-<li><p><a href="#direct-vs.-inverse-bias-preparation">Direct vs. Inverse
-Bias Preparation</a></p></li>
+<li><a href="#function-arguments">Function Arguments</a></li>
+<li><a href="#direct-vs.-inverse-bias-preparation">Direct vs. Inverse
+Bias Preparation</a></li>
 </ul>
 </li>
 <li>
-<p><a href="#applying-bias-to-predictions">Applying Bias to
-Predictions</a></p>
+<a href="#applying-bias-to-predictions">Applying Bias to
+Predictions</a>
 <ul>
-<li><p><a href="#function-arguments">Function Arguments</a></p></li>
-<li><p><a href="#comparing-applied-biases">Comparing Applied
-Biases</a></p></li>
+<li><a href="#function-arguments">Function Arguments</a></li>
+<li><a href="#comparing-applied-biases">Comparing Applied
+Biases</a></li>
 </ul>
 </li>
+<li><a href="#save-and-export">Save and export</a></li>
 </ul>
-<p>&lt;hr&gt;</p>
+<hr>
 </div>
 <div class="section level2">
 <h2 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
@@ -122,6 +124,24 @@ those bias surfaces with your habitat suitability predictions.</p></li>
 <p><br></p>
 </div>
 <div class="section level2">
+<h2 id="getting-ready">Getting ready<a class="anchor" aria-label="anchor" href="#getting-ready"></a>
+</h2>
+<p>First, we load the core packages required for our spatial and niche
+operations. For this vignette, we assume you have already defined a
+nicheR_ellipsoid object.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/castanedaM/NicheR" class="external-link">nicheR</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Load reference niche (nicheR_ellipsoid object)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Load pre-calculated prediction surface (from previous vignette)</span></span>
+<span><span class="co"># This SpatRaster contains "suitability", "Mahalanobis", "suitability_trunc", etc.</span></span>
+<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><br></p>
+</div>
+<div class="section level2">
 <h2 id="preparing-the-bias-layer">Preparing the Bias Layer<a class="anchor" aria-label="anchor" href="#preparing-the-bias-layer"></a>
 </h2>
 <p>Raw bias proxies (e.g., species richness, nighttime lights, distance
@@ -130,6 +150,18 @@ resamples, aligns, and min-max standardizes these layers to a strict [0,
 1] scale. If multiple layers are provided, it allows you to assign
 unique directional effects to each before multiplying them into a single
 composite surface.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Load a sample bias layer containing 'sp_richness' and 'nighttime'</span></span>
+<span><span class="va">biases_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"ma_biases.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
+<span><span class="va">raw_bias</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">biases_file</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># --- Plotting the Output ---</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Plot the raw inputs</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raw_bias</span><span class="op">[[</span><span class="st">"sp_richness"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Species Richness"</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raw_bias</span><span class="op">[[</span><span class="st">"nighttime"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Nighttime Lights"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="bias_files/figure-html/unnamed-chunk-1-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 <div class="section level4">
 <h4 id="function-arguments">Function Arguments<a class="anchor" aria-label="anchor" href="#function-arguments"></a>
@@ -191,35 +223,14 @@ high species richness, but lowest in highly urbanized areas. Therefore,
 we will assign a <code>"direct"</code> effect to richness and an
 <code>"inverse"</code> effect to nighttime lights to create a realistic
 composite bias surface.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/castanedaM/NicheR" class="external-link">nicheR</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; terra 1.9.11</span></span>
-<span></span>
-<span><span class="co"># Load a sample bias layer containing 'sp_richness' and 'nighttime'</span></span>
-<span><span class="va">biases_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"ma_biases.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
-<span><span class="va">raw_bias</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">biases_file</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Prepare a composite bias surface mapping unique directions to each layer</span></span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Prepare a composite bias surface mapping unique directions to each layer</span></span>
 <span><span class="va">prep_composite</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_bias.html">prepare_bias</a></span><span class="op">(</span>bias_surface <span class="op">=</span> <span class="va">raw_bias</span>, </span>
 <span>                               effect_direction <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"direct"</span>, <span class="st">"inverse"</span><span class="op">)</span>, </span>
 <span>                               verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># --- Plotting the Output ---</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Plot the raw inputs</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raw_bias</span><span class="op">[[</span><span class="st">"sp_richness"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Species Richness"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raw_bias</span><span class="op">[[</span><span class="st">"nighttime"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Nighttime Lights"</span><span class="op">)</span></span>
-<span></span>
 <span><span class="co"># Plot the resulting unified bias probability surface</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">prep_composite</span><span class="op">$</span><span class="va">composite_surface</span>, main <span class="op">=</span> <span class="st">"Composite Bias Surface"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bias_files/figure-html/unnamed-chunk-1-1.png" class="r-plt" alt="" width="95%"></p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/grDevices/dev.html" class="external-link">dev.off</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; null device </span></span>
-<span><span class="co">#&gt;           1</span></span></code></pre></div>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">prep_composite</span><span class="op">$</span><span class="va">composite_surface</span>, main <span class="op">=</span> <span class="st">"Composite Bias Surface"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="bias_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="95%"></p>
 <p><em>Notice how the final composite surface creates “hotspots” for
 sampling in areas that feature both high species richness AND low
 urbanization, accurately reflecting the combined
@@ -274,44 +285,25 @@ using the composite bias layer we just prepared. We will apply it as a
 <code>"direct"</code> multiplier, meaning areas with high composite bias
 scores will retain their suitability, while areas with low bias scores
 will be penalized.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># (Assuming 'pred' is a previously generated suitability raster from build_ellipsoid)</span></span>
-<span><span class="co"># Let's generate a quick prediction for this example</span></span>
-<span><span class="va">bios_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"ma_bios.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
-<span><span class="va">bios</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">bios_file</span><span class="op">)</span></span>
-<span><span class="va">range_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>bio_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">22</span>, <span class="fl">28</span><span class="op">)</span>, bio_12 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">3500</span><span class="op">)</span>, bio_15 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">70</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">ell</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/build_ellipsoid.html">build_ellipsoid</a></span><span class="op">(</span>range <span class="op">=</span> <span class="va">range_df</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Starting: building ellipsoidal niche from ranges...</span></span>
-<span><span class="co">#&gt; Step: computing covariance matrix...</span></span>
-<span><span class="co">#&gt; Step: computing additional ellipsoidal niche metrics...</span></span>
-<span><span class="co">#&gt; Done: created ellipsoidal niche.</span></span>
-<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ell</span>, newdata <span class="op">=</span> <span class="va">bios</span>, include_suitability <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Starting: suitability prediction using newdata of class: SpatRaster...</span></span>
-<span><span class="co">#&gt; Step: Ignoring extra predictor columns: bio_5, bio_6, bio_7, bio_13, bio_14</span></span>
-<span><span class="co">#&gt; Step: Using 3 predictor variables: bio_1, bio_12, bio_15</span></span>
-<span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability</span></span>
-<span></span>
-<span><span class="co"># Apply the composite bias to our suitability layer</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Apply the composite bias to our suitability layer</span></span>
 <span><span class="va">applied_bias</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apply_bias.html">apply_bias</a></span><span class="op">(</span>prepared_bias <span class="op">=</span> <span class="va">prep_composite</span>, </span>
 <span>                           prediction <span class="op">=</span> <span class="va">pred</span>, </span>
-<span>                           prediction_layer <span class="op">=</span> <span class="st">"suitability"</span>, </span>
-<span>                           effect_direction <span class="op">=</span> <span class="st">"direct"</span>,</span>
-<span>                           verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>                           prediction_layer <span class="op">=</span> <span class="st">"suitability"</span>,</span>
+<span>                           effect_direction <span class="op">=</span> <span class="st">"direct"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Starting: apply_bias()</span></span>
+<span><span class="co">#&gt; Step: applying bias with 'direct' effect to to "suitability" layer...</span></span>
+<span><span class="co">#&gt; Done: apply_bias(). Note: values are no longer probabilities</span></span>
 <span></span>
 <span><span class="co"># --- Plotting the Output ---</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Original Biological Suitability</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred</span><span class="op">[[</span><span class="st">"suitability"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Habitat Suitability"</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred</span><span class="op">[[</span><span class="st">"suitability"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Habitat Suitability"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Suitability mathematically restricted by our composite sampling bias</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">applied_bias</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Suitability + Composite Bias"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bias_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="95%"></p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/grDevices/dev.html" class="external-link">dev.off</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; null device </span></span>
-<span><span class="co">#&gt;           1</span></span></code></pre></div>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">applied_bias</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Suitability + Composite Bias"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="bias_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="95%"></p>
 <p><em>In the final comparison, observe how the spatial footprint of the
 species shrinks based on the bias layer. When drawing points from the
 <code>applied_bias</code> raster using
@@ -321,6 +313,14 @@ sampling effort (driven by nighttime lights and richness) in those areas
 is too low.</em></p>
 </div>
 </div>
+<div class="section level2">
+<h2 id="save-and-export">Save and export<a class="anchor" aria-label="anchor" href="#save-and-export"></a>
+</h2>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">temp_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"applied_bias_rast.tif"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">applied_bias</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, filename <span class="op">=</span> <span class="va">temp_rast</span><span class="op">)</span></span></code></pre></div>
+</div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
@@ -328,7 +328,7 @@ is too low.</em></p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon Cobos.</p>
+  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon E. Cobos.</p>
 </div>
 
 <div class="pkgdown-footer-right">

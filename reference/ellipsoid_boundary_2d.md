@@ -2,7 +2,7 @@
 
 Computes ordered boundary points for a two-dimensional slice of a
 `nicheR_ellipsoid`, suitable for plotting with
-[`lines()`](https://rspatial.github.io/terra/reference/lines.html) or
+[`lines()`](https://rdrr.io/r/graphics/lines.html) or
 `plot(type = "l")`. The boundary is derived from the selected covariance
 submatrix and the stored chi-square cutoff.
 

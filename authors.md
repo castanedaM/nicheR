@@ -8,7 +8,7 @@
 
 - **Paanwaris Paansri**. Author.
 
-- **Marlon Cobos**. Author.
+- **Marlon E. Cobos**. Author.
 
 ## Citation
 
@@ -22,7 +22,7 @@ E-space and G-space*. R package version 0.0.11,
 
     @Manual{,
       title = {nicheR: An R package for ellipsoid-based virtual species and niche visualization in E-space and G-space},
-      author = {Mariana Castaneda-Guzman and Connor Hughes and Paanwaris Paansri and Marlon Cobos},
+      author = {Mariana Castaneda-Guzman and Connor Hughes and Paanwaris Paansri and Marlon E. Cobos},
       year = {2026},
       note = {R package version 0.0.11},
       url = {https://github.com/castanedaM/NicheR},

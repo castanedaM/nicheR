@@ -103,6 +103,9 @@ raster stack of the same variables for geographic projections.
 # Reference niche (nicheR_ellipsoid object)
 data("ref_ellipse", package = "nicheR")
 
+# Reference 3-dimentainal niche
+data("example_sp_4", package = "nicheR")
+
 # Background environmental data (data.frame)
 data("back_data", package = "nicheR")
 
@@ -128,6 +131,10 @@ ref_ellipse
 #>           bio_1 bio_12
 #> bio_1     1.361   -100
 #> bio_12 -100.000  62500
+#> 
+#> Covariance Limits:
+#>                   min     max
+#> bio_1-bio_12 -291.667 291.667
 #> 
 #> Ellipsoid semi-axis lengths:
 #>   758.715, 3.326
@@ -244,23 +251,26 @@ prediction layers.
 
 ``` r
 pred_rast <- predict(ref_ellipse,
-                     newdata = ma_bios[[ref_ellipse$var_names]])
+                     newdata = ma_bios[[ref_ellipse$var_names]],
+                     keep_data = TRUE)
 #> Starting: suitability prediction using newdata of class: SpatRaster...
 #> Step: Using 2 predictor variables: bio_1, bio_12
-#> Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability
+#> Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability
 
 pred_rast
 #> class       : SpatRaster 
-#> size        : 150, 240, 2  (nrow, ncol, nlyr)
+#> size        : 150, 240, 4  (nrow, ncol, nlyr)
 #> resolution  : 0.1666667, 0.1666667  (x, y)
 #> extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)
 #> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-#> source(s)   : memory
-#> names       :  Mahalanobis,   suitability 
-#> min values  : 2.992248e-03, 7.035461e-127 
-#> max values  : 5.809547e+02,  9.985050e-01
+#> sources     : ma_bios.tif  (2 layers) 
+#>               memory  
+#>               memory  
+#> names       :    bio_1, bio_12,  Mahalanobis,   suitability 
+#> min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127 
+#> max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01
 names(pred_rast)
-#> [1] "Mahalanobis" "suitability"
+#> [1] "bio_1"       "bio_12"      "Mahalanobis" "suitability"
 ```
 
   
@@ -868,7 +878,7 @@ ellipse_3d <- build_ellipsoid(range = range_3d)
 #> Step: computing additional ellipsoidal niche metrics...
 #> Done: created ellipsoidal niche.
 
-print(ellipse_3d)
+ellipse_3d
 #> nicheR Ellipsoid Object
 #> -----------------------
 #> Dimensions:        3D
@@ -880,6 +890,12 @@ print(ellipse_3d)
 #> bio_1  1.778    0.000   0.00
 #> bio_12 0.000 6944.444   0.00
 #> bio_15 0.000    0.000   6.25
+#> 
+#> Covariance Limits:
+#>                    min    max
+#> bio_1-bio_12   -55.556 110.00
+#> bio_1-bio_15    -1.667   3.30
+#> bio_12-bio_15 -104.167 206.25
 #> 
 #> Ellipsoid semi-axis lengths:
 #>   280.685, 8.421, 4.491
@@ -906,24 +922,26 @@ print(ellipse_3d)
   
 
 ``` r
-suit_3d <- predict(ellipse_3d,
-                   newdata = back_data[, ellipse_3d$var_names],
-                   include_mahalanobis   = FALSE,
+suit_3d <- predict(example_sp_4,
+                   newdata = ma_bios[[example_sp_4$var_names]],
+                   include_mahalanobis   = TRUE,
                    include_suitability   = TRUE,
                    suitability_truncated = TRUE,
-                   verbose = FALSE)
+                   verbose = FALSE,
+                   keep_data = TRUE)
 
 colnames(suit_3d)
-#> [1] "bio_1"             "bio_12"            "bio_15"           
-#> [4] "suitability"       "suitability_trunc"
+#> NULL
 head(suit_3d)
-#>      bio_1 bio_12   bio_15  suitability suitability_trunc
-#> 1 18.16097    680 39.75968 9.333979e-58                 0
-#> 2 18.06556    703 38.44158 7.446140e-60                 0
-#> 3 17.95946    725 37.43598 1.611035e-61                 0
-#> 4 18.01018    734 36.24147 1.307242e-63                 0
-#> 5 18.14458    748 34.95365 1.353496e-65                 0
-#> 6 18.36623    771 33.73626 5.276799e-67                 0
+#> class       : SpatRaster 
+#> size        : 6, 240, 6  (nrow, ncol, nlyr)
+#> resolution  : 0.1666667, 0.1666667  (x, y)
+#> extent      : -100, -60, 29, 30  (xmin, xmax, ymin, ymax)
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326) 
+#> source(s)   : memory
+#> names       :    bio_1, bio_12,   bio_15, Mahalanobis,  suitability, suita~trunc 
+#> min values  : 17.95946,    579, 16.11374,    42.89806, 1.199671e-26,           0 
+#> max values  : 21.65417,   1689, 50.46778,   119.37033, 4.839548e-10,           0
 ```
 
   
@@ -939,7 +957,7 @@ ellipsoid in each dimension is directly comparable.
 par(cex = 0.7)
 
 plot_ellipsoid_pairs(ellipse_3d,
-                     prediction = suit_3d,
+                     prediction = as.data.frame(suit_3d),
                      col_layer  = "suitability_trunc",
                      col_bg     = "#d4d4d4",
                      col_ell    = "#e10000",
@@ -969,7 +987,7 @@ standard functions. For `nicheR_ellipsoid` objects, use the
 `save_nicheR` and `read_nicheR` functions.
 
 ``` r
-temp_ellipse <- file.path(tempdir(), "ref_ellipse.rds")
+temp_ellipse <- file.path(tempdir(), "ref_ellipse.rda")
 save_nicheR(ref_ellipse, file = temp_ellipse)
 
 ref_ellipse_imported <- read_nicheR(temp_ellipse)
@@ -981,8 +999,14 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
 temp_df   <- file.path(tempdir(), "predictions_df.csv")
 temp_rast <- file.path(tempdir(), "predictions_rast.tif")
 
+temp_3d_df   <- file.path(tempdir(), "predictions_3d_df.csv")
+temp_3d_rast <- file.path(tempdir(), "predictions_3d_rast.tif")
+
 write.csv(pred_df, file = temp_df, row.names = FALSE)
 terra::writeRaster(pred_rast, filename = temp_rast)
+
+write.csv(suit_3d, file = temp_3d_df, row.names = FALSE)
+terra::writeRaster(suit_3d, filename = temp_3d_rast)
 
 pred_df_imported   <- read.csv(temp_df)
 pred_rast_imported <- terra::rast(temp_rast)

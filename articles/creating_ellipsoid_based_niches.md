@@ -208,6 +208,10 @@ print(ell)
 #> bio_1      4      0.0
 #> bio_12     0 293402.8
 #> 
+#> Covariance Limits:
+#>                    min      max
+#> bio_1-bio_12 -1083.333 1083.333
+#> 
 #> Ellipsoid semi-axis lengths:
 #>   1643.879, 6.07
 #> 
@@ -391,6 +395,10 @@ ell2
 #>        bio_1   bio_12
 #> bio_1      4    750.0
 #> bio_12   750 293402.8
+#> 
+#> Covariance Limits:
+#>                    min      max
+#> bio_1-bio_12 -1083.333 1083.333
 #> 
 #> Ellipsoid semi-axis lengths:
 #>   1643.885, 4.38
@@ -618,6 +626,10 @@ print(read_example_sp)
 #> bio_1      4    750.0
 #> bio_12   750 293402.8
 #> 
+#> Covariance Limits:
+#>                    min      max
+#> bio_1-bio_12 -1083.333 1083.333
+#> 
 #> Ellipsoid semi-axis lengths:
 #>   1643.885, 4.38
 #> 
@@ -680,6 +692,12 @@ ell5
 #> bio_1  2.778      0.0   0.000
 #> bio_12 0.000 321111.1   0.000
 #> bio_15 0.000      0.0 136.111
+#> 
+#> Covariance Limits:
+#>                     min     max
+#> bio_1-bio_12   -472.222  935.00
+#> bio_1-bio_15     -9.722   19.25
+#> bio_12-bio_15 -3305.556 6545.00
 #> 
 #> Ellipsoid semi-axis lengths:
 #>   1908.655, 39.296, 5.614
@@ -813,7 +831,7 @@ We can save this three-dimensional species for use in later sessions
 alongside the two-dimensional examples defined above.
 
 ``` r
-temp_file4 <- file.path(tempdir(), "example_sp_4.rds")
+temp_file4 <- file.path(tempdir(), "example_sp_4.rda")
 save_nicheR(ell5, file = temp_file4)
 ```
 

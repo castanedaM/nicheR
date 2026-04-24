@@ -93,6 +93,10 @@ print(ref_ellipse)
 #> bio_1     1.361   -100
 #> bio_12 -100.000  62500
 #> 
+#> Covariance Limits:
+#>                   min     max
+#> bio_1-bio_12 -291.667 291.667
+#> 
 #> Ellipsoid semi-axis lengths:
 #>   758.715, 3.326
 #> 

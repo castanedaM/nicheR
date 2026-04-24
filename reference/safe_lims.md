@@ -3,7 +3,7 @@
 Returns x and y ranges that span both a matrix of data points and a data
 frame of ellipsoid boundary points, so the ellipsoid boundary is never
 clipped by the data extent when passed to
-[`plot()`](https://rspatial.github.io/terra/reference/plot.html).
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html).
 
 ## Usage
 

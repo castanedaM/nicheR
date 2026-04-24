@@ -36,9 +36,10 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/creating_ellipsoid_based_niches.html">1. Build ellipsoid</a></li>
     <li><a class="dropdown-item" href="../articles/predict.html">2. Make a Prediction</a></li>
-    <li><a class="dropdown-item" href="../articles/sampling_occurrence_data.html">3. Generate Occurence Data</a></li>
+    <li><a class="dropdown-item" href="../articles/generate_occurrence_data.html">3. Generate Occurence Data</a></li>
     <li><a class="dropdown-item" href="../articles/sampling_bias_data.html">4. Working With Bias</a></li>
     <li><a class="dropdown-item" href="../articles/virtual_communities.html">5. Virtual Community Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/plotting_vignette.html">6. Plotting</a></li>
   </ul>
 </li>
       </ul>
@@ -67,8 +68,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Predicting suitability and Mahalanobis distance</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Predicting suitability and Mahalanobis distance</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/castanedaM/NicheR/blob/master/vignettes/predict.Rmd" class="external-link"><code>vignettes/predict.Rmd</code></a></small>
@@ -196,6 +196,9 @@ variables for geographic projections.</p>
 <code class="sourceCode R"><span><span class="co"># Reference niche (nicheR_ellipsoid object)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Reference 3-dimentainal niche</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_sp_4"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
+<span></span>
 <span><span class="co"># Background environmental data (data.frame)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"back_data"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
 <span></span>
@@ -218,6 +221,10 @@ proceeding.</p>
 <span><span class="co">#&gt;           bio_1 bio_12</span></span>
 <span><span class="co">#&gt; bio_1     1.361   -100</span></span>
 <span><span class="co">#&gt; bio_12 -100.000  62500</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                   min     max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12 -291.667 291.667</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   758.715, 3.326</span></span>
@@ -325,23 +332,26 @@ with <code>NA</code> in any predictor layer receive <code>NA</code> in
 all prediction layers.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
-<span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>                     keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: suitability prediction using newdata of class: SpatRaster...</span></span>
 <span><span class="co">#&gt; Step: Using 2 predictor variables: bio_1, bio_12</span></span>
-<span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: Mahalanobis, suitability</span></span>
+<span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability</span></span>
 <span></span>
 <span><span class="va">pred_rast</span></span>
 <span><span class="co">#&gt; class       : SpatRaster </span></span>
-<span><span class="co">#&gt; size        : 150, 240, 2  (nrow, ncol, nlyr)</span></span>
+<span><span class="co">#&gt; size        : 150, 240, 4  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
 <span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
-<span><span class="co">#&gt; source(s)   : memory</span></span>
-<span><span class="co">#&gt; names       :  Mahalanobis,   suitability </span></span>
-<span><span class="co">#&gt; min values  : 2.992248e-03, 7.035461e-127 </span></span>
-<span><span class="co">#&gt; max values  : 5.809547e+02,  9.985050e-01</span></span>
+<span><span class="co">#&gt; sources     : ma_bios.tif  (2 layers) </span></span>
+<span><span class="co">#&gt;               memory  </span></span>
+<span><span class="co">#&gt;               memory  </span></span>
+<span><span class="co">#&gt; names       :    bio_1, bio_12,  Mahalanobis,   suitability </span></span>
+<span><span class="co">#&gt; min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127 </span></span>
+<span><span class="co">#&gt; max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pred_rast</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Mahalanobis" "suitability"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "bio_1"       "bio_12"      "Mahalanobis" "suitability"</span></span></code></pre></div>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -974,7 +984,7 @@ background.</p>
 <span><span class="co">#&gt; Step: computing additional ellipsoidal niche metrics...</span></span>
 <span><span class="co">#&gt; Done: created ellipsoidal niche.</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ellipse_3d</span><span class="op">)</span></span>
+<span><span class="va">ellipse_3d</span></span>
 <span><span class="co">#&gt; nicheR Ellipsoid Object</span></span>
 <span><span class="co">#&gt; -----------------------</span></span>
 <span><span class="co">#&gt; Dimensions:        3D</span></span>
@@ -986,6 +996,12 @@ background.</p>
 <span><span class="co">#&gt; bio_1  1.778    0.000   0.00</span></span>
 <span><span class="co">#&gt; bio_12 0.000 6944.444   0.00</span></span>
 <span><span class="co">#&gt; bio_15 0.000    0.000   6.25</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                    min    max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12   -55.556 110.00</span></span>
+<span><span class="co">#&gt; bio_1-bio_15    -1.667   3.30</span></span>
+<span><span class="co">#&gt; bio_12-bio_15 -104.167 206.25</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   280.685, 8.421, 4.491</span></span>
@@ -1009,24 +1025,26 @@ background.</p>
 <span><span class="co">#&gt; Ellipsoid volume:  44461.61</span></span></code></pre></div>
 <p><br></p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ellipse_3d</span>,</span>
-<span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ellipse_3d</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
-<span>                   include_mahalanobis   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">example_sp_4</span>,</span>
+<span>                   newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">example_sp_4</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>                   include_mahalanobis   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                   include_suitability   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                   suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>                   verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>                   verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>                   keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">suit_3d</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "bio_1"             "bio_12"            "bio_15"           </span></span>
-<span><span class="co">#&gt; [4] "suitability"       "suitability_trunc"</span></span>
+<span><span class="co">#&gt; NULL</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">suit_3d</span><span class="op">)</span></span>
-<span><span class="co">#&gt;      bio_1 bio_12   bio_15  suitability suitability_trunc</span></span>
-<span><span class="co">#&gt; 1 18.16097    680 39.75968 9.333979e-58                 0</span></span>
-<span><span class="co">#&gt; 2 18.06556    703 38.44158 7.446140e-60                 0</span></span>
-<span><span class="co">#&gt; 3 17.95946    725 37.43598 1.611035e-61                 0</span></span>
-<span><span class="co">#&gt; 4 18.01018    734 36.24147 1.307242e-63                 0</span></span>
-<span><span class="co">#&gt; 5 18.14458    748 34.95365 1.353496e-65                 0</span></span>
-<span><span class="co">#&gt; 6 18.36623    771 33.73626 5.276799e-67                 0</span></span></code></pre></div>
+<span><span class="co">#&gt; class       : SpatRaster </span></span>
+<span><span class="co">#&gt; size        : 6, 240, 6  (nrow, ncol, nlyr)</span></span>
+<span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
+<span><span class="co">#&gt; extent      : -100, -60, 29, 30  (xmin, xmax, ymin, ymax)</span></span>
+<span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
+<span><span class="co">#&gt; source(s)   : memory</span></span>
+<span><span class="co">#&gt; names       :    bio_1, bio_12,   bio_15, Mahalanobis,  suitability, suita~trunc </span></span>
+<span><span class="co">#&gt; min values  : 17.95946,    579, 16.11374,    42.89806, 1.199671e-26,           0 </span></span>
+<span><span class="co">#&gt; max values  : 21.65417,   1689, 50.46778,   119.37033, 4.839548e-10,           0</span></span></code></pre></div>
 <p><br></p>
 <p>With a three-dimensional ellipsoid there are three pairwise
 projections: bio1 vs. bio12, bio1 vs. bio15, and bio12 vs. bio15. The
@@ -1038,7 +1056,7 @@ dimension is directly comparable.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>cex <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid_pairs.html">plot_ellipsoid_pairs</a></span><span class="op">(</span><span class="va">ellipse_3d</span>,</span>
-<span>                     prediction <span class="op">=</span> <span class="va">suit_3d</span>,</span>
+<span>                     prediction <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">suit_3d</span><span class="op">)</span>,</span>
 <span>                     col_layer  <span class="op">=</span> <span class="st">"suitability_trunc"</span>,</span>
 <span>                     col_bg     <span class="op">=</span> <span class="st">"#d4d4d4"</span>,</span>
 <span>                     col_ell    <span class="op">=</span> <span class="st">"#e10000"</span>,</span>
@@ -1060,7 +1078,7 @@ having three pairs and a layout that rounds up to four cells.</p>
 standard functions. For <code>nicheR_ellipsoid</code> objects, use the
 <code>save_nicheR</code> and <code>read_nicheR</code> functions.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">temp_ellipse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"ref_ellipse.rds"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">temp_ellipse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"ref_ellipse.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, file <span class="op">=</span> <span class="va">temp_ellipse</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ref_ellipse_imported</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_nicheR.html">read_nicheR</a></span><span class="op">(</span><span class="va">temp_ellipse</span><span class="op">)</span></span></code></pre></div>
@@ -1069,8 +1087,14 @@ standard functions. For <code>nicheR_ellipsoid</code> objects, use the
 <code class="sourceCode R"><span><span class="va">temp_df</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_df.csv"</span><span class="op">)</span></span>
 <span><span class="va">temp_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_rast.tif"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="va">temp_3d_df</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_3d_df.csv"</span><span class="op">)</span></span>
+<span><span class="va">temp_3d_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_3d_rast.tif"</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">pred_df</span>, file <span class="op">=</span> <span class="va">temp_df</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">pred_rast</span>, filename <span class="op">=</span> <span class="va">temp_rast</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">suit_3d</span>, file <span class="op">=</span> <span class="va">temp_3d_df</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">suit_3d</span>, filename <span class="op">=</span> <span class="va">temp_3d_rast</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">pred_df_imported</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_df</span><span class="op">)</span></span>
 <span><span class="va">pred_rast_imported</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">temp_rast</span><span class="op">)</span></span></code></pre></div>
@@ -1082,7 +1106,7 @@ standard functions. For <code>nicheR_ellipsoid</code> objects, use the
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon Cobos.</p>
+  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon E. Cobos.</p>
 </div>
 
 <div class="pkgdown-footer-right">

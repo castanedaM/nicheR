@@ -36,9 +36,10 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/creating_ellipsoid_based_niches.html">1. Build ellipsoid</a></li>
     <li><a class="dropdown-item" href="../articles/predict.html">2. Make a Prediction</a></li>
-    <li><a class="dropdown-item" href="../articles/sampling_occurrence_data.html">3. Generate Occurence Data</a></li>
+    <li><a class="dropdown-item" href="../articles/generate_occurrence_data.html">3. Generate Occurence Data</a></li>
     <li><a class="dropdown-item" href="../articles/sampling_bias_data.html">4. Working With Bias</a></li>
     <li><a class="dropdown-item" href="../articles/virtual_communities.html">5. Virtual Community Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/plotting_vignette.html">6. Plotting</a></li>
   </ul>
 </li>
       </ul>
@@ -67,8 +68,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Virtual community simulation</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Virtual community simulation</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/castanedaM/NicheR/blob/master/vignettes/virtual_communities.Rmd" class="external-link"><code>vignettes/virtual_communities.Rmd</code></a></small>
@@ -222,6 +222,10 @@ them here to make sure they are loaded correctly.</p>
 <span><span class="co">#&gt;           bio_1 bio_12</span></span>
 <span><span class="co">#&gt; bio_1     1.361   -100</span></span>
 <span><span class="co">#&gt; bio_12 -100.000  62500</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                   min     max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12 -291.667 291.667</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   758.715, 3.326</span></span>
@@ -1335,7 +1339,7 @@ and <code><a href="https://rspatial.github.io/terra/reference/rast.html" class="
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon Cobos.</p>
+  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon E. Cobos.</p>
 </div>
 
 <div class="pkgdown-footer-right">

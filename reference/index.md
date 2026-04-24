@@ -4,8 +4,12 @@
 
 - [`add_data()`](https://castanedam.github.io/nicheR/reference/add_data.md)
   : Add occurrence points or other data to an existing E-space plot
+- [`add_data_3d()`](https://castanedam.github.io/nicheR/reference/add_data_3d.md)
+  : Add data to an existing 3D E-space plot
 - [`add_ellipsoid()`](https://castanedam.github.io/nicheR/reference/add_ellipsoid.md)
   : Add an ellipsoid boundary to an existing E-space plot
+- [`add_ellipsoid_3d()`](https://castanedam.github.io/nicheR/reference/add_ellipsoid_3d.md)
+  : Add an ellipsoid to an existing 3D E-space plot
 - [`apply_bias()`](https://castanedam.github.io/nicheR/reference/apply_bias.md)
   : Apply sampling bias to suitability surfaces
 - [`back_data`](https://castanedam.github.io/nicheR/reference/back_data.md)
@@ -28,6 +32,8 @@
   : Plot a nicheR Community of Ellipses
 - [`plot_ellipsoid()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid.md)
   : Plot a nicheR ellipsoid in environmental space
+- [`plot_ellipsoid_3d()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_3d.md)
+  : Plot a nicheR ellipsoid in 3D environmental space
 - [`plot_ellipsoid_pairs()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
   : Plot all pairwise 2D ellipsoid projections
 - [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_community.md)

@@ -72,6 +72,10 @@ print(ell)
 #> bio1 2.778 0.000
 #> bio2 0.000 2.778
 #> 
+#> Covariance Limits:
+#>              min   max
+#> bio1-bio2 -2.778 2.778
+#> 
 #> Ellipsoid semi-axis lengths:
 #>   4.08, 4.08
 #> 

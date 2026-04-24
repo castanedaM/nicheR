@@ -36,9 +36,10 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/creating_ellipsoid_based_niches.html">1. Build ellipsoid</a></li>
     <li><a class="dropdown-item" href="../articles/predict.html">2. Make a Prediction</a></li>
-    <li><a class="dropdown-item" href="../articles/sampling_occurrence_data.html">3. Generate Occurence Data</a></li>
+    <li><a class="dropdown-item" href="../articles/generate_occurrence_data.html">3. Generate Occurence Data</a></li>
     <li><a class="dropdown-item" href="../articles/sampling_bias_data.html">4. Working With Bias</a></li>
     <li><a class="dropdown-item" href="../articles/virtual_communities.html">5. Virtual Community Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/plotting_vignette.html">6. Plotting</a></li>
   </ul>
 </li>
       </ul>
@@ -67,8 +68,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Creating Ellipsoid Based Niches</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Creating Ellipsoid Based Niches</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/castanedaM/NicheR/blob/master/vignettes/creating_ellipsoid_based_niches.Rmd" class="external-link"><code>vignettes/creating_ellipsoid_based_niches.Rmd</code></a></small>
@@ -280,6 +280,10 @@ properties.</p>
 <span><span class="co">#&gt; bio_1      4      0.0</span></span>
 <span><span class="co">#&gt; bio_12     0 293402.8</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                    min      max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12 -1083.333 1083.333</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   1643.879, 6.07</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -429,6 +433,10 @@ variables.</p>
 <span><span class="co">#&gt;        bio_1   bio_12</span></span>
 <span><span class="co">#&gt; bio_1      4    750.0</span></span>
 <span><span class="co">#&gt; bio_12   750 293402.8</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                    min      max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12 -1083.333 1083.333</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   1643.885, 4.38</span></span>
@@ -619,6 +627,10 @@ the niche has been recovered correctly.</p>
 <span><span class="co">#&gt; bio_1      4    750.0</span></span>
 <span><span class="co">#&gt; bio_12   750 293402.8</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                    min      max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12 -1083.333 1083.333</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   1643.885, 4.38</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -679,6 +691,12 @@ precipitation seasonality, as an additional dimension.</p>
 <span><span class="co">#&gt; bio_1  2.778      0.0   0.000</span></span>
 <span><span class="co">#&gt; bio_12 0.000 321111.1   0.000</span></span>
 <span><span class="co">#&gt; bio_15 0.000      0.0 136.111</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Covariance Limits:</span></span>
+<span><span class="co">#&gt;                     min     max</span></span>
+<span><span class="co">#&gt; bio_1-bio_12   -472.222  935.00</span></span>
+<span><span class="co">#&gt; bio_1-bio_15     -9.722   19.25</span></span>
+<span><span class="co">#&gt; bio_12-bio_15 -3305.556 6545.00</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
 <span><span class="co">#&gt;   1908.655, 39.296, 5.614</span></span>
@@ -776,7 +794,7 @@ species adapted to seasonally pulsed precipitation environments.</p>
 <p>We can save this three-dimensional species for use in later sessions
 alongside the two-dimensional examples defined above.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">temp_file4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_4.rds"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">temp_file4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_4.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell5</span>, file <span class="op">=</span> <span class="va">temp_file4</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 <p>This concludes the basics for defining ellipsoid-based tolerances for
@@ -792,7 +810,7 @@ the next vignette: <a href="link">Making Predictions</a>.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon Cobos.</p>
+  <p>Developed by Mariana Castaneda-Guzman, Connor Hughes, Paanwaris Paansri, Marlon E. Cobos.</p>
 </div>
 
 <div class="pkgdown-footer-right">
