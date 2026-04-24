@@ -226,5 +226,5 @@ Since the generated virtual occurrences are standard data frames, we save them u
 
 ```{r}
 # Save the basic virtual occurrence dataset
-saveRDS(occ_virt_basic, file = "data/virtual_occurrences.rds")
+# saveRDS(occ_virt_basic, file = "data/virtual_occurrences.rd")
 ```
