@@ -134,10 +134,15 @@ plot_ellipsoid_3d <- function(object,
 #' @param data A data frame or matrix containing the points.
 #' @param dim Integer vector of length 3. Indices of dimensions to plot.
 #' @param col_layer Character or \code{NULL}. Column for coloring.
+#' @param alpha Transparency for the points. Default is \code{1}.
 #' @param ... Additional arguments passed to \code{rgl::points3d}.
 #'
 #' @export
-add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
+add_data_3d <- function(data,
+                        dim = c(1, 2, 3),
+                        col_layer = NULL,
+                        alpha = 1,
+                        ...) {
   if (!requireNamespace("rgl", quietly = TRUE)) {
     stop("Package 'rgl' is required, please install it before trying again.")
   }
@@ -149,7 +154,7 @@ add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
   vars <- colnames(data)[dim]
 
   # Lean point addition
-  rgl::points3d(data[, vars], ...)
+  rgl::points3d(data[, vars], alpha = alpha, ...)
 }
 
 
@@ -161,8 +166,8 @@ add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
 #' @param wire Logical. If \code{TRUE}, plots wireframe, otherwise plots a
 #'    shaded volume. Default is \code{FALSE}.
 #' @param col_ell Color of the ellipsoid. Default is \code{"#000000"}.
-#' @param alpha_ell Transparency of the ellipsoid boundary. Default is
-#'    \code{0.5}.
+#' @param alpha_ell Transparency of the ellipsoid. Default is
+#'    \code{1}. Not applied if \code{wire = TRUE}.
 #' @param ... Additional arguments passed to \code{rgl::wire3d} or
 #'    \code{rgl::shade3d}.
 #'
@@ -170,8 +175,8 @@ add_data_3d <- function(data, dim = c(1, 2, 3), col_layer = NULL, ...) {
 add_ellipsoid_3d <- function(object,
                              dim = c(1, 2, 3),
                              wire = FALSE,
-                             col_ell = "#000000",
-                             alpha_ell = 0.5,
+                             col_ell = "#800000",
+                             alpha_ell = 1,
                              ...) {
   if (!requireNamespace("rgl", quietly = TRUE)) {
     stop("Package 'rgl' is required, please install it before trying again.")
@@ -188,7 +193,7 @@ add_ellipsoid_3d <- function(object,
                              t = sqrt(object$chi2_cutoff))
 
   if (isTRUE(wire)) {
-    rgl::wire3d(ell_mesh, col = col_ell, alpha = alpha_ell, ...)
+    rgl::wire3d(ell_mesh, col = col_ell, ...)
   } else {
     rgl::shade3d(ell_mesh, col = col_ell, alpha = alpha_ell, ...)
   }
