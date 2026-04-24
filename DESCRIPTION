@@ -7,13 +7,13 @@ Authors@R: c(
       "Mariana", "Castaneda-Guzman",
       email = "marianacg@vt.edu", 
       role = c("aut", "cre"), 
-      comment = c(ORCID = c("0000-0001-6106-4284"))
+      comment = c(ORCID = "0000-0001-6106-4284")
     ),
     person(
       "Connor", "Hughes",
       email = "connorjh@vt.edu", 
       role = "aut",
-      comment = c(ORCID = c("0000-0002-3720-0837")
+      comment = c(ORCID = "0000-0002-3720-0837")
     ),
     person(
       "Paanwaris", "Paansri",
