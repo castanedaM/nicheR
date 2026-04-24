@@ -73,7 +73,7 @@ Raw bias proxies (e.g., species richness, nighttime lights, distance to roads) c
 ```{r, results='hide', message=FALSE, warning=FALSE}
 # Load a sample bias layer containing 'sp_richness' and 'nighttime'
 biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
-raw_bias <- rast(biases_file)
+raw_bias <- terra::rast(biases_file)
 
 # --- Plotting the Output ---
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
@@ -182,7 +182,7 @@ terra::plot(applied_bias[[1]], main = "Suitability + Composite Bias")
 # Save and export
 
 ```{r}
-temp_rast <- file.path("inst/extdata/", "applied_bias_rast.tif")
+temp_rast <- file.path(tempdir(), "applied_bias_rast.tif")
 
 terra::writeRaster(applied_bias[[1]], filename = temp_rast)
 ```
