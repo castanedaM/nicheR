@@ -66,33 +66,38 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9">
-<div class="section level1">
+  <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header">
-<img src="logo.png" class="logo" alt=""><h1 id="nicher-an-r-package-for-elliposid-based-niche-construction">nicheR: An R package for elliposid-based niche construction
-<a class="anchor" aria-label="anchor" href="#nicher-an-r-package-for-elliposid-based-niche-construction"></a>
+<img src="logo.png" class="logo" alt=""><h1 id="ellipsoid-based-virtual-niches-and-visualization">Ellipsoid-Based Virtual Niches and Visualization<a class="anchor" aria-label="anchor" href="#ellipsoid-based-virtual-niches-and-visualization"></a>
 </h1>
 </div>
+<ul>
+<li><a href="#background">Background</a></li>
+<li><a href="#package-description">Package description</a></li>
+<li><a href="#installing-the-package">Installing the package</a></li>
+<li>
+<a href="#workflow-in-nicher">Workflow in nicheR</a>
+<ul>
+<li><a href="#building-an-ellipsoid">Building an ellipsoid</a></li>
+<li><a href="#predictions">Predictions</a></li>
+<li><a href="#preparing-and-applying-bias-layers">Preparing and applying bias layers</a></li>
+<li><a href="#generating-virtual-occurrences">Generating virtual occurrences</a></li>
+<li><a href="#simulating-virtual-communities">Simulating virtual communities</a></li>
+<li><a href="#visualization">Visualization</a></li>
+</ul>
+</li>
+<li><a href="#checking-the-vignettes">Checking the vignettes</a></li>
+<li><a href="#note-on-ai-usage">Note on AI usage</a></li>
+<li><a href="#contributing">Contributing</a></li>
+</ul>
+<!-- README.md is generated from README.Rmd. Please edit that file --><!-- badges: start -->
 <div class="section level2">
 <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
 </h2>
 <p>The field of distributional ecology is evolving rapidly, with new algorithms, parameterization strategies, and hypotheses emerging at a fast pace. Evaluating these ideas requires software that can isolate mechanisms, account for bias, and clearly link ecological theory to model behavior.</p>
-<p>Virtual niche simulations help researchers test ideas by creating controlled datasets that make model behavior easier to interpret. In practice, building ellipsoid-based virtual niches in R has typically required combining several packages to define niches, map them to geography, and visualize results — making analyses harder to reproduce and build on.</p>
+<p>Virtual niche simulations help researchers test ideas by creating controlled datasets that make model behavior easier to interpret. In practice, building ellipsoid-based virtual niches in R has typically required combining several packages to define niches, map them to geography, and visualize results, making analyses harder to reproduce and build on.</p>
 <p><strong>nicheR</strong> is an R package for building and visualizing <strong>ellipsoid-based ecological niches</strong> using environmental data.</p>
 <p>Inspired by the conceptual foundations of <strong>NicheA</strong> and the flexibility of the <strong>virtualspecies</strong> package, <strong>nicheR</strong> provides a reproducible framework that connects niche construction, prediction, sampling, and visualization in one integrated workflow.</p>
-</div>
-<div class="section level2">
-<h2 id="related-work">Related work<a class="anchor" aria-label="anchor" href="#related-work"></a>
-</h2>
-<p>Three tools have shaped virtual species and niche simulation in ENM/SDMs:</p>
-<ul>
-<li>
-<strong>NicheA</strong> — a Java-based software that pioneered environmental-space niche visualization and explicitly linked niche theory with simulation. An important conceptual foundation for nicheR.</li>
-<li>
-<strong><a href="https://github.com/Farewe/virtualspecies" class="external-link">virtualspecies</a></strong> — a widely adopted R package (200+ citations) for simulating virtual species and benchmarking SDMs and ENMs within R.</li>
-<li>
-<strong><a href="https://github.com/marlonecobos/evniche/" class="external-link">evniche</a></strong> — a theoretically rigorous R package focused on environmental-space representations and ellipsoid-based niche concepts.</li>
-</ul>
 <p><br></p>
 </div>
 <div class="section level2">
@@ -160,7 +165,7 @@
 <p><br></p>
 </div>
 <div class="section level3">
-<h3 id="predicting-suitability">Predicting suitability<a class="anchor" aria-label="anchor" href="#predicting-suitability"></a>
+<h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
 </h3>
 <p>Once the ellipsoid is built, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> projects it onto environmental data to produce Mahalanobis distance and suitability surfaces. Suitability is highest at the niche centroid and decreases toward the boundary. Truncated outputs set values to zero (suitability) or <code>NA</code> (Mahalanobis) outside the ellipsoid, which is useful for enforcing strict niche-boundary sampling downstream. Both <code>SpatRaster</code> and <code>data.frame</code> inputs are supported and return matching output types.</p>
 <blockquote>
@@ -257,7 +262,6 @@
 <p>If you have an idea for a major change, please open an Issue first to discuss it with the maintainers.</p>
 </div>
 </div>
-
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
