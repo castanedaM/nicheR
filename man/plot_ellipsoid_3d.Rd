@@ -50,8 +50,8 @@ to use for coloring.}
 
 \item{col_ell}{Color of the ellipsoid. Default is \code{"#000000"}.}
 
-\item{alpha_ell}{Transparency of the ellipsoid boundary. Default is
-\code{1}.}
+\item{alpha_ell}{Transparency of the ellipsoid. Default is \code{1}.
+Not applied to wireframe mode.}
 
 \item{alpha_bg}{Transparency of background points. Default is \code{1}.
 Also applied to prediction points.}

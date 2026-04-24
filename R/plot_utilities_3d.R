@@ -19,8 +19,8 @@
 #' @param rev_pal Logical. If \code{TRUE}, reverses the palette.
 #' @param bg_sample Integer or \code{NULL}. Subsample size for large data.
 #' @param col_ell Color of the ellipsoid. Default is \code{"#000000"}.
-#' @param alpha_ell Transparency of the ellipsoid boundary. Default is
-#'    \code{1}.
+#' @param alpha_ell Transparency of the ellipsoid. Default is \code{1}.
+#'    Not applied to wireframe mode.
 #' @param alpha_bg Transparency of background points. Default is \code{1}.
 #'    Also applied to prediction points.
 #' @param col_bg Color for background points.
@@ -111,7 +111,7 @@ plot_ellipsoid_3d <- function(object,
                              t = sqrt(object$chi2_cutoff))
 
   if (isTRUE(wire)) {
-    rgl::wire3d(ell_mesh, col = col_ell, alpha = alpha_ell)
+    rgl::wire3d(ell_mesh, col = col_ell)
   } else {
     rgl::shade3d(ell_mesh, col = col_ell, alpha = alpha_ell)
   }
