@@ -1,5 +1,8 @@
 # Ellipsoid-Based Virtual Niches and Visualization
 
+Mariana Castaneda-Guzman, Connor Hugges, Paanwaris Paansri, Marlon E.
+Cobos ![](reference/figures/logo.png)
+
 - [Background](#background)
 - [Package description](#package-description)
 - [Installing the package](#installing-the-package)
