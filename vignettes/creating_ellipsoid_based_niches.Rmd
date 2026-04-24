@@ -321,13 +321,13 @@ To facilitate saving `nicheR` objects between sessions, this package provides th
 
 ```{r save_2d}
 # Save ellipsoid objects to a local directory
-temp_file1 <- file.path("data/", "example_sp_1.rds")
+temp_file1 <- file.path(tempdir(), "example_sp_1.rds")
 save_nicheR(ell2, file = temp_file1)
 
-temp_file2 <- file.path("data/", "example_sp_2.rds")
+temp_file2 <- file.path(tempdir(), "example_sp_2.rds")
 save_nicheR(ell3, file = temp_file2)
 
-temp_file3 <- file.path("data/", "example_sp_3.rds")
+temp_file3 <- file.path(tempdir(), "example_sp_3.rds")
 save_nicheR(ell4, file = temp_file3)
 ```
 
@@ -426,7 +426,7 @@ This three-dimensional species shares the wide thermal and precipitation toleran
 We can save this three-dimensional species for use in later sessions alongside the two-dimensional examples defined above.
 
 ```{r save_3d}
-temp_file4 <- file.path("data/", "example_sp_4.rds")
+temp_file4 <- file.path(tempdir(), "example_sp_4.rda")
 save_nicheR(ell5, file = temp_file4)
 ```
 
