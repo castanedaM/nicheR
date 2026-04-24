@@ -70,7 +70,56 @@
 #' ref_ellipse$volume
 "ref_ellipse"
 
+#' Example species occurrence data
+#'
+#' Datasets containing geographic occurrence records for four example species.
+#' These datasets are used to demonstrate and test functions related to
+#' ecological niche modeling, such as building niche ellipsoids and
+#' simulating virtual communities in the \code{nicheR} package.
+#'
+#' @format An object of class \code{nicheR_ellipsoid} (which is a \code{list})
+#' with 13 elements:
+#' \describe{
+#'   \item{dimensions}{Integer. Number of dimensions (2).}
+#'   \item{var_names}{Character vector. Names of variables (\code{"bio_1"}, \code{"bio_12"}).}
+#'   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
+#'   \item{cov_matrix}{Matrix. The \eqn{2 \times 2} covariance matrix (\eqn{\Sigma}).}
+#'   \item{Sigma_inv}{Matrix. The precision matrix (inverse covariance).}
+#'   \item{chol_Sigma}{Matrix. Cholesky decomposition of the covariance.}
+#'   \item{eigen}{List. Eigenvectors and eigenvalues of the covariance.}
+#'   \item{cl}{Numeric. Confidence level used (e.g., 0.99).}
+#'   \item{chi2_cutoff}{Numeric. The chi-square quantile for the given \code{cl}.}
+#'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
+#'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
+#'   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
+#'   \item{cov_limits}{List. Axis-aligned minimum and maximum limits.}
+#' }
+#'
+#' @details
+#' This object serves as a template for testing community simulation functions
+#' like \code{\link{conserved_ellipses}}. It was generated using
+#' \code{\link{build_ellipsoid}} with a centroid at (23.75, 1750) and
+#' specific covariance structures to reflect a typical temperature-precipitation
+#' relationship.
+#'
+#' @name example_species
+#' @aliases example_sp_1 example_sp_2 example_sp_3 example_sp_4
+#' @examples
+#' data(example_sp_1)
+#' head(example_sp_1)
+#'
+#' data(example_sp_2)
+#' head(example_sp_2)
+"example_sp_1"
 
+#' @rdname example_species
+"example_sp_2"
+
+#' @rdname example_species
+"example_sp_3"
+
+#' @rdname example_species
+"example_sp_4"
 
 #' Bioclimatic variables for part of the Americas
 #'
@@ -101,5 +150,6 @@
 #'                                    package = "nicheR"))
 #'
 #' terra::plot(ma_bios[[1]])
+
 NULL
 
