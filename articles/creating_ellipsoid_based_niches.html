@@ -599,13 +599,13 @@ to be saved and reloaded without repeating the parameterization
 workflow. Let’s save the three species we have defined so far.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save ellipsoid objects to a local directory</span></span>
-<span><span class="va">temp_file1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_1.rds"</span><span class="op">)</span></span>
+<span><span class="va">temp_file1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_1.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell2</span>, file <span class="op">=</span> <span class="va">temp_file1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">temp_file2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_2.rds"</span><span class="op">)</span></span>
+<span><span class="va">temp_file2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_2.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell3</span>, file <span class="op">=</span> <span class="va">temp_file2</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">temp_file3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_3.rds"</span><span class="op">)</span></span>
+<span><span class="va">temp_file3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"example_sp_3.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ell4</span>, file <span class="op">=</span> <span class="va">temp_file3</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 <p>We can reload any of these objects and work with them exactly as
@@ -613,46 +613,14 @@ before. Below we reimport the first species and visualize it to confirm
 the niche has been recovered correctly.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Import an ellipsoid object from a local directory</span></span>
-<span><span class="va">read_example_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_nicheR.html">read_nicheR</a></span><span class="op">(</span><span class="va">temp_file1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_sp_1"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">read_example_sp</span><span class="op">)</span></span>
-<span><span class="co">#&gt; nicheR Ellipsoid Object</span></span>
-<span><span class="co">#&gt; -----------------------</span></span>
-<span><span class="co">#&gt; Dimensions:        2D</span></span>
-<span><span class="co">#&gt; Chi-square cutoff: 9.21</span></span>
-<span><span class="co">#&gt; Centroid (mu):     26, 2375</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Covariance matrix:</span></span>
-<span><span class="co">#&gt;        bio_1   bio_12</span></span>
-<span><span class="co">#&gt; bio_1      4    750.0</span></span>
-<span><span class="co">#&gt; bio_12   750 293402.8</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Covariance Limits:</span></span>
-<span><span class="co">#&gt;                    min      max</span></span>
-<span><span class="co">#&gt; bio_1-bio_12 -1083.333 1083.333</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Ellipsoid semi-axis lengths:</span></span>
-<span><span class="co">#&gt;   1643.885, 4.38</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Ellipsoid axis endpoints:</span></span>
-<span><span class="co">#&gt;  Axis 1:</span></span>
-<span><span class="co">#&gt;           bio_1   bio_12</span></span>
-<span><span class="co">#&gt; vertex_a 21.798  731.121</span></span>
-<span><span class="co">#&gt; vertex_b 30.202 4018.879</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Axis 2:</span></span>
-<span><span class="co">#&gt;          bio_1   bio_12</span></span>
-<span><span class="co">#&gt; vertex_a 30.38 2374.989</span></span>
-<span><span class="co">#&gt; vertex_b 21.62 2375.011</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Ellipsoid volume:  22619.64</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">read_example_sp</span>, background <span class="op">=</span> <span class="va">bios_df</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">example_sp_1</span>, background <span class="op">=</span> <span class="va">bios_df</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>               bg_sample <span class="op">=</span> <span class="fl">5000</span>, pch <span class="op">=</span> <span class="st">"."</span>, cex_bg <span class="op">=</span> <span class="fl">1.5</span>, col_bg <span class="op">=</span> <span class="st">"gray50"</span>,</span>
 <span>               lwd <span class="op">=</span> <span class="fl">3</span>, col_ell <span class="op">=</span> <span class="st">"forestgreen"</span>, lty <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>               fixed_lims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">32</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">200</span>, <span class="fl">5000</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">read_example_sp</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>,</span>
+<span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">example_sp_1</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>         x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>,</span>
 <span>         pts_col <span class="op">=</span> <span class="st">"forestgreen"</span>, cex <span class="op">=</span> <span class="fl">2</span>, pch <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span></code></pre></div>
 <p><img src="creating_ellipsoid_based_niches_files/figure-html/read_2d-1.png" class="r-plt" alt="" width="95%"></p>

@@ -594,13 +594,13 @@ so far.
 
 ``` r
 # Save ellipsoid objects to a local directory
-temp_file1 <- file.path(tempdir(), "example_sp_1.rds")
+temp_file1 <- file.path(tempdir(), "example_sp_1.rda")
 save_nicheR(ell2, file = temp_file1)
 
-temp_file2 <- file.path(tempdir(), "example_sp_2.rds")
+temp_file2 <- file.path(tempdir(), "example_sp_2.rda")
 save_nicheR(ell3, file = temp_file2)
 
-temp_file3 <- file.path(tempdir(), "example_sp_3.rds")
+temp_file3 <- file.path(tempdir(), "example_sp_3.rda")
 save_nicheR(ell4, file = temp_file3)
 ```
 
@@ -612,46 +612,14 @@ niche has been recovered correctly.
 
 ``` r
 # Import an ellipsoid object from a local directory
-read_example_sp <- read_nicheR(temp_file1)
+data("example_sp_1", package = "nicheR")
 
-print(read_example_sp)
-#> nicheR Ellipsoid Object
-#> -----------------------
-#> Dimensions:        2D
-#> Chi-square cutoff: 9.21
-#> Centroid (mu):     26, 2375
-#> 
-#> Covariance matrix:
-#>        bio_1   bio_12
-#> bio_1      4    750.0
-#> bio_12   750 293402.8
-#> 
-#> Covariance Limits:
-#>                    min      max
-#> bio_1-bio_12 -1083.333 1083.333
-#> 
-#> Ellipsoid semi-axis lengths:
-#>   1643.885, 4.38
-#> 
-#> Ellipsoid axis endpoints:
-#>  Axis 1:
-#>           bio_1   bio_12
-#> vertex_a 21.798  731.121
-#> vertex_b 30.202 4018.879
-#> 
-#>  Axis 2:
-#>          bio_1   bio_12
-#> vertex_a 30.38 2374.989
-#> vertex_b 21.62 2375.011
-#> 
-#> Ellipsoid volume:  22619.64
-
-plot_ellipsoid(read_example_sp, background = bios_df, dim = c(1, 2),
+plot_ellipsoid(example_sp_1, background = bios_df, dim = c(1, 2),
                bg_sample = 5000, pch = ".", cex_bg = 1.5, col_bg = "gray50",
                lwd = 3, col_ell = "forestgreen", lty = 6,
                fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)))
 
-add_data(as.data.frame(t(read_example_sp$centroid)),
+add_data(as.data.frame(t(example_sp_1$centroid)),
          x = "bio_1", y = "bio_12",
          pts_col = "forestgreen", cex = 2, pch = 18)
 ```

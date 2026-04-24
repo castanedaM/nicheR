@@ -24,6 +24,11 @@
   : Calculate n-dimensional ellipsoid metrics
 - [`ellipsoid_volume()`](https://castanedam.github.io/nicheR/reference/ellipsoid_volume.md)
   : Compute ellipsoid hypervolume
+- [`example_sp_1`](https://castanedam.github.io/nicheR/reference/example_species.md)
+  [`example_sp_2`](https://castanedam.github.io/nicheR/reference/example_species.md)
+  [`example_sp_3`](https://castanedam.github.io/nicheR/reference/example_species.md)
+  [`example_sp_4`](https://castanedam.github.io/nicheR/reference/example_species.md)
+  : Example species occurrence data
 - [`ma_bios`](https://castanedam.github.io/nicheR/reference/ma_bios.md)
   : Bioclimatic variables for part of the Americas
 - [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)

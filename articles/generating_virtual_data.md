@@ -305,5 +305,5 @@ save them using
 
 ``` r
 # Save the basic virtual occurrence dataset
-# saveRDS(occ_virt_basic, file = "data/virtual_occurrences.rd")
+write.csv(occ_virt_basic, file = tempfile())
 ```

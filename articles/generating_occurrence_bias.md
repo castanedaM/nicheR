@@ -172,5 +172,5 @@ analyses.
 
 ``` r
 # Save the biased occurrence data frame to your local directory
-# saveRDS(occ_biased, file = "data/biased_occurrences.rds")
+write.csv(occ_biased, file = tempfile())
 ```

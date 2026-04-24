@@ -415,8 +415,5 @@ very beginning of this vignette.
 
 ``` r
 # Save the basic generated occurrence data frame to your local directory
-# saveRDS(occ_basic, file = "data/generate_occurrences.rds")
-
-# To load this data back into a future session:
-# my_occurrences <- readRDS("data/virtual_occurrences.rds")
+write.csv(occ_basic, file = tempfile())
 ```

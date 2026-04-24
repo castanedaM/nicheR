@@ -379,7 +379,7 @@ landscape raster.</p>
 save them using <code><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">saveRDS()</a></code>.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save the basic virtual occurrence dataset</span></span>
-<span><span class="co"># saveRDS(occ_virt_basic, file = "data/virtual_occurrences.rd")</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">occ_virt_basic</span>, file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
