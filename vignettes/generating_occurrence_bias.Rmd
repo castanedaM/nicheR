@@ -141,5 +141,5 @@ Because we generated standard spatial coordinates, we can export this biased dat
 
 ```{r}
 # Save the biased occurrence data frame to your local directory
-saveRDS(occ_biased, file = "data/biased_occurrences.rds")
+# saveRDS(occ_biased, file = "data/biased_occurrences.rds")
 ```
