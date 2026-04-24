@@ -736,7 +736,7 @@ With a three-dimensional ellipsoid there are three pairwise projections: bio1 vs
 par(cex = 0.7)
 
 plot_ellipsoid_pairs(ellipse_3d,
-                     prediction = suit_3d,
+                     prediction = as.data.frame(suit_3d),
                      col_layer  = "suitability_trunc",
                      col_bg     = "#d4d4d4",
                      col_ell    = "#e10000",
@@ -760,7 +760,7 @@ par(original_par)
 Prediction outputs are standard R objects and can be saved using standard functions. For `nicheR_ellipsoid` objects, use the `save_nicheR` and `read_nicheR` functions.
 
 ```{r save_import, eval=FALSE}
-temp_ellipse <- file.path("data/", "ref_ellipse.rds")
+temp_ellipse <- file.path(tempdir(), "ref_ellipse.rda")
 save_nicheR(ref_ellipse, file = temp_ellipse)
 
 ref_ellipse_imported <- read_nicheR(temp_ellipse)
@@ -769,11 +769,11 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
 <br>
 
 ```{r save_preds, eval=FALSE}
-temp_df   <- file.path("inst/extdata/", "predictions_df.csv")
-temp_rast <- file.path("inst/extdata/", "predictions_rast.tif")
+temp_df   <- file.path(tempdir(), "predictions_df.csv")
+temp_rast <- file.path(tempdir(), "predictions_rast.tif")
 
-temp_3d_df   <- file.path("inst/extdata/", "predictions_3d_df.csv")
-temp_3d_rast <- file.path("inst/extdata/", "predictions_3d_rast.tif")
+temp_3d_df   <- file.path(tempdir(), "predictions_3d_df.csv")
+temp_3d_rast <- file.path(tempdir(), "predictions_3d_rast.tif")
 
 write.csv(pred_df, file = temp_df, row.names = FALSE)
 terra::writeRaster(pred_rast, filename = temp_rast)
