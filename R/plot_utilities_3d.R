@@ -25,6 +25,8 @@
 #'    Also applied to prediction points.
 #' @param col_bg Color for background points.
 #' @param fixed_lims Named list with \code{xlim}, \code{ylim}, and \code{zlim}.
+#' @param xlab, ylab, zlab Axis labels. The default, \code{NULL}, uses
+#'    the variable names.
 #' @param ... Additional graphical parameters.
 #'
 #' @export
@@ -44,6 +46,9 @@ plot_ellipsoid_3d <- function(object,
                               alpha_bg = 1,
                               col_bg = "#8A8A8A",
                               fixed_lims = NULL,
+                              xlab = NULL,
+                              ylab = NULL,
+                              zlab = NULL,
                               ...) {
 
   # Argument Checks
@@ -59,6 +64,11 @@ plot_ellipsoid_3d <- function(object,
 
   # Extract variable names for the specified dimensions
   vars <- object$var_names[dim]
+
+  # Axes labels
+  xlab <- if (!is.null(xlab)) xlab else vars[1]
+  ylab <- if (!is.null(ylab)) ylab else vars[2]
+  zlab <- if (!is.null(zlab)) zlab else vars[3]
 
   # Handle Data (Background or Prediction)
   ## Prioritize background if both are provided
@@ -94,15 +104,17 @@ plot_ellipsoid_3d <- function(object,
 
     # Setup 3D Scene
     rgl::plot3d(plot_data[, vars], col = pt_colors, alpha = alpha_bg,
-                xlab = vars[1], ylab = vars[2], zlab = vars[3],
+                xlab = xlab, ylab = ylab, zlab = zlab,
                 xlim = fixed_lims$xlim, ylim = fixed_lims$ylim,
-                zlim = fixed_lims$zlim, aspect = aspect, ...)
+                zlim = fixed_lims$zlim, aspect = aspect, box = FALSE, ...)
+
+
   } else {
     # Initialize 3D scene using ellipsoid centroid to ensure axes are drawn
     rgl::plot3d(t(object$centroid[dim]), type = "n",
-                xlab = vars[1], ylab = vars[2], zlab = vars[3],
+                xlab = xlab, ylab = ylab, zlab = zlab,
                 xlim = fixed_lims$xlim, ylim = fixed_lims$ylim,
-                zlim = fixed_lims$zlim, aspect = aspect, ...)
+                zlim = fixed_lims$zlim, aspect = aspect, box = FALSE, ...)
   }
 
   # Add Ellipsoid

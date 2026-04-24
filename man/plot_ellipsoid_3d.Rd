@@ -20,6 +20,9 @@ plot_ellipsoid_3d(
   alpha_bg = 1,
   col_bg = "#8A8A8A",
   fixed_lims = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  zlab = NULL,
   ...
 )
 }
@@ -59,6 +62,9 @@ Also applied to prediction points.}
 \item{col_bg}{Color for background points.}
 
 \item{fixed_lims}{Named list with \code{xlim}, \code{ylim}, and \code{zlim}.}
+
+\item{xlab, }{ylab, zlab Axis labels. The default, \code{NULL}, uses
+the variable names.}
 
 \item{...}{Additional graphical parameters.}
 }
