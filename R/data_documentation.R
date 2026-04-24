@@ -70,7 +70,46 @@
 #' ref_ellipse$volume
 "ref_ellipse"
 
+#' Example species occurrence data
+#'
+#' Datasets containing geographic occurrence records for four example species.
+#' These datasets are used to demonstrate and test functions related to
+#' ecological niche modeling, such as building niche ellipsoids and
+#' simulating virtual communities in the \code{nicheR} package.
+#'
+#' @format Data frames containing occurrence points. While the exact number of
+#' rows varies per dataset, they typically share the following variables:
+#' \describe{
+#'   \item{longitude}{Numeric. Longitude in decimal degrees (WGS84).}
+#'   \item{latitude}{Numeric. Latitude in decimal degrees (WGS84).}
+#'   \item{species}{Character (Optional). The identifier for the species.}
+#' }
+#'
+#' @details
+#' \code{example_sp_1}, \code{example_sp_2}, \code{example_sp_3}, and
+#' \code{example_sp_4} represent typical presence-only occurrence records.
+#' They can be extracted against background environmental data (like
+#' \code{\link{back_data}}) to fit \code{nicheR_ellipsoid} objects or test
+#' overlap functions.
+#'
+#' @name example_species
+#' @aliases example_sp_1 example_sp_2 example_sp_3 example_sp_4
+#' @examples
+#' data(example_sp_1)
+#' head(example_sp_1)
+#'
+#' data(example_sp_2)
+#' head(example_sp_2)
+"example_sp_1"
 
+#' @rdname example_species
+"example_sp_2"
+
+#' @rdname example_species
+"example_sp_3"
+
+#' @rdname example_species
+"example_sp_4"
 
 #' Bioclimatic variables for part of the Americas
 #'
@@ -101,5 +140,6 @@
 #'                                    package = "nicheR"))
 #'
 #' terra::plot(ma_bios[[1]])
+
 NULL
 
