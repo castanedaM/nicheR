@@ -3,12 +3,13 @@
 ## Authors
 
 - **Mariana Castaneda-Guzman**. Author, maintainer.
+  [](https://orcid.org/0000-0001-6106-4284)
 
 - **Connor Hughes**. Author.
 
 - **Paanwaris Paansri**. Author.
 
-- **Marlon E. Cobos**. Author.
+- **Marlon E. Cobos**. Author. [](https://orcid.org/0000-0002-2611-1767)
 
 ## Citation
 
