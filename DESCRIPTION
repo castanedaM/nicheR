@@ -1,6 +1,6 @@
 Package: nicheR
 Type: Package
-Title: An R package for ellipsoid-based virtual species and niche visualization in E-space and G-space
+Title: Ellipsoid-Based Virtual Niches and Visualization
 Version: 0.0.11
 Authors@R: c(
     person(
