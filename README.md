@@ -1,3 +1,20 @@
+Ellipsoid-Based Virtual Niches and Visualization
+================
+
+- [Background](#background)
+- [Package description](#package-description)
+- [Installing the package](#installing-the-package)
+- [Workflow in nicheR](#workflow-in-nicher)
+  - [Building an ellipsoid](#building-an-ellipsoid)
+  - [Predictions](#predictions)
+  - [Preparing and applying bias
+    layers](#preparing-and-applying-bias-layers)
+  - [Generating virtual occurrences](#generating-virtual-occurrences)
+  - [Simulating virtual communities](#simulating-virtual-communities)
+  - [Visualization](#visualization)
+- [Checking the vignettes](#checking-the-vignettes)
+- [Note on AI usage](#note-on-ai-usage)
+- [Contributing](#contributing)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -5,8 +22,6 @@
 
 [![R-CMD-check](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/castanedaM/nicheR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
-
-# nicheR: An R package for elliposid-based niche construction<a href="https://castanedam.github.io/nicheR/"><img src="man/figures/logo.png" align="right" height="120" alt="nicheR website" /></a>
 
 ## Background
 
@@ -20,7 +35,7 @@ Virtual niche simulations help researchers test ideas by creating
 controlled datasets that make model behavior easier to interpret. In
 practice, building ellipsoid-based virtual niches in R has typically
 required combining several packages to define niches, map them to
-geography, and visualize results — making analyses harder to reproduce
+geography, and visualize results, making analyses harder to reproduce
 and build on.
 
 **nicheR** is an R package for building and visualizing
@@ -30,21 +45,6 @@ Inspired by the conceptual foundations of **NicheA** and the flexibility
 of the **virtualspecies** package, **nicheR** provides a reproducible
 framework that connects niche construction, prediction, sampling, and
 visualization in one integrated workflow.
-
-## Related work
-
-Three tools have shaped virtual species and niche simulation in
-ENM/SDMs:
-
-- **NicheA** — a Java-based software that pioneered environmental-space
-  niche visualization and explicitly linked niche theory with
-  simulation. An important conceptual foundation for nicheR.
-- **[virtualspecies](https://github.com/Farewe/virtualspecies)** — a
-  widely adopted R package (200+ citations) for simulating virtual
-  species and benchmarking SDMs and ENMs within R.
-- **[evniche](https://github.com/marlonecobos/evniche/)** — a
-  theoretically rigorous R package focused on environmental-space
-  representations and ellipsoid-based niche concepts.
 
 <br>
 
@@ -147,7 +147,7 @@ where the niche sits relative to available conditions.
 
 <br>
 
-### Predicting suitability
+### Predictions
 
 Once the ellipsoid is built, `predict()` projects it onto environmental
 data to produce Mahalanobis distance and suitability surfaces.
