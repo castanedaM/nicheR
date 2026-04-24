@@ -211,7 +211,7 @@ raster layers will be used later for predictions, so we will just check
 them here to make sure they are loaded correctly.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Check reference niche</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ref_ellipse</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/print.html">print</a></span><span class="op">(</span><span class="va">ref_ellipse</span><span class="op">)</span></span>
 <span><span class="co">#&gt; nicheR Ellipsoid Object</span></span>
 <span><span class="co">#&gt; -----------------------</span></span>
 <span><span class="co">#&gt; Dimensions:        2D</span></span>
@@ -310,7 +310,7 @@ of how to use this function.</p>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">rand_comm</span><span class="op">)</span>  <span class="co"># elements in the community object</span></span>
 <span><span class="co">#&gt; [1] "details"           "reference"         "ellipse_community"</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">rand_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
+<span><span class="fu"><a href="../reference/print.html">print</a></span><span class="op">(</span><span class="va">rand_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
 <span><span class="co">#&gt; nicheR Community Object</span></span>
 <span><span class="co">#&gt; -----------------------</span></span>
 <span><span class="co">#&gt; Generation Metadata:</span></span>
@@ -529,7 +529,7 @@ to use this function.</p>
 <span><span class="va">nest_comm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nested_ellipses.html">nested_ellipses</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">ref_ellipse</span>, n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># check the a few details from the generated community</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">nest_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
+<span><span class="fu"><a href="../reference/print.html">print</a></span><span class="op">(</span><span class="va">nest_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
 <span><span class="co">#&gt; nicheR Community Object</span></span>
 <span><span class="co">#&gt; -----------------------</span></span>
 <span><span class="co">#&gt; Generation Metadata:</span></span>
@@ -706,7 +706,7 @@ below.</p>
 <span>                                n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># check the a few details from the generated community</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
+<span><span class="fu"><a href="../reference/print.html">print</a></span><span class="op">(</span><span class="va">cons_comm</span><span class="op">)</span>  <span class="co"># a summary of the elements in the community object</span></span>
 <span><span class="co">#&gt; nicheR Community Object</span></span>
 <span><span class="co">#&gt; -----------------------</span></span>
 <span><span class="co">#&gt; Generation Metadata:</span></span>
@@ -876,7 +876,7 @@ and pick the ones that are more convinient for your research.</p>
 <p>Once we have our communities simmulated using the functions explored
 above, we can predict over new data to observe the patterns of
 Mahalanobis distance and suitability derived from the ellipses. The
-function <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> can be used with
+function <code><a href="../reference/predict.html">predict()</a></code> can be used with
 <code>nicheR_community</code> objects to obtain predictions. The
 difference between predict for community objects and that for
 <code>nicheR_ellipsoid</code> objects (see <a href="predict.html">2.
@@ -920,7 +920,7 @@ below, using one of the communities generated in which we assumed niche
 conservatism and background data as <code>newdata</code>.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Predicting Mahalanobis distances</span></span>
-<span><span class="va">maha_cons_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
+<span><span class="va">maha_cons_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
 <span>                          prediction <span class="op">=</span> <span class="st">"Mahalanobis"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: data.frame...</span></span>
 <span><span class="co">#&gt; Predictions for a conserved community of 20 ellipses...</span></span>
@@ -929,7 +929,7 @@ conservatism and background data as <code>newdata</code>.</p>
 <span><span class="co">#&gt; Finalizing results...</span></span>
 <span></span>
 <span><span class="co"># Predicting suitability</span></span>
-<span><span class="va">suit_cons_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
+<span><span class="va">suit_cons_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
 <span>                          prediction <span class="op">=</span> <span class="st">"suitability"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: data.frame...</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1035,7 +1035,7 @@ from which our background derives (originally form <a href="https://www.worldcli
 <code>nicheR</code> package).</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Predicting Mahalanobis distances</span></span>
-<span><span class="va">maha_cons_predr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
+<span><span class="va">maha_cons_predr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
 <span>                           prediction <span class="op">=</span> <span class="st">"Mahalanobis"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: SpatRaster...</span></span>
 <span><span class="co">#&gt; Predictions for a conserved community of 20 ellipses...</span></span>
@@ -1044,7 +1044,7 @@ from which our background derives (originally form <a href="https://www.worldcli
 <span><span class="co">#&gt; Finalizing results...</span></span>
 <span></span>
 <span><span class="co"># Predicting suitability</span></span>
-<span><span class="va">suit_cons_predr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
+<span><span class="va">suit_cons_predr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
 <span>                           prediction <span class="op">=</span> <span class="st">"suitability"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: SpatRaster...</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1119,7 +1119,7 @@ environments stop being suitable. Here is where ellipsoids shine as
 models of suitability, because their formulation gives us that
 threshold. The limit of the ellipses we created, are the theoretical
 limits for what is suitable and not suitable.</p>
-<p>The options for <code>prediction</code> in our <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>
+<p>The options for <code>prediction</code> in our <code><a href="../reference/predict.html">predict()</a></code>
 function include results for Mahalanobis and suitability that can be
 “truncated” using that ellipsoid limit. For Mahalanobis distances,
 truncation implies that all conditions outside the ellipsoid limit
@@ -1130,7 +1130,7 @@ potential distributions.</p>
 based on the ellipse limits.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Predicting suitability truncated using a data frame</span></span>
-<span><span class="va">suit_cons_predt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
+<span><span class="va">suit_cons_predt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">vars</span><span class="op">]</span>,</span>
 <span>                           prediction <span class="op">=</span> <span class="st">"suitability_trunc"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: data.frame...</span></span>
 <span><span class="co">#&gt; Predictions for a conserved community of 20 ellipses...</span></span>
@@ -1139,7 +1139,7 @@ based on the ellipse limits.</p>
 <span><span class="co">#&gt; Finalizing results...</span></span>
 <span></span>
 <span><span class="co"># Predicting suitability truncated using raster data</span></span>
-<span><span class="va">suit_cons_predrt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
+<span><span class="va">suit_cons_predrt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">cons_comm</span>, newdata <span class="op">=</span> <span class="va">ma_bios</span>,</span>
 <span>                            prediction <span class="op">=</span> <span class="st">"suitability_trunc"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: using newdata of class: SpatRaster...</span></span>
 <span><span class="co">#&gt; </span></span>

@@ -168,7 +168,7 @@
 <div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
 </h3>
-<p>Once the ellipsoid is built, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> projects it onto environmental data to produce Mahalanobis distance and suitability surfaces. Suitability is highest at the niche centroid and decreases toward the boundary. Truncated outputs set values to zero (suitability) or <code>NA</code> (Mahalanobis) outside the ellipsoid, which is useful for enforcing strict niche-boundary sampling downstream. Both <code>SpatRaster</code> and <code>data.frame</code> inputs are supported and return matching output types.</p>
+<p>Once the ellipsoid is built, <code><a href="reference/predict.html">predict()</a></code> projects it onto environmental data to produce Mahalanobis distance and suitability surfaces. Suitability is highest at the niche centroid and decreases toward the boundary. Truncated outputs set values to zero (suitability) or <code>NA</code> (Mahalanobis) outside the ellipsoid, which is useful for enforcing strict niche-boundary sampling downstream. Both <code>SpatRaster</code> and <code>data.frame</code> inputs are supported and return matching output types.</p>
 <blockquote>
 <p>For a full guide to prediction outputs, truncation logic, raster vs. data frame workflows, and E-space vs. G-space visualization, see the <a href="https://castanedam.github.io/nicheR/articles/predict.html">Predicting suitability and Mahalanobis distance</a> vignette.</p>
 </blockquote>

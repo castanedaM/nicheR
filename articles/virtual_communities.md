@@ -875,7 +875,7 @@ Once we have our communities simmulated using the functions explored
 above, we can predict over new data to observe the patterns of
 Mahalanobis distance and suitability derived from the ellipses. The
 function
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 can be used with `nicheR_community` objects to obtain predictions. The
 difference between predict for community objects and that for
 `nicheR_ellipsoid` objects (see [2. Make a
@@ -1136,7 +1136,7 @@ threshold. The limit of the ellipses we created, are the theoretical
 limits for what is suitable and not suitable.
 
 The options for `prediction` in our
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 function include results for Mahalanobis and suitability that can be
 “truncated” using that ellipsoid limit. For Mahalanobis distances,
 truncation implies that all conditions outside the ellipsoid limit

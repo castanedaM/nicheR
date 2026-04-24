@@ -138,9 +138,9 @@ example</a></li>
 <div class="section level2">
 <h2 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
 </h2>
-<p>This vignette demonstrates how to use the <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>
+<p>This vignette demonstrates how to use the <code><a href="../reference/predict.html">predict()</a></code>
 method for <code>nicheR_ellipsoid</code> objects to generate Mahalanobis
-distance and suitability predictions. The <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>
+distance and suitability predictions. The <code><a href="../reference/predict.html">predict()</a></code>
 function is the core tool for translating the estimated ellipsoidal
 niche built with <code><a href="../reference/build_ellipsoid.html">build_ellipsoid()</a></code> into quantitative
 estimates of environmental suitability, both in environmental space
@@ -148,7 +148,7 @@ estimates of environmental suitability, both in environmental space
 <p>The main function covered in this vignette is:</p>
 <ul>
 <li>
-<code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>: generates Mahalanobis distance, suitability,
+<code><a href="../reference/predict.html">predict()</a></code>: generates Mahalanobis distance, suitability,
 and truncated versions of these metrics from a
 <code>nicheR_ellipsoid</code> object. It accepts environmental data as a
 <code>data.frame</code> or a <code>SpatRaster</code>.</li>
@@ -277,13 +277,13 @@ details on how ellipsoids are constructed, see the <a href="build_ellipsoid.html
 The most important things to carry forward are that we are working in
 two dimensions and that the variable names stored in
 <code>ref_ellipse$var_names</code> must be present in any
-<code>newdata</code> passed to <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code>.</p>
+<code>newdata</code> passed to <code><a href="../reference/predict.html">predict()</a></code>.</p>
 <p><br></p>
 </div>
 <div class="section level2">
 <h2 id="using-predict">Using predict()<a class="anchor" aria-label="anchor" href="#using-predict"></a>
 </h2>
-<p>At its most basic, <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> requires two things: the
+<p>At its most basic, <code><a href="../reference/predict.html">predict()</a></code> requires two things: the
 <code>nicheR_ellipsoid</code> object produced by
 <code><a href="../reference/build_ellipsoid.html">build_ellipsoid()</a></code>, and <code>newdata</code>, the
 environmental data over which predictions will be made. The
@@ -296,12 +296,12 @@ though the function will handle extra columns automatically.</p>
 <h3 id="basic-predictions-to-a-data-frame">Basic predictions to a data frame<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-data-frame"></a>
 </h3>
 <p>When <code>newdata</code> is a <code>data.frame</code>,
-<code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> returns a <code>data.frame</code> with class
+<code><a href="../reference/predict.html">predict()</a></code> returns a <code>data.frame</code> with class
 <code>"nicheR_prediction"</code>. By default it includes the predictor
 columns followed by two prediction columns: <code>Mahalanobis</code> and
 <code>suitability</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">pred_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: suitability prediction using newdata of class: data.frame...</span></span>
 <span><span class="co">#&gt; Step: Using 2 predictor variables: bio_1, bio_12</span></span>
@@ -325,13 +325,13 @@ columns followed by two prediction columns: <code>Mahalanobis</code> and
 <h3 id="basic-predictions-to-a-spatraster">Basic predictions to a SpatRaster<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-spatraster"></a>
 </h3>
 <p>When <code>newdata</code> is a <code>SpatRaster</code>,
-<code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> returns a <code>SpatRaster</code> where each
+<code><a href="../reference/predict.html">predict()</a></code> returns a <code>SpatRaster</code> where each
 requested output is a named layer. The coordinate reference system,
 extent, and resolution always match those of <code>newdata</code>. Cells
 with <code>NA</code> in any predictor layer receive <code>NA</code> in
 all prediction layers.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                     keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: suitability prediction using newdata of class: SpatRaster...</span></span>
@@ -473,7 +473,7 @@ suitability value marks the edge of the niche.</p>
 <div class="section level3">
 <h3 id="additional-function-arguments">Additional function arguments<a class="anchor" aria-label="anchor" href="#additional-function-arguments"></a>
 </h3>
-<p>Beyond the basic call, <code><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict()</a></code> lets you control which
+<p>Beyond the basic call, <code><a href="../reference/predict.html">predict()</a></code> lets you control which
 outputs are returned independently. The four output types are:</p>
 <table class="table">
 <colgroup>
@@ -542,7 +542,7 @@ confidence level on predictions</a>.</li>
 <p>Any combination of the four flags can be set to <code>TRUE</code> in
 a single call. All requested outputs are returned together.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_df_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">pred_df_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                       newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                       include_mahalanobis   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                       include_suitability   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -570,7 +570,7 @@ have a value; the truncated ones apply the boundary.</p>
 <p><br></p>
 <p>The same applies to raster output:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_rast_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">pred_rast_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                         newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                         include_mahalanobis   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                         include_suitability   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -642,13 +642,13 @@ shifts.</p>
 different thresholds without refitting the ellipsoid:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># More conservative: only the innermost 90% of the MVN distribution</span></span>
-<span><span class="va">pred_conservative</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">pred_conservative</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                             newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                             suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                             adjust_truncation_level <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># More permissive: the innermost 99%</span></span>
-<span><span class="va">pred_permissive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">pred_permissive</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                           newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                           suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                           adjust_truncation_level <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span></span></code></pre></div>
@@ -680,7 +680,7 @@ limit.</p>
 <h3 id="mahalanobis-distance-in-e-space">Mahalanobis distance in E-space<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-in-e-space"></a>
 </h3>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">maha_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">maha_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                   include_mahalanobis <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                   include_suitability <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -720,7 +720,7 @@ does not distinguish inside from outside.</p>
 <h3 id="suitability-in-e-space">Suitability in E-space<a class="anchor" aria-label="anchor" href="#suitability-in-e-space"></a>
 </h3>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">suit_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">suit_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                   include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                   include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -759,7 +759,7 @@ match those used to construct the ellipsoid.</p>
 <h3 id="truncated-predictions-in-e-space">Truncated predictions in E-space<a class="anchor" aria-label="anchor" href="#truncated-predictions-in-e-space"></a>
 </h3>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">trunc_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">trunc_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                    newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                    include_mahalanobis   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                    include_suitability   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -867,7 +867,7 @@ using the environmental values of its corresponding layers.</p>
 <h3 id="mahalanobis-distance-map">Mahalanobis distance map<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-map"></a>
 </h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">maha_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">maha_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                     include_mahalanobis <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                     include_suitability <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -892,7 +892,7 @@ E-space alone.</p>
 <h3 id="suitability-map">Suitability map<a class="anchor" aria-label="anchor" href="#suitability-map"></a>
 </h3>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">suit_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">suit_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                     include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -917,7 +917,7 @@ used to build the ellipsoid.</p>
 <h3 id="truncated-suitability-map">Truncated suitability map<a class="anchor" aria-label="anchor" href="#truncated-suitability-map"></a>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">trunc_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">trunc_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                      newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                      include_mahalanobis   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                      include_suitability   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -1025,7 +1025,7 @@ background.</p>
 <span><span class="co">#&gt; Ellipsoid volume:  44461.61</span></span></code></pre></div>
 <p><br></p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">example_sp_4</span>,</span>
+<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">example_sp_4</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">example_sp_4</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>                   include_mahalanobis   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                   include_suitability   <span class="op">=</span> <span class="cn">TRUE</span>,</span>

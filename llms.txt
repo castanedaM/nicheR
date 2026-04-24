@@ -146,13 +146,14 @@ where the niche sits relative to available conditions.
 ### Predictions
 
 Once the ellipsoid is built,
-[`predict()`](https://rdrr.io/r/stats/predict.html) projects it onto
-environmental data to produce Mahalanobis distance and suitability
-surfaces. Suitability is highest at the niche centroid and decreases
-toward the boundary. Truncated outputs set values to zero (suitability)
-or `NA` (Mahalanobis) outside the ellipsoid, which is useful for
-enforcing strict niche-boundary sampling downstream. Both `SpatRaster`
-and `data.frame` inputs are supported and return matching output types.
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
+projects it onto environmental data to produce Mahalanobis distance and
+suitability surfaces. Suitability is highest at the niche centroid and
+decreases toward the boundary. Truncated outputs set values to zero
+(suitability) or `NA` (Mahalanobis) outside the ellipsoid, which is
+useful for enforcing strict niche-boundary sampling downstream. Both
+`SpatRaster` and `data.frame` inputs are supported and return matching
+output types.
 
 > For a full guide to prediction outputs, truncation logic, raster vs.
 > data frame workflows, and E-space vs. G-space visualization, see the
@@ -359,16 +360,14 @@ discuss it with the maintainers.
   : Plot a nicheR ellipsoid in 3D environmental space
 - [`plot_ellipsoid_pairs()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
   : Plot all pairwise 2D ellipsoid projections
-- [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_community.md)
-  : Predict method for a nicheR Community
-- [`predict(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_ellipsoid.md)
+- [`predict(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/predict.md)
+  [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.md)
   : Predict suitability and Mahalanobis distance from a nicheR ellipsoid
 - [`prepare_bias()`](https://castanedam.github.io/nicheR/reference/prepare_bias.md)
   : Prepare sampling bias surfaces
-- [`print(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_community.md)
-  : Print a nicheR Community Object
-- [`print(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_ellipsoid.md)
-  : Print a nicheR Ellipsoid Object
+- [`print(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/print.md)
+  [`print(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/print.md)
+  : Print method for nicheR objects
 - [`random_ellipses()`](https://castanedam.github.io/nicheR/reference/random_ellipses.md)
   : Generate random ellipses constrained by a point cloud and a
   reference ellipse

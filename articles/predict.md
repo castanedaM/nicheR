@@ -40,10 +40,10 @@
 ## Description
 
 This vignette demonstrates how to use the
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 method for `nicheR_ellipsoid` objects to generate Mahalanobis distance
 and suitability predictions. The
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 function is the core tool for translating the estimated ellipsoidal
 niche built with
 [`build_ellipsoid()`](https://castanedam.github.io/nicheR/reference/build_ellipsoid.md)
@@ -52,7 +52,7 @@ environmental space (E-space) and geographic space (G-space).
 
 The main function covered in this vignette is:
 
-- [`predict()`](https://rspatial.github.io/terra/reference/predict.html):
+- [`predict()`](https://castanedam.github.io/nicheR/reference/predict.md):
   generates Mahalanobis distance, suitability, and truncated versions of
   these metrics from a `nicheR_ellipsoid` object. It accepts
   environmental data as a `data.frame` or a `SpatRaster`.
@@ -191,14 +191,14 @@ vignette](https://castanedam.github.io/nicheR/articles/build_ellipsoid.md).
 The most important things to carry forward are that we are working in
 two dimensions and that the variable names stored in
 `ref_ellipse$var_names` must be present in any `newdata` passed to
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html).
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md).
 
   
 
 ## Using predict()
 
 At its most basic,
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 requires two things: the `nicheR_ellipsoid` object produced by
 [`build_ellipsoid()`](https://castanedam.github.io/nicheR/reference/build_ellipsoid.md),
 and `newdata`, the environmental data over which predictions will be
@@ -212,7 +212,7 @@ function will handle extra columns automatically.
 ### Basic predictions to a data frame
 
 When `newdata` is a `data.frame`,
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 returns a `data.frame` with class `"nicheR_prediction"`. By default it
 includes the predictor columns followed by two prediction columns:
 `Mahalanobis` and `suitability`.
@@ -243,7 +243,7 @@ head(pred_df)
 ### Basic predictions to a SpatRaster
 
 When `newdata` is a `SpatRaster`,
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 returns a `SpatRaster` where each requested output is a named layer. The
 coordinate reference system, extent, and resolution always match those
 of `newdata`. Cells with `NA` in any predictor layer receive `NA` in all
@@ -370,7 +370,7 @@ suitability value marks the edge of the niche.
 ### Additional function arguments
 
 Beyond the basic call,
-[`predict()`](https://rspatial.github.io/terra/reference/predict.html)
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
 lets you control which outputs are returned independently. The four
 output types are:
 

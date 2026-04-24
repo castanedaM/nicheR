@@ -181,21 +181,21 @@ prediction-based plotting modes. We compute them all here so they are
 available throughout the vignette.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Non-truncated Mahalanobis distance</span></span>
-<span><span class="va">pred_maha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">pred_maha</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                     include_mahalanobis <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                     include_suitability <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                     verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Non-truncated suitability</span></span>
-<span><span class="va">pred_suit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">pred_suit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                     include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                     verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Truncated suitability (outside = 0, inside = suitability value)</span></span>
-<span><span class="va">pred_trunc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">pred_trunc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                      newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                      include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                      include_suitability <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -353,7 +353,7 @@ view does not collapse to the ellipsoid interior.</p>
 outside points receive <code>NA</code> and are drawn in
 <code>col_bg</code>.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_trunc_maha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<code class="sourceCode R"><span><span class="va">pred_trunc_maha</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                           newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                           include_mahalanobis   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                           include_suitability   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -549,7 +549,7 @@ suitability, Mahalanobis distance, or any other variable at the
 occurrence locations on top of a background.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Predict suitability at the occurrence points</span></span>
-<span><span class="va">occ_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
+<span><span class="va">occ_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                    newdata <span class="op">=</span> <span class="va">occ_pts</span>,</span>
 <span>                    include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                    include_mahalanobis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -641,7 +641,7 @@ rounds up to four cells.</p>
 suitability or Mahalanobis distance across all pairwise projections at
 once.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">ellipse_3d</span>,</span>
+<code class="sourceCode R"><span><span class="va">suit_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ellipse_3d</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ellipse_3d</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
 <span>                   include_mahalanobis   <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                   include_suitability   <span class="op">=</span> <span class="cn">TRUE</span>,</span>

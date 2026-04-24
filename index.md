@@ -146,13 +146,14 @@ where the niche sits relative to available conditions.
 ### Predictions
 
 Once the ellipsoid is built,
-[`predict()`](https://rdrr.io/r/stats/predict.html) projects it onto
-environmental data to produce Mahalanobis distance and suitability
-surfaces. Suitability is highest at the niche centroid and decreases
-toward the boundary. Truncated outputs set values to zero (suitability)
-or `NA` (Mahalanobis) outside the ellipsoid, which is useful for
-enforcing strict niche-boundary sampling downstream. Both `SpatRaster`
-and `data.frame` inputs are supported and return matching output types.
+[`predict()`](https://castanedam.github.io/nicheR/reference/predict.md)
+projects it onto environmental data to produce Mahalanobis distance and
+suitability surfaces. Suitability is highest at the niche centroid and
+decreases toward the boundary. Truncated outputs set values to zero
+(suitability) or `NA` (Mahalanobis) outside the ellipsoid, which is
+useful for enforcing strict niche-boundary sampling downstream. Both
+`SpatRaster` and `data.frame` inputs are supported and return matching
+output types.
 
 > For a full guide to prediction outputs, truncation logic, raster vs.
 > data frame workflows, and E-space vs. G-space visualization, see the

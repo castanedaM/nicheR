@@ -41,16 +41,14 @@
   : Plot a nicheR ellipsoid in 3D environmental space
 - [`plot_ellipsoid_pairs()`](https://castanedam.github.io/nicheR/reference/plot_ellipsoid_pairs.md)
   : Plot all pairwise 2D ellipsoid projections
-- [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_community.md)
-  : Predict method for a nicheR Community
-- [`predict(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/predict.nicheR_ellipsoid.md)
+- [`predict(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/predict.md)
+  [`predict(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/predict.md)
   : Predict suitability and Mahalanobis distance from a nicheR ellipsoid
 - [`prepare_bias()`](https://castanedam.github.io/nicheR/reference/prepare_bias.md)
   : Prepare sampling bias surfaces
-- [`print(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_community.md)
-  : Print a nicheR Community Object
-- [`print(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/print.nicheR_ellipsoid.md)
-  : Print a nicheR Ellipsoid Object
+- [`print(`*`<nicheR_ellipsoid>`*`)`](https://castanedam.github.io/nicheR/reference/print.md)
+  [`print(`*`<nicheR_community>`*`)`](https://castanedam.github.io/nicheR/reference/print.md)
+  : Print method for nicheR objects
 - [`random_ellipses()`](https://castanedam.github.io/nicheR/reference/random_ellipses.md)
   : Generate random ellipses constrained by a point cloud and a
   reference ellipse
