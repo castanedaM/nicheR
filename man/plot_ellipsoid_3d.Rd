@@ -15,9 +15,9 @@ plot_ellipsoid_3d(
   pal = hcl.colors(100, palette = "Viridis"),
   rev_pal = FALSE,
   bg_sample = NULL,
-  pch = 1,
-  col_ell = "#000000",
-  alpha_ell = 0.5,
+  col_ell = "#8b0000",
+  alpha_ell = 1,
+  alpha_bg = 1,
   col_bg = "#8A8A8A",
   fixed_lims = NULL,
   ...
@@ -48,13 +48,13 @@ to use for coloring.}
 
 \item{bg_sample}{Integer or \code{NULL}. Subsample size for large data.}
 
-\item{pch}{Point symbol for background/prediction points.
-Default is \code{1}.}
-
 \item{col_ell}{Color of the ellipsoid. Default is \code{"#000000"}.}
 
 \item{alpha_ell}{Transparency of the ellipsoid boundary. Default is
-\code{0.5}.}
+\code{1}.}
+
+\item{alpha_bg}{Transparency of background points. Default is \code{1}.
+Also applied to prediction points.}
 
 \item{col_bg}{Color for background points.}
 

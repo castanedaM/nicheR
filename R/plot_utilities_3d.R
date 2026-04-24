@@ -18,11 +18,11 @@
 #' @param pal Color palette function or character vector.
 #' @param rev_pal Logical. If \code{TRUE}, reverses the palette.
 #' @param bg_sample Integer or \code{NULL}. Subsample size for large data.
-#' @param pch Point symbol for background/prediction points.
-#'    Default is \code{1}.
 #' @param col_ell Color of the ellipsoid. Default is \code{"#000000"}.
 #' @param alpha_ell Transparency of the ellipsoid boundary. Default is
-#'    \code{0.5}.
+#'    \code{1}.
+#' @param alpha_bg Transparency of background points. Default is \code{1}.
+#'    Also applied to prediction points.
 #' @param col_bg Color for background points.
 #' @param fixed_lims Named list with \code{xlim}, \code{ylim}, and \code{zlim}.
 #' @param ... Additional graphical parameters.
@@ -39,9 +39,9 @@ plot_ellipsoid_3d <- function(object,
                               pal = hcl.colors(100, palette = "Viridis"),
                               rev_pal = FALSE,
                               bg_sample = NULL,
-                              pch = 1,
-                              col_ell = "#000000",
-                              alpha_ell = 0.5,
+                              col_ell = "#8b0000",
+                              alpha_ell = 1,
+                              alpha_bg = 1,
                               col_bg = "#8A8A8A",
                               fixed_lims = NULL,
                               ...) {
@@ -93,7 +93,7 @@ plot_ellipsoid_3d <- function(object,
     }
 
     # Setup 3D Scene
-    rgl::plot3d(plot_data[, vars], col = pt_colors,
+    rgl::plot3d(plot_data[, vars], col = pt_colors, alpha = alpha_bg,
                 xlab = vars[1], ylab = vars[2], zlab = vars[3],
                 xlim = fixed_lims$xlim, ylim = fixed_lims$ylim,
                 zlim = fixed_lims$zlim, aspect = aspect, ...)
