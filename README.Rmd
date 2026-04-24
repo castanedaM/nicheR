@@ -1,6 +1,6 @@
 ---
 title: Ellipsoid-Based Virtual Niches and Visualization
-authors: "Mariana Castaneda-Guzman, Connor Hugges, Paanwaris Paansri, Marlon E. Cobos <img src='man/figures/logo.png' align='right' height='25%' width='25%'/>"
+author: "Mariana Castaneda-Guzman, Connor Hugges, Paanwaris Paansri, Marlon E. Cobos <img src='man/figures/logo.png' align='right' height='25%' width='25%'/>"
 output: 
   github_document:
     toc: yes
