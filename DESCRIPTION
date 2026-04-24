@@ -6,7 +6,8 @@ Authors@R: c(
     person(
       "Mariana", "Castaneda-Guzman",
       email = "marianacg@vt.edu", 
-      role = c("aut", "cre")
+      role = c("aut", "cre"), 
+      comment = c(ORCID = c("0000-0001-6106-4284"))
     ),
     person(
       "Connor", "Hughes",
@@ -20,8 +21,9 @@ Authors@R: c(
     ),
     person(
       "Marlon E.", "Cobos",
-      email = "", 
-      role = "aut"
+      email = "manubio13@gmail.com", 
+      role = "aut",
+      comment = c(ORCID = "0000-0002-2611-1767")
     )
   )
 Description: Provides a robust set of tools for researchers and modelers to
