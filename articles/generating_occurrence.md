@@ -97,7 +97,7 @@ function generates points purely based on mathematical distributions,
 **these points do not possess spatial coordinates
 (Longitude/Latitude).** They exist exclusively in E-Space.
 
-We will use the pre-calculated virtual backgrounds (`pred_virt` and
+We will use the pre-calculated virtual backgrounds (`pred_virt_2d` and
 `pred_virt_3d`) loaded during our setup phase. These data frames contain
 1,000 theoretical background points that have already been scored for
 suitability.
