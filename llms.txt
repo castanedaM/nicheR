@@ -343,11 +343,11 @@ discuss it with the maintainers.
   : Calculate n-dimensional ellipsoid metrics
 - [`ellipsoid_volume()`](https://castanedam.github.io/nicheR/reference/ellipsoid_volume.md)
   : Compute ellipsoid hypervolume
-- [`example_sp_1`](https://castanedam.github.io/nicheR/reference/example_species.md)
-  [`example_sp_2`](https://castanedam.github.io/nicheR/reference/example_species.md)
-  [`example_sp_3`](https://castanedam.github.io/nicheR/reference/example_species.md)
-  [`example_sp_4`](https://castanedam.github.io/nicheR/reference/example_species.md)
-  : Example species occurrence data
+- [`example_sp_1`](https://castanedam.github.io/nicheR/reference/example_ellipsoids.md)
+  [`example_sp_2`](https://castanedam.github.io/nicheR/reference/example_ellipsoids.md)
+  [`example_sp_3`](https://castanedam.github.io/nicheR/reference/example_ellipsoids.md)
+  [`example_sp_4`](https://castanedam.github.io/nicheR/reference/example_ellipsoids.md)
+  : Example niche ellipsoid objects for virtual communities
 - [`ma_bios`](https://castanedam.github.io/nicheR/reference/ma_bios.md)
   : Bioclimatic variables for part of the Americas
 - [`nested_ellipses()`](https://castanedam.github.io/nicheR/reference/nested_ellipses.md)
@@ -402,11 +402,7 @@ discuss it with the maintainers.
 - [Creating Ellipsoid Based
   Niches](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.md):
 - [Generate occurrence
-  data](https://castanedam.github.io/nicheR/articles/generate_occurrence_data.md):
-- [Generate occurrence data with
-  bias](https://castanedam.github.io/nicheR/articles/generating_occurrence_bias.md):
-- [Generate occurrence data with virtual
-  data](https://castanedam.github.io/nicheR/articles/generating_virtual_data.md):
+  data](https://castanedam.github.io/nicheR/articles/generating_occurrence.md):
 - [Visualizing ellipsoids in environmental
   space](https://castanedam.github.io/nicheR/articles/plotting_vignette.md):
 - [Predicting suitability and Mahalanobis

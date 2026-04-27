@@ -99,6 +99,8 @@ Predictions</a>
 <li><a href="#function-arguments">Function Arguments</a></li>
 <li><a href="#comparing-applied-biases">Comparing Applied
 Biases</a></li>
+<li><a href="#sec-three-dimensional-example">Three-Dimensional
+Example</a></li>
 </ul>
 </li>
 <li><a href="#save-and-export">Save and export</a></li>
@@ -136,9 +138,10 @@ nicheR_ellipsoid object.</p>
 <span><span class="co"># 1. Load reference niche (nicheR_ellipsoid object)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Load pre-calculated prediction surface (from previous vignette)</span></span>
-<span><span class="co"># This SpatRaster contains "suitability", "Mahalanobis", "suitability_trunc", etc.</span></span>
-<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 2. Load pre-calculated prediction surfaces (from previous vignettes)</span></span>
+<span><span class="co"># These SpatRasters contain "suitability", "Mahalanobis", "suitability_trunc", etc.</span></span>
+<span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">pred_3d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_3d_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
 </div>
 <div class="section level2">
@@ -163,9 +166,9 @@ composite surface.</p>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raw_bias</span><span class="op">[[</span><span class="st">"nighttime"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"Nighttime Lights"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="bias_files/figure-html/unnamed-chunk-1-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
-<div class="section level4">
-<h4 id="function-arguments">Function Arguments<a class="anchor" aria-label="anchor" href="#function-arguments"></a>
-</h4>
+<div class="section level3">
+<h3 id="function-arguments">Function Arguments<a class="anchor" aria-label="anchor" href="#function-arguments"></a>
+</h3>
 <ul>
 <li><p><strong><code>bias_surface</code></strong>: A
 <code>SpatRaster</code> (single or multi-layer) or a list of
@@ -212,9 +215,9 @@ coverage as possible.</p></li>
 </ul>
 <p><br></p>
 </div>
-<div class="section level4">
-<h4 id="example-mixed-direction-composite-bias">Example: Mixed-Direction Composite Bias<a class="anchor" aria-label="anchor" href="#example-mixed-direction-composite-bias"></a>
-</h4>
+<div class="section level3">
+<h3 id="example-mixed-direction-composite-bias">Example: Mixed-Direction Composite Bias<a class="anchor" aria-label="anchor" href="#example-mixed-direction-composite-bias"></a>
+</h3>
 <p>In this example, our <code>raw_bias</code> raster contains two
 layers: <code>sp_richness</code> and <code>nighttime</code> (nighttime
 lights/urbanization).</p>
@@ -247,9 +250,9 @@ it with your actual ecological prediction (e.g., habitat suitability).
 suitability by the bias. <strong>The resulting output is a weighted
 surface, not a true biological probability.</strong></p>
 <p><br></p>
-<div class="section level4">
-<h4 id="function-arguments-1">Function Arguments<a class="anchor" aria-label="anchor" href="#function-arguments-1"></a>
-</h4>
+<div class="section level3">
+<h3 id="function-arguments-1">Function Arguments<a class="anchor" aria-label="anchor" href="#function-arguments-1"></a>
+</h3>
 <ul>
 <li><p><strong><code>prepared_bias</code></strong>: A single-layer
 <code>SpatRaster</code>, or the list output generated by
@@ -277,9 +280,9 @@ bias.</p></li>
 </ul>
 <p><br></p>
 </div>
-<div class="section level4">
-<h4 id="example-comparing-applied-biases">Example: Comparing Applied Biases<a class="anchor" aria-label="anchor" href="#example-comparing-applied-biases"></a>
-</h4>
+<div class="section level3">
+<h3 id="example-comparing-applied-biases">Example: Comparing Applied Biases<a class="anchor" aria-label="anchor" href="#example-comparing-applied-biases"></a>
+</h3>
 <p>Below, we take a standard suitability prediction and restrict it
 using the composite bias layer we just prepared. We will apply it as a
 <code>"direct"</code> multiplier, meaning areas with high composite bias
@@ -312,14 +315,42 @@ large swaths of highly suitable habitat simply because the simulated
 sampling effort (driven by nighttime lights and richness) in those areas
 is too low.</em></p>
 </div>
+<div class="section level3">
+<h3 id="sec-three-dimensional-example">Three-Dimensional Example<a class="anchor" aria-label="anchor" href="#sec-three-dimensional-example"></a>
+</h3>
+<p>Because collection bias is fundamentally geographic, the process of
+applying it works identically regardless of how many environmental
+dimensions were used to define the fundamental niche. Here, we apply the
+exact same composite bias surface to our 3-dimensional species
+prediction.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Apply the composite bias to our 3D suitability layer</span></span>
+<span><span class="va">applied_bias_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apply_bias.html">apply_bias</a></span><span class="op">(</span>prepared_bias <span class="op">=</span> <span class="va">prep_composite</span>, </span>
+<span>                              prediction <span class="op">=</span> <span class="va">pred_3d</span>, </span>
+<span>                              prediction_layer <span class="op">=</span> <span class="st">"suitability"</span>,</span>
+<span>                              effect_direction <span class="op">=</span> <span class="st">"direct"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Starting: apply_bias()</span></span>
+<span><span class="co">#&gt; Step: applying bias with 'direct' effect to to "suitability" layer...</span></span>
+<span><span class="co">#&gt; Done: apply_bias(). Note: values are no longer probabilities</span></span>
+<span></span>
+<span><span class="co"># --- Plotting the Output ---</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred_3d</span><span class="op">[[</span><span class="st">"suitability"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"3D Habitat Suitability"</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">applied_bias_3d</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"3D Suitability + Composite Bias"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="bias_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="95%"></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="save-and-export">Save and export<a class="anchor" aria-label="anchor" href="#save-and-export"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">temp_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"applied_bias_rast.tif"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Save the final biased prediction layers to a temporary directory</span></span>
+<span><span class="va">temp_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"applied_bias_rast.tif"</span><span class="op">)</span></span>
+<span><span class="va">temp_rast_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"applied_bias_3d_rast.tif"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">applied_bias</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, filename <span class="op">=</span> <span class="va">temp_rast</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">applied_bias</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, filename <span class="op">=</span> <span class="va">temp_rast</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">applied_bias_3d</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, filename <span class="op">=</span> <span class="va">temp_rast_3d</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

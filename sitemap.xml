@@ -4,9 +4,7 @@
 <url><loc>https://castanedam.github.io/nicheR/LICENSE.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/articles/bias.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html</loc></url>
-<url><loc>https://castanedam.github.io/nicheR/articles/generate_occurrence_data.html</loc></url>
-<url><loc>https://castanedam.github.io/nicheR/articles/generating_occurrence_bias.html</loc></url>
-<url><loc>https://castanedam.github.io/nicheR/articles/generating_virtual_data.html</loc></url>
+<url><loc>https://castanedam.github.io/nicheR/articles/generating_occurrence.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/articles/index.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/articles/plotting_vignette.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/articles/predict.html</loc></url>
@@ -25,7 +23,7 @@
 <url><loc>https://castanedam.github.io/nicheR/reference/ellipsoid_boundary_2d.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/reference/ellipsoid_calculator.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/reference/ellipsoid_volume.html</loc></url>
-<url><loc>https://castanedam.github.io/nicheR/reference/example_species.html</loc></url>
+<url><loc>https://castanedam.github.io/nicheR/reference/example_ellipsoids.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/reference/index.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/reference/ma_bios.html</loc></url>
 <url><loc>https://castanedam.github.io/nicheR/reference/map_to_pal.html</loc></url>

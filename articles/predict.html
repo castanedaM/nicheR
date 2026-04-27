@@ -77,9 +77,9 @@
 
     
     
-<div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
-</h2>
+<div class="section level3">
+<h3 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+</h3>
 <ul>
 <li><a href="#description">Description</a></li>
 <li><a href="#getting-ready">Getting ready</a></li>
@@ -131,13 +131,23 @@ distribution map</a></li>
 </li>
 <li><a href="#three-dimensional-example">Three-dimensional
 example</a></li>
+<li>
+<a href="#sec-predicting-with-virtual-data">Predicting with virtual
+data</a>
+<ul>
+<li><a href="#sec-two-dimensional-virtual-data">Two-dimensional virtual
+data</a></li>
+<li><a href="#sec-three-dimensional-virtual-data">Three-dimensional
+virtual data</a></li>
+</ul>
+</li>
 <li><a href="#save-and-import">Save and import</a></li>
 </ul>
 <hr>
 </div>
-<div class="section level2">
-<h2 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
-</h2>
+<div class="section level3">
+<h3 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
+</h3>
 <p>This vignette demonstrates how to use the <code><a href="../reference/predict.html">predict()</a></code>
 method for <code>nicheR_ellipsoid</code> objects to generate Mahalanobis
 distance and suitability predictions. The <code><a href="../reference/predict.html">predict()</a></code>
@@ -160,9 +170,9 @@ detailed breakdown of all function arguments and output types, and
 visualizations of every output in both E-space and G-space.</p>
 <p><br></p>
 </div>
-<div class="section level2">
-<h2 id="getting-ready">Getting ready<a class="anchor" aria-label="anchor" href="#getting-ready"></a>
-</h2>
+<div class="section level3">
+<h3 id="getting-ready">Getting ready<a class="anchor" aria-label="anchor" href="#getting-ready"></a>
+</h3>
 <p>If <code>nicheR</code> has not been installed yet, please do so. See
 the <a href="index.html">Main guide</a> for installation
 instructions.</p>
@@ -183,9 +193,9 @@ necessary).</p>
 <span><span class="co">#setwd("YOUR/DIRECTORY")  # modify if setting a new directory</span></span></code></pre></div>
 <p><br></p>
 </div>
-<div class="section level2">
-<h2 id="loading-example-data">Loading example data<a class="anchor" aria-label="anchor" href="#loading-example-data"></a>
-</h2>
+<div class="section level3">
+<h3 id="loading-example-data">Loading example data<a class="anchor" aria-label="anchor" href="#loading-example-data"></a>
+</h3>
 <p>The example data included in <code>nicheR</code> consists of a
 <code>nicheR_ellipsoid</code> object representing the niche of a
 reference species defined by two environmental variables (bio1: Mean
@@ -280,9 +290,9 @@ two dimensions and that the variable names stored in
 <code>newdata</code> passed to <code><a href="../reference/predict.html">predict()</a></code>.</p>
 <p><br></p>
 </div>
-<div class="section level2">
-<h2 id="using-predict">Using predict()<a class="anchor" aria-label="anchor" href="#using-predict"></a>
-</h2>
+<div class="section level3">
+<h3 id="using-predict">Using predict()<a class="anchor" aria-label="anchor" href="#using-predict"></a>
+</h3>
 <p>At its most basic, <code><a href="../reference/predict.html">predict()</a></code> requires two things: the
 <code>nicheR_ellipsoid</code> object produced by
 <code><a href="../reference/build_ellipsoid.html">build_ellipsoid()</a></code>, and <code>newdata</code>, the
@@ -292,9 +302,9 @@ used to build the ellipsoid. Only those variables are used, so
 subsetting to <code>ref_ellipse$var_names</code> is good practice,
 though the function will handle extra columns automatically.</p>
 <p><br></p>
-<div class="section level3">
-<h3 id="basic-predictions-to-a-data-frame">Basic predictions to a data frame<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-data-frame"></a>
-</h3>
+<div class="section level4">
+<h4 id="basic-predictions-to-a-data-frame">Basic predictions to a data frame<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-data-frame"></a>
+</h4>
 <p>When <code>newdata</code> is a <code>data.frame</code>,
 <code><a href="../reference/predict.html">predict()</a></code> returns a <code>data.frame</code> with class
 <code>"nicheR_prediction"</code>. By default it includes the predictor
@@ -321,9 +331,9 @@ columns followed by two prediction columns: <code>Mahalanobis</code> and
 <span><span class="co">#&gt; 6 18.36623    771    52.71068 3.581139e-12</span></span></code></pre></div>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="basic-predictions-to-a-spatraster">Basic predictions to a SpatRaster<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-spatraster"></a>
-</h3>
+<div class="section level4">
+<h4 id="basic-predictions-to-a-spatraster">Basic predictions to a SpatRaster<a class="anchor" aria-label="anchor" href="#basic-predictions-to-a-spatraster"></a>
+</h4>
 <p>When <code>newdata</code> is a <code>SpatRaster</code>,
 <code><a href="../reference/predict.html">predict()</a></code> returns a <code>SpatRaster</code> where each
 requested output is a named layer. The coordinate reference system,
@@ -333,38 +343,44 @@ all prediction layers.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pred_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                     suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                     include_mahalanobis <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                     mahalanobis_truncated <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                     keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: suitability prediction using newdata of class: SpatRaster...</span></span>
 <span><span class="co">#&gt; Step: Using 2 predictor variables: bio_1, bio_12</span></span>
-<span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability</span></span>
+<span><span class="co">#&gt; Done: Prediction completed successfully. Returned raster layers: bio_1, bio_12, Mahalanobis, suitability, Mahalanobis_trunc, suitability_trunc</span></span>
 <span></span>
 <span><span class="va">pred_rast</span></span>
 <span><span class="co">#&gt; class       : SpatRaster </span></span>
-<span><span class="co">#&gt; size        : 150, 240, 4  (nrow, ncol, nlyr)</span></span>
+<span><span class="co">#&gt; size        : 150, 240, 6  (nrow, ncol, nlyr)</span></span>
 <span><span class="co">#&gt; resolution  : 0.1666667, 0.1666667  (x, y)</span></span>
 <span><span class="co">#&gt; extent      : -100, -60, 5, 30  (xmin, xmax, ymin, ymax)</span></span>
 <span><span class="co">#&gt; coord. ref. : lon/lat WGS 84 (EPSG:4326) </span></span>
 <span><span class="co">#&gt; sources     : ma_bios.tif  (2 layers) </span></span>
 <span><span class="co">#&gt;               memory  </span></span>
 <span><span class="co">#&gt;               memory  </span></span>
-<span><span class="co">#&gt; names       :    bio_1, bio_12,  Mahalanobis,   suitability </span></span>
-<span><span class="co">#&gt; min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127 </span></span>
-<span><span class="co">#&gt; max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01</span></span>
+<span><span class="co">#&gt;               ... and 2 more sources</span></span>
+<span><span class="co">#&gt; names       :    bio_1, bio_12,  Mahalanobis,   suitability, Mahal~trunc, suita~trunc </span></span>
+<span><span class="co">#&gt; min values  :  3.91325,    291, 2.992248e-03, 7.035461e-127, 0.002992248,    0.000000 </span></span>
+<span><span class="co">#&gt; max values  : 29.39055,   7150, 5.809547e+02,  9.985050e-01, 9.206901663,    0.998505</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pred_rast</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "bio_1"       "bio_12"      "Mahalanobis" "suitability"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "bio_1"             "bio_12"            "Mahalanobis"      </span></span>
+<span><span class="co">#&gt; [4] "suitability"       "Mahalanobis_trunc" "suitability_trunc"</span></span></code></pre></div>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="understanding-the-output">Understanding the output<a class="anchor" aria-label="anchor" href="#understanding-the-output"></a>
-</h3>
+<div class="section level4">
+<h4 id="understanding-the-output">Understanding the output<a class="anchor" aria-label="anchor" href="#understanding-the-output"></a>
+</h4>
 <p>Looking at both outputs above, the default call always returns a
 Mahalanobis distance and a suitability, regardless of whether the input
 is a data frame or a raster. These two quantities are mathematically
 connected, and understanding that connection is essential for
 interpreting what the model is telling you.</p>
-<div class="section level4">
-<h4 id="mahalanobis-distance-and-the-ellipsoid">Mahalanobis distance and the ellipsoid<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-and-the-ellipsoid"></a>
-</h4>
+<div class="section level5">
+<h5 id="mahalanobis-distance-and-the-ellipsoid">Mahalanobis distance and the ellipsoid<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-and-the-ellipsoid"></a>
+</h5>
 <p>The ellipsoidal niche model in <code>nicheR</code> represents a
 species’ niche as a region in multivariate environmental space. The
 ellipsoid’s shape comes from the covariance structure of the
@@ -398,9 +414,9 @@ means they are increasingly different. Critically,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>D</mi><mn>2</mn></msup><annotation encoding="application/x-tex">D^2</annotation></semantics></math>
 is not bounded between 0 and 1: it is a distance, not a probability.</p>
 </div>
-<div class="section level4">
-<h4 id="from-distance-to-suitability-the-chi-square-and-mvn-connection">From distance to suitability: the chi-square and MVN connection<a class="anchor" aria-label="anchor" href="#from-distance-to-suitability-the-chi-square-and-mvn-connection"></a>
-</h4>
+<div class="section level5">
+<h5 id="from-distance-to-suitability-the-chi-square-and-mvn-connection">From distance to suitability: the chi-square and MVN connection<a class="anchor" aria-label="anchor" href="#from-distance-to-suitability-the-chi-square-and-mvn-connection"></a>
+</h5>
 <p><code>nicheR</code> converts
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>D</mi><mn>2</mn></msup><annotation encoding="application/x-tex">D^2</annotation></semantics></math>
 to <strong>suitability</strong> using the multivariate normal (MVN)
@@ -470,9 +486,9 @@ suitability value marks the edge of the niche.</p>
 <p><br></p>
 </div>
 </div>
-<div class="section level3">
-<h3 id="additional-function-arguments">Additional function arguments<a class="anchor" aria-label="anchor" href="#additional-function-arguments"></a>
-</h3>
+<div class="section level4">
+<h4 id="additional-function-arguments">Additional function arguments<a class="anchor" aria-label="anchor" href="#additional-function-arguments"></a>
+</h4>
 <p>Beyond the basic call, <code><a href="../reference/predict.html">predict()</a></code> lets you control which
 outputs are returned independently. The four output types are:</p>
 <table class="table">
@@ -536,9 +552,9 @@ confidence level on predictions</a>.</li>
 </ul>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="all-four-outputs-at-once">All four outputs at once<a class="anchor" aria-label="anchor" href="#all-four-outputs-at-once"></a>
-</h3>
+<div class="section level4">
+<h4 id="all-four-outputs-at-once">All four outputs at once<a class="anchor" aria-label="anchor" href="#all-four-outputs-at-once"></a>
+</h4>
 <p>Any combination of the four flags can be set to <code>TRUE</code> in
 a single call. All requested outputs are returned together.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -595,9 +611,9 @@ have a value; the truncated ones apply the boundary.</p>
 <span><span class="co">#&gt; [4] "suitability_trunc"</span></span></code></pre></div>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="the-role-of-the-confidence-level-and-truncation">The role of the confidence level and truncation<a class="anchor" aria-label="anchor" href="#the-role-of-the-confidence-level-and-truncation"></a>
-</h3>
+<div class="section level4">
+<h4 id="the-role-of-the-confidence-level-and-truncation">The role of the confidence level and truncation<a class="anchor" aria-label="anchor" href="#the-role-of-the-confidence-level-and-truncation"></a>
+</h4>
 <p>The ellipsoid boundary is defined by the chi-square cutoff
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>p</mi><mo>,</mo><mspace width="0.167em"></mspace><mtext mathvariant="normal">cl</mtext></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{p,\,\text{cl}}</annotation></semantics></math>.
 Without truncation,
@@ -629,9 +645,9 @@ show truncated outputs. Outside points are rendered in grey so the full
 background extent is preserved in the view.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="effect-of-the-confidence-level-on-predictions">Effect of the confidence level on predictions<a class="anchor" aria-label="anchor" href="#effect-of-the-confidence-level-on-predictions"></a>
-</h3>
+<div class="section level4">
+<h4 id="effect-of-the-confidence-level-on-predictions">Effect of the confidence level on predictions<a class="anchor" aria-label="anchor" href="#effect-of-the-confidence-level-on-predictions"></a>
+</h4>
 <p>The choice of <code>cl</code> directly controls how much of the
 environmental space is classified as suitable. A lower <code>cl</code>
 produces a smaller, more conservative ellipsoid boundary; a higher
@@ -667,18 +683,18 @@ justified in the context of the research question.</p>
 <p><br></p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="visualizing-predictions-in-environmental-space">Visualizing predictions in environmental space<a class="anchor" aria-label="anchor" href="#visualizing-predictions-in-environmental-space"></a>
-</h2>
+<div class="section level3">
+<h3 id="visualizing-predictions-in-environmental-space">Visualizing predictions in environmental space<a class="anchor" aria-label="anchor" href="#visualizing-predictions-in-environmental-space"></a>
+</h3>
 <p>Visualizing predictions in E-space is the most direct way to
 understand what the model is saying about the niche. Each point
 represents an environmental combination and its color encodes the
 prediction value. The ellipsoid boundary is overlaid to show the niche
 limit.</p>
 <p><br></p>
-<div class="section level3">
-<h3 id="mahalanobis-distance-in-e-space">Mahalanobis distance in E-space<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-in-e-space"></a>
-</h3>
+<div class="section level4">
+<h4 id="mahalanobis-distance-in-e-space">Mahalanobis distance in E-space<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-in-e-space"></a>
+</h4>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">maha_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
@@ -716,9 +732,9 @@ discontinuity: the untruncated
 does not distinguish inside from outside.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="suitability-in-e-space">Suitability in E-space<a class="anchor" aria-label="anchor" href="#suitability-in-e-space"></a>
-</h3>
+<div class="section level4">
+<h4 id="suitability-in-e-space">Suitability in E-space<a class="anchor" aria-label="anchor" href="#suitability-in-e-space"></a>
+</h4>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">suit_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                   newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
@@ -755,9 +771,9 @@ colors mark the core of the niche, where environmental conditions best
 match those used to construct the ellipsoid.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="truncated-predictions-in-e-space">Truncated predictions in E-space<a class="anchor" aria-label="anchor" href="#truncated-predictions-in-e-space"></a>
-</h3>
+<div class="section level4">
+<h4 id="truncated-predictions-in-e-space">Truncated predictions in E-space<a class="anchor" aria-label="anchor" href="#truncated-predictions-in-e-space"></a>
+</h4>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">trunc_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                    newdata <span class="op">=</span> <span class="va">back_data</span><span class="op">[</span>, <span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span>,</span>
@@ -818,9 +834,9 @@ preserved in the plot, making it easy to see what fraction of the
 background falls inside versus outside the ellipsoid.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="binary-suitable-vs--unsuitable-environments">Binary suitable vs. unsuitable environments<a class="anchor" aria-label="anchor" href="#binary-suitable-vs--unsuitable-environments"></a>
-</h3>
+<div class="section level4">
+<h4 id="binary-suitable-vs--unsuitable-environments">Binary suitable vs. unsuitable environments<a class="anchor" aria-label="anchor" href="#binary-suitable-vs--unsuitable-environments"></a>
+</h4>
 <p>The truncated suitability output provides a direct route to binary
 presence-absence predictions in E-space. Points with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">S &gt; 0</annotation></semantics></math>
@@ -855,17 +871,17 @@ deriving potential distribution maps and species richness estimates.</p>
 <p><br></p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="visualizing-predictions-in-geographic-space">Visualizing predictions in geographic space<a class="anchor" aria-label="anchor" href="#visualizing-predictions-in-geographic-space"></a>
-</h2>
+<div class="section level3">
+<h3 id="visualizing-predictions-in-geographic-space">Visualizing predictions in geographic space<a class="anchor" aria-label="anchor" href="#visualizing-predictions-in-geographic-space"></a>
+</h3>
 <p>Projecting predictions to G-space using a <code>SpatRaster</code>
 translates niche model outputs into maps of potential distribution. Each
 cell represents a geographic location evaluated against the niche model
 using the environmental values of its corresponding layers.</p>
 <p><br></p>
-<div class="section level3">
-<h3 id="mahalanobis-distance-map">Mahalanobis distance map<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-map"></a>
-</h3>
+<div class="section level4">
+<h4 id="mahalanobis-distance-map">Mahalanobis distance map<a class="anchor" aria-label="anchor" href="#mahalanobis-distance-map"></a>
+</h4>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">maha_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -888,9 +904,9 @@ precipitation produce complex spatial patterns that are not visible in
 E-space alone.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="suitability-map">Suitability map<a class="anchor" aria-label="anchor" href="#suitability-map"></a>
-</h3>
+<div class="section level4">
+<h4 id="suitability-map">Suitability map<a class="anchor" aria-label="anchor" href="#suitability-map"></a>
+</h4>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">suit_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                     newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -913,9 +929,9 @@ predictions of where environmental conditions are most similar to those
 used to build the ellipsoid.</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="truncated-suitability-map">Truncated suitability map<a class="anchor" aria-label="anchor" href="#truncated-suitability-map"></a>
-</h3>
+<div class="section level4">
+<h4 id="truncated-suitability-map">Truncated suitability map<a class="anchor" aria-label="anchor" href="#truncated-suitability-map"></a>
+</h4>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">trunc_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>,</span>
 <span>                      newdata <span class="op">=</span> <span class="va">ma_bios</span><span class="op">[[</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">var_names</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -942,9 +958,9 @@ outside the boundary receive <code>NA</code> (Mahalanobis) or 0
 (suitability).</p>
 <p><br></p>
 </div>
-<div class="section level3">
-<h3 id="binary-potential-distribution-map">Binary potential distribution map<a class="anchor" aria-label="anchor" href="#binary-potential-distribution-map"></a>
-</h3>
+<div class="section level4">
+<h4 id="binary-potential-distribution-map">Binary potential distribution map<a class="anchor" aria-label="anchor" href="#binary-potential-distribution-map"></a>
+</h4>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">binary_rast</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">trunc_rast</span><span class="op">$</span><span class="va">suitability_trunc</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1</span></span>
 <span></span>
@@ -963,9 +979,9 @@ construction, and comparisons with observed occurrence data.</p>
 <p><br></p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="three-dimensional-example">Three-dimensional example<a class="anchor" aria-label="anchor" href="#three-dimensional-example"></a>
-</h2>
+<div class="section level3">
+<h3 id="three-dimensional-example">Three-dimensional example<a class="anchor" aria-label="anchor" href="#three-dimensional-example"></a>
+</h3>
 <p>The examples above use a two-dimensional ellipsoid defined by bio1
 and bio12. <code>nicheR</code> works with any number of dimensions and
 both predictions and pairwise visualizations scale accordingly. Here we
@@ -1072,32 +1088,125 @@ having three pairs and a layout that rounds up to four cells.</p>
 <p><br></p>
 </div>
 <div class="section level2">
-<h2 id="save-and-import">Save and import<a class="anchor" aria-label="anchor" href="#save-and-import"></a>
+<h2 id="sec-predicting-with-virtual-data">Predicting with virtual data<a class="anchor" aria-label="anchor" href="#sec-predicting-with-virtual-data"></a>
 </h2>
+<p>In addition to predicting over extracted background data or spatial
+rasters, <code><a href="../reference/predict.html">predict()</a></code> works seamlessly with simulated
+environments generated by the <code><a href="../reference/virtual_data.html">virtual_data()</a></code> function. This
+is particularly useful for testing theoretical community assemblies or
+running controlled simulations without the confounding factors of
+real-world geographic space.</p>
+<p>Here, we draw 1,000 points directly from the mathematical
+multivariate normal (MVN) distribution of the niche, and then use
+<code><a href="../reference/predict.html">predict()</a></code> to score their suitability.</p>
+<p><br></p>
+<div class="section level3">
+<h3 id="sec-two-dimensional-virtual-data">Two-dimensional virtual data<a class="anchor" aria-label="anchor" href="#sec-two-dimensional-virtual-data"></a>
+</h3>
+<p>First, we generate the virtual environmental points for our 2D
+reference ellipse, and then we score them.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># We draw 1,000 points from the mathematical distribution of the niche</span></span>
+<span><span class="va">virt_bg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/virtual_data.html">virtual_data</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, n <span class="op">=</span> <span class="fl">1000</span>, truncate <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>                        effect <span class="op">=</span> <span class="st">"direct"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># We score our background points so we can sample from them based on suitability</span></span>
+<span><span class="va">pred_virt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, newdata <span class="op">=</span> <span class="va">virt_bg</span>, </span>
+<span>                     include_suitability <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                     suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                     keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Starting: suitability prediction using newdata of class: matrix, array...</span></span>
+<span><span class="co">#&gt; Step: Using 2 predictor variables: bio_1, bio_12</span></span>
+<span><span class="co">#&gt; Done: Prediction completed successfully. Returned columns: bio_1, bio_12, Mahalanobis, suitability, suitability_trunc</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_virt</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      bio_1   bio_12 Mahalanobis suitability suitability_trunc</span></span>
+<span><span class="co">#&gt; 1 22.50672 1593.385   1.6805901   0.4315832         0.4315832</span></span>
+<span><span class="co">#&gt; 2 22.20792 1795.909   1.2701173   0.5299044         0.5299044</span></span>
+<span><span class="co">#&gt; 3 24.78859 1541.094   1.4565289   0.4827461         0.4827461</span></span>
+<span><span class="co">#&gt; 4 22.63092 2148.820   2.5893286   0.2739898         0.2739898</span></span>
+<span><span class="co">#&gt; 5 23.29214 1832.377   0.1133911   0.9448817         0.9448817</span></span>
+<span><span class="co">#&gt; 6 25.65037 1544.886   3.4375696   0.1792839         0.1792839</span></span></code></pre></div>
+<p><br></p>
+</div>
+<div class="section level3">
+<h3 id="sec-three-dimensional-virtual-data">Three-dimensional virtual data<a class="anchor" aria-label="anchor" href="#sec-three-dimensional-virtual-data"></a>
+</h3>
+<p>The exact same workflow applies to multidimensional niches. We can
+generate a theoretical 3D point cloud for <code>example_sp_4</code> and
+evaluate suitability across those simulated conditions.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># We draw 1,000 points from the mathematical distribution of the 3D niche</span></span>
+<span><span class="va">virt_3d_bg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/virtual_data.html">virtual_data</a></span><span class="op">(</span><span class="va">example_sp_4</span>, n <span class="op">=</span> <span class="fl">1000</span>, truncate <span class="op">=</span> <span class="cn">FALSE</span>, </span>
+<span>                           effect <span class="op">=</span> <span class="st">"direct"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Predict suitability for the 3D virtual background</span></span>
+<span><span class="va">pred_3d_virt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">example_sp_4</span>, newdata <span class="op">=</span> <span class="va">virt_3d_bg</span>, </span>
+<span>                        include_suitability <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                        suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>, </span>
+<span>                        keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Starting: suitability prediction using newdata of class: matrix, array...</span></span>
+<span><span class="co">#&gt; Step: Using 3 predictor variables: bio_1, bio_12, bio_15</span></span>
+<span><span class="co">#&gt; Done: Prediction completed successfully. Returned columns: bio_1, bio_12, bio_15, Mahalanobis, suitability, suitability_trunc</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pred_3d_virt</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      bio_1   bio_12   bio_15 Mahalanobis suitability suitability_trunc</span></span>
+<span><span class="co">#&gt; 1 25.86952 2145.146 94.26637   2.4658512  0.29143869        0.29143869</span></span>
+<span><span class="co">#&gt; 2 24.51666 2604.201 87.03236   4.9651812  0.08352656        0.08352656</span></span>
+<span><span class="co">#&gt; 3 28.88041 2026.370 80.58811   4.0799594  0.13003135        0.13003135</span></span>
+<span><span class="co">#&gt; 4 28.46909 3404.016 67.48380   2.8589699  0.23943221        0.23943221</span></span>
+<span><span class="co">#&gt; 5 27.05804 2686.729 77.62646   0.1165103  0.94340919        0.94340919</span></span>
+<span><span class="co">#&gt; 6 27.09673 2034.869 74.49320   3.9225671  0.14067774        0.14067774</span></span></code></pre></div>
+<p><br></p>
+</div>
+<div class="section level3">
+<h3 id="save-and-import">Save and import<a class="anchor" aria-label="anchor" href="#save-and-import"></a>
+</h3>
 <p>Prediction outputs are standard R objects and can be saved using
 standard functions. For <code>nicheR_ellipsoid</code> objects, use the
 <code>save_nicheR</code> and <code>read_nicheR</code> functions.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">temp_ellipse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"ref_ellipse.rda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_nicheR.html">save_nicheR</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, file <span class="op">=</span> <span class="va">temp_ellipse</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ref_ellipse_imported</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_nicheR.html">read_nicheR</a></span><span class="op">(</span><span class="va">temp_ellipse</span><span class="op">)</span></span></code></pre></div>
 <p><br></p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">temp_df</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_df.csv"</span><span class="op">)</span></span>
-<span><span class="va">temp_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_rast.tif"</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Define temporary file paths</span></span>
+<span><span class="va">temp_df</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_df.csv"</span><span class="op">)</span></span>
+<span><span class="va">temp_rast</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_rast.tif"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">temp_3d_df</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_3d_df.csv"</span><span class="op">)</span></span>
 <span><span class="va">temp_3d_rast</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_3d_rast.tif"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="va">temp_virt</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_virt.csv"</span><span class="op">)</span></span>
+<span><span class="va">temp_virt_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"predictions_virt_3d.csv"</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># 2. Save predictions to disk</span></span>
+<span><span class="co"># Standard predictions</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">pred_df</span>, file <span class="op">=</span> <span class="va">temp_df</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">pred_rast</span>, filename <span class="op">=</span> <span class="va">temp_rast</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">pred_rast</span>, filename <span class="op">=</span> <span class="va">temp_rast</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">suit_3d</span>, file <span class="op">=</span> <span class="va">temp_3d_df</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">suit_3d</span>, filename <span class="op">=</span> <span class="va">temp_3d_rast</span><span class="op">)</span></span>
+<span><span class="co"># 3D predictions (saved as both a data frame and a raster)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">suit_3d</span>, xy <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, file <span class="op">=</span> <span class="va">temp_3d_df</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">suit_3d</span>, filename <span class="op">=</span> <span class="va">temp_3d_rast</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pred_df_imported</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_df</span><span class="op">)</span></span>
-<span><span class="va">pred_rast_imported</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">temp_rast</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Virtual data predictions (these are data frames)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">pred_virt</span>, file <span class="op">=</span> <span class="va">temp_virt</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">pred_3d_virt</span>, file <span class="op">=</span> <span class="va">temp_virt_3d</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># 3. Import predictions back into R</span></span>
+<span><span class="va">pred_df_imported</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_df</span><span class="op">)</span></span>
+<span><span class="va">pred_rast_imported</span>    <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">temp_rast</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">suit_3d_df_imported</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_3d_df</span><span class="op">)</span></span>
+<span><span class="va">suit_3d_rast_imported</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">temp_3d_rast</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">pred_virt_imported</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_virt</span><span class="op">)</span></span>
+<span><span class="va">pred_3d_virt_imported</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">temp_virt_3d</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

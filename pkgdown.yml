@@ -4,13 +4,11 @@ pkgdown_sha: ~
 articles:
   bias: bias.html
   creating_ellipsoid_based_niches: creating_ellipsoid_based_niches.html
-  generate_occurrence_data: generate_occurrence_data.html
-  generating_occurrence_bias: generating_occurrence_bias.html
-  generating_virtual_data: generating_virtual_data.html
+  generating_occurrence: generating_occurrence.html
   plotting_vignette: plotting_vignette.html
   predict: predict.html
   virtual_communities: virtual_communities.html
-last_built: 2026-04-24T17:33Z
+last_built: 2026-04-27T14:58Z
 urls:
   reference: https://castanedam.github.io/nicheR/reference
   article: https://castanedam.github.io/nicheR/articles
