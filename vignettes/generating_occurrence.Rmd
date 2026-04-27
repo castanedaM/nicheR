@@ -48,11 +48,11 @@ knitr::opts_chunk$set(
 
 The `nicheR` package allows you to simulate how a species might be distributed by generating synthetic occurrence data from continuous prediction surfaces. This vignette progresses through three levels of complexity:
 
-1.  **Pure Virtual Data:** Simulating species entirely within Environmental Space (E-Space), bypassing geographic rasters to test theoretical concepts.
+1.  **Virtual Data:** Simulating species entirely within Environmental Space (E-Space), bypassing geographic rasters to test theoretical concepts.
 
 2.  **Geographic Occurrence Data:** Acting as a "virtual ecologist" to generate presence points across a physical landscape (G-Space) based on theoretical preferences.
 
-3.  **Biased Occurrence Data:** Introducing real-world collection bias (e.g., proximity to roads) to see how human sampling effort distorts our view of a species' niche.
+3.  **Biased Occurrence Data:** Introducing real-world collection bias (e.g., ninghttime light, proximity to roads, species richness, land use land cover) to see how human sampling effort distorts our view of a species' niche.
 
 <br>
 
