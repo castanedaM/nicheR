@@ -71,11 +71,15 @@ bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 data("ref_ellipse", package = "nicheR")  # 2D Niche (Bio1, Bio12)
 data("example_sp_4", package = "nicheR") # 3D Niche (Bio1, Bio12, Bio15)
 
-# 3. Load pre-calculated geographic prediction surfaces
+# 3. Load pre-calculated virtual backgrounds (E-Space only)
+pred_virt_2d <- read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
+pred_virt_3d <- read.csv(system.file("extdata", "predictions_virt_3d.csv", package = "nicheR"))
+
+# 4. Load pre-calculated geographic prediction surfaces
 pred_2d <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
 pred_3d <- terra::rast(system.file("extdata", "predictions_3d_rast.tif", package = "nicheR"))
 
-# 4. Load pre-calculated biased prediction surfaces 
+# 5. Load pre-calculated biased prediction surfaces 
 # (Habitat Suitability * Accessibility Bias)
 bias_2d <- terra::rast(system.file("extdata", "applied_bias_rast.tif", package = "nicheR"))
 bias_3d <- terra::rast(system.file("extdata", "applied_bias_3d_rast.tif", package = "nicheR"))
@@ -92,21 +96,10 @@ function generates points purely based on mathematical distributions,
 **these points do not possess spatial coordinates
 (Longitude/Latitude).** They exist exclusively in E-Space.
 
-First, we generate a mathematical “background” of 1,000 points that our
-virtual species can potentially inhabit, and score them based on
+We will use the pre-calculated virtual backgrounds (`pred_virt` and
+`pred_virt_3d`) loaded during our setup phase. These data frames contain
+1,000 theoretical background points that have already been scored for
 suitability.
-
-``` r
-# Generate Environmental Background for the 2D ellipse
-virt_bg <- virtual_data(ref_ellipse, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
-
-# Predict Suitability for the Background
-pred_virt <- predict(ref_ellipse, newdata = virt_bg, include_suitability = TRUE, 
-                     suitability_truncated = TRUE, keep_data = TRUE)
-#> Starting: suitability prediction using newdata of class: matrix, array...
-#> Step: Using 2 predictor variables: bio_1, bio_12
-#> Done: Prediction completed successfully. Returned columns: bio_1, bio_12, Mahalanobis, suitability, suitability_trunc
-```
 
   
 
@@ -122,7 +115,7 @@ It picks “occurrences” from our virtual background.
 occ_virt_basic <- sample_virtual_data(
   n_occ = 100, 
   object = ref_ellipse,
-  virtual_prediction = pred_virt, 
+  virtual_prediction = pred_virt_2d, 
   prediction_layer = "suitability", 
   seed = 123
 )
@@ -158,7 +151,7 @@ add_data(occ_virt_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-4-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-3-1.png)
 
   
 
@@ -169,17 +162,7 @@ workflow is identical: generate a 3D background, score its suitability,
 and sample from it.
 
 ``` r
-# 1. Generate 3D virtual background
-virt_bg_3d <- virtual_data(example_sp_4, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
-
-# 2. Predict suitability
-pred_virt_3d <- predict(example_sp_4, newdata = virt_bg_3d, include_suitability = TRUE, 
-                        suitability_truncated = TRUE, keep_data = TRUE)
-#> Starting: suitability prediction using newdata of class: matrix, array...
-#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
-#> Done: Prediction completed successfully. Returned columns: bio_1, bio_12, bio_15, Mahalanobis, suitability, suitability_trunc
-
-# 3. Sample 100 virtual occurrences
+# Sample 100 virtual occurrences from the 3D background
 occ_virt_3d <- sample_virtual_data(
   n_occ = 100, 
   object = example_sp_4,
@@ -193,7 +176,7 @@ occ_virt_3d <- sample_virtual_data(
 #> geographical connections.
 #> Done: sampled 100 points.
 
-# 4. Visualize across multiple dimensions in E-Space
+# Visualize across multiple dimensions in E-Space
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 
 plot_ellipsoid(example_sp_4, dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio12")
@@ -205,7 +188,7 @@ add_data(occ_virt_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-5-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-4-1.png)
 
   
 
@@ -250,7 +233,7 @@ add_data(occ_geo_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-6-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-5-1.png)
 
   
 
@@ -298,7 +281,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_rand, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-7-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-6-1.png)
 
   
 
@@ -335,7 +318,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_meth_maha, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-8-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-7-1.png)
 
   
 
@@ -368,7 +351,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_strict, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-9-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-8-1.png)
 
   
 
@@ -395,7 +378,7 @@ plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12
 add_data(occ_geo_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-10-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-9-1.png)
 
   
 
@@ -443,7 +426,7 @@ add_data(occ_bias_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-11-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-10-1.png)
 
 **Notice the Distortion:** Because observers only sampled accessible
 areas, the orange dots are dragged away from the optimal centroid (red
@@ -488,7 +471,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-12-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-11-1.png)
 
   
 
@@ -516,7 +499,7 @@ add_data(occ_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 2
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-13-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-12-1.png)
 
   
 

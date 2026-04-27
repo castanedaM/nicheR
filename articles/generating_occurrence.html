@@ -166,11 +166,15 @@ previous vignettes.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"ref_ellipse"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span>  <span class="co"># 2D Niche (Bio1, Bio12)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"example_sp_4"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span> <span class="co"># 3D Niche (Bio1, Bio12, Bio15)</span></span>
 <span></span>
-<span><span class="co"># 3. Load pre-calculated geographic prediction surfaces</span></span>
+<span><span class="co"># 3. Load pre-calculated virtual backgrounds (E-Space only)</span></span>
+<span><span class="va">pred_virt_2d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_virt.csv"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">pred_virt_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_virt_3d.csv"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4. Load pre-calculated geographic prediction surfaces</span></span>
 <span><span class="va">pred_2d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">pred_3d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"predictions_3d_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Load pre-calculated biased prediction surfaces </span></span>
+<span><span class="co"># 5. Load pre-calculated biased prediction surfaces </span></span>
 <span><span class="co"># (Habitat Suitability * Accessibility Bias)</span></span>
 <span><span class="va">bias_2d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"applied_bias_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">bias_3d</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"applied_bias_3d_rast.tif"</span>, package <span class="op">=</span> <span class="st">"nicheR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -185,19 +189,10 @@ experiments in quantitative ecology. Because the
 mathematical distributions, <strong>these points do not possess spatial
 coordinates (Longitude/Latitude).</strong> They exist exclusively in
 E-Space.</p>
-<p>First, we generate a mathematical “background” of 1,000 points that
-our virtual species can potentially inhabit, and score them based on
-suitability.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Generate Environmental Background for the 2D ellipse</span></span>
-<span><span class="va">virt_bg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/virtual_data.html">virtual_data</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, n <span class="op">=</span> <span class="fl">1000</span>, truncate <span class="op">=</span> <span class="cn">FALSE</span>, effect <span class="op">=</span> <span class="st">"direct"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Predict Suitability for the Background</span></span>
-<span><span class="va">pred_virt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, newdata <span class="op">=</span> <span class="va">virt_bg</span>, include_suitability <span class="op">=</span> <span class="cn">TRUE</span>, </span>
-<span>                     suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>, keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Starting: suitability prediction using newdata of class: matrix, array...</span></span>
-<span><span class="co">#&gt; Step: Using 2 predictor variables: bio_1, bio_12</span></span>
-<span><span class="co">#&gt; Done: Prediction completed successfully. Returned columns: bio_1, bio_12, Mahalanobis, suitability, suitability_trunc</span></span></code></pre></div>
+<p>We will use the pre-calculated virtual backgrounds
+(<code>pred_virt</code> and <code>pred_virt_3d</code>) loaded during our
+setup phase. These data frames contain 1,000 theoretical background
+points that have already been scored for suitability.</p>
 <p><br></p>
 <div class="section level3">
 <h3 id="sec-basic-generation">Basic generation<a class="anchor" aria-label="anchor" href="#sec-basic-generation"></a>
@@ -205,11 +200,11 @@ suitability.</p>
 <p>The <code><a href="../reference/sample_virtual_data.html">sample_virtual_data()</a></code> function acts as the
 non-spatial twin to <code><a href="../reference/sample_data.html">sample_data()</a></code>. It picks “occurrences”
 from our virtual background.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_virt_basic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_virtual_data.html">sample_virtual_data</a></span><span class="op">(</span></span>
 <span>  n_occ <span class="op">=</span> <span class="fl">100</span>, </span>
 <span>  object <span class="op">=</span> <span class="va">ref_ellipse</span>,</span>
-<span>  virtual_prediction <span class="op">=</span> <span class="va">pred_virt</span>, </span>
+<span>  virtual_prediction <span class="op">=</span> <span class="va">pred_virt_2d</span>, </span>
 <span>  prediction_layer <span class="op">=</span> <span class="st">"suitability"</span>, </span>
 <span>  seed <span class="op">=</span> <span class="fl">123</span></span>
 <span><span class="op">)</span></span>
@@ -236,12 +231,12 @@ from our virtual background.</p>
 E-Space. The gray dots are our 1,000 background points. The orange dots
 are the 100 sampled individuals. Notice they cluster toward the center
 (red square) because higher suitability exists there.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, </span>
 <span>               xlab <span class="op">=</span> <span class="st">"Bio1 (Temp)"</span>, ylab <span class="op">=</span> <span class="st">"Bio12 (Precip)"</span>, main <span class="op">=</span> <span class="st">"Virtual E-Space"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_virt_basic</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -250,18 +245,8 @@ are the 100 sampled individuals. Notice they cluster toward the center
 <p>We can simulate pure virtual points across a 3-dimensional niche. The
 workflow is identical: generate a 3D background, score its suitability,
 and sample from it.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. Generate 3D virtual background</span></span>
-<span><span class="va">virt_bg_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/virtual_data.html">virtual_data</a></span><span class="op">(</span><span class="va">example_sp_4</span>, n <span class="op">=</span> <span class="fl">1000</span>, truncate <span class="op">=</span> <span class="cn">FALSE</span>, effect <span class="op">=</span> <span class="st">"direct"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2. Predict suitability</span></span>
-<span><span class="va">pred_virt_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict.html">predict</a></span><span class="op">(</span><span class="va">example_sp_4</span>, newdata <span class="op">=</span> <span class="va">virt_bg_3d</span>, include_suitability <span class="op">=</span> <span class="cn">TRUE</span>, </span>
-<span>                        suitability_truncated <span class="op">=</span> <span class="cn">TRUE</span>, keep_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Starting: suitability prediction using newdata of class: matrix, array...</span></span>
-<span><span class="co">#&gt; Step: Using 3 predictor variables: bio_1, bio_12, bio_15</span></span>
-<span><span class="co">#&gt; Done: Prediction completed successfully. Returned columns: bio_1, bio_12, bio_15, Mahalanobis, suitability, suitability_trunc</span></span>
-<span></span>
-<span><span class="co"># 3. Sample 100 virtual occurrences</span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Sample 100 virtual occurrences from the 3D background</span></span>
 <span><span class="va">occ_virt_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_virtual_data.html">sample_virtual_data</a></span><span class="op">(</span></span>
 <span>  n_occ <span class="op">=</span> <span class="fl">100</span>, </span>
 <span>  object <span class="op">=</span> <span class="va">example_sp_4</span>,</span>
@@ -275,7 +260,7 @@ and sample from it.</p>
 <span><span class="co">#&gt; geographical connections.</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points.</span></span>
 <span></span>
-<span><span class="co"># 4. Visualize across multiple dimensions in E-Space</span></span>
+<span><span class="co"># Visualize across multiple dimensions in E-Space</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span> </span>
 <span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">example_sp_4</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"Virtual: Bio1 v Bio12"</span><span class="op">)</span></span>
@@ -285,7 +270,7 @@ and sample from it.</p>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">example_sp_4</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"Virtual: Bio1 v Bio15"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_virt_3d</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">example_sp_4</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 </div>
@@ -305,7 +290,7 @@ occurrences in both Geographic Space (G-Space) and Environmental Space
 </h3>
 <p>Let’s generate 100 geographically grounded occurrences using the
 default suitability layer of our 2D prediction raster.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_geo_basic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span></span>
 <span>  n_occ <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  prediction <span class="op">=</span> <span class="va">pred_2d</span>,</span>
@@ -326,7 +311,7 @@ default suitability layer of our 2D prediction raster.</p>
 <span>               dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Temp vs Precip"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_geo_basic</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -342,7 +327,7 @@ marginal environments (repelled to boundaries).</p></li>
 <li><p><strong><code>random</code></strong>: Uniform distribution across
 suitable habitats.</p></li>
 </ul>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_cent</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">pred_2d</span>, <span class="st">"suitability"</span>, sampling <span class="op">=</span> <span class="st">"centroid"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_data()</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points.</span></span>
@@ -371,7 +356,7 @@ suitable habitats.</p></li>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred_2d</span><span class="op">[[</span><span class="st">"suitability"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"G-Space: Random Sampling"</span><span class="op">)</span>; <span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occ_rand</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, pch <span class="op">=</span> <span class="fl">20</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Random"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_rand</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -386,7 +371,7 @@ on the 0-1 habitat suitability index.</p></li>
 multivariate environmental distance, creating a stricter concentration
 in optimal environments.</p></li>
 </ul>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_meth_suit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">pred_2d</span>, <span class="st">"suitability"</span>, method <span class="op">=</span> <span class="st">"suitability"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_data()</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points.</span></span>
@@ -406,7 +391,7 @@ in optimal environments.</p></li>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred_2d</span><span class="op">[[</span><span class="st">"Mahalanobis"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"G-Space: Method = Mahalanobis"</span><span class="op">)</span>; <span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occ_meth_maha</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, pch <span class="op">=</span> <span class="fl">20</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Mahalanobis"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_meth_maha</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -417,7 +402,7 @@ allows points to fall slightly outside the strict boundaries of the
 fundamental niche to simulate sink populations. Setting
 <code>strict = TRUE</code> (using a truncated layer) establishes a hard
 boundary.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_lax</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">pred_2d</span>, <span class="st">"suitability"</span>, strict <span class="op">=</span> <span class="cn">FALSE</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_data()</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points.</span></span>
@@ -437,7 +422,7 @@ boundary.</p>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pred_2d</span><span class="op">[[</span><span class="st">"suitability_trunc"</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"G-Space: Strict = TRUE"</span><span class="op">)</span>; <span class="fu"><a href="https://rspatial.github.io/terra/reference/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">occ_strict</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, pch <span class="op">=</span> <span class="fl">20</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Strict = TRUE"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_strict</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -447,7 +432,7 @@ boundary.</p>
 same way. We simply pass the 3D prediction raster and view the outputs
 across multiple axes (e.g., Temperature vs. Precipitation, and
 Temperature vs. Seasonality).</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_geo_3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_data.html">sample_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">pred_3d</span>, <span class="st">"suitability"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_data()</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points.</span></span>
@@ -461,7 +446,7 @@ Temperature vs. Seasonality).</p>
 <span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">example_sp_4</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span>, <span class="st">"bio_15"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Bio1 v Bio15"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_geo_3d</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 </div>
@@ -483,7 +468,7 @@ distortion.</p>
 <p>Once the spatial points are generated, we must use
 <code><a href="https://rspatial.github.io/terra/reference/extract.html" class="external-link">terra::extract()</a></code> to pull the underlying climate values so
 we can plot them in E-Space and observe the distortion.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_bias_xy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_biased_data.html">sample_biased_data</a></span><span class="op">(</span></span>
 <span>  n_occ <span class="op">=</span> <span class="fl">100</span>, </span>
 <span>  prediction <span class="op">=</span> <span class="va">bias_2d</span>, </span>
@@ -504,7 +489,7 @@ we can plot them in E-Space and observe the distortion.</p>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Distorted Niche"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_bias_env</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">ref_ellipse</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="95%"></p>
 <p><strong>Notice the Distortion:</strong> Because observers only
 sampled accessible areas, the orange dots are dragged away from the
 optimal centroid (red square) and pushed into marginal climates.</p>
@@ -529,7 +514,7 @@ are trying to simulate.</p>
 whether occurrences are allowed in zero-probability/NA cells. Setting
 <code>strict = TRUE</code> acts as a strict firewall, removing any
 <code>NA</code> and zero-valued pixels prior to pulling samples.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># strict = TRUE ensures sampling ONLY happens in explicitly positive bias areas</span></span>
 <span><span class="va">occ_bias_strict_xy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_biased_data.html">sample_biased_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">bias_2d</span>, <span class="st">"suitability_biased_direct"</span>, strict <span class="op">=</span> <span class="cn">TRUE</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_biased_data()</span></span>
@@ -542,7 +527,7 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 <span></span>
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">ref_ellipse</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Strict Bias"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_bias_strict_env</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_12"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 <div class="section level3">
@@ -550,7 +535,7 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 </h3>
 <p>Finally, let’s look at biased sampling on a 3-dimensional niche
 (<code>example_sp_4</code>).</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">occ_bias_3d_xy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_biased_data.html">sample_biased_data</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">bias_3d</span>, <span class="st">"suitability_biased_direct"</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Starting: sample_biased_data()</span></span>
 <span><span class="co">#&gt; Done: sampled 100 points from biased prediction layer</span></span>
@@ -567,7 +552,7 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 <span><span class="fu"><a href="../reference/plot_ellipsoid.html">plot_ellipsoid</a></span><span class="op">(</span><span class="va">example_sp_4</span>, background <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">bios</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bio_1"</span>, <span class="st">"bio_12"</span>, <span class="st">"bio_15"</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>, pch <span class="op">=</span> <span class="st">"."</span>, col_bg <span class="op">=</span> <span class="st">"#9a9797"</span>, main <span class="op">=</span> <span class="st">"E-Space: Bio1 v Bio15"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="va">occ_bias_3d_env</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"orange"</span>, pch <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add_data.html">add_data</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/transpose.html" class="external-link">t</a></span><span class="op">(</span><span class="va">example_sp_4</span><span class="op">$</span><span class="va">centroid</span><span class="op">)</span><span class="op">)</span>, x <span class="op">=</span> <span class="st">"bio_1"</span>, y <span class="op">=</span> <span class="st">"bio_15"</span>, pts_col <span class="op">=</span> <span class="st">"red"</span>, pch <span class="op">=</span> <span class="fl">15</span>, cex <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="95%"></p>
+<p><img src="generating_occurrence_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="95%"></p>
 <p><br></p>
 </div>
 </div>
@@ -577,7 +562,7 @@ whether occurrences are allowed in zero-probability/NA cells. Setting
 <p>Because we generated standard spatial coordinates and data frames,
 exporting these simulated datasets for testing model robustness or
 downstream analyses is straightforward.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save Pure Virtual Data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">occ_virt_basic</span>, file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
