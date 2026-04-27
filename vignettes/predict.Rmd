@@ -22,45 +22,48 @@ knitr::opts_chunk$set(
 
 ## Summary
 
-- [Description](#description)
-- [Getting ready](#getting-ready)
-- [Loading example data](#loading-example-data)
-- [Using predict()](#using-predict)
-  - [Basic predictions to a data frame](#basic-predictions-to-a-data-frame)
-  - [Basic predictions to a SpatRaster](#basic-predictions-to-a-spatraster)
-  - [Understanding the output](#understanding-the-output)
-  - [Additional function arguments](#additional-function-arguments)
-  - [All four outputs at once](#all-four-outputs-at-once)
-  - [The role of the confidence level and truncation](#the-role-of-the-confidence-level-and-truncation)
-  - [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions)
-- [Visualizing predictions in environmental space](#visualizing-predictions-in-environmental-space)
-  - [Mahalanobis distance in E-space](#mahalanobis-distance-in-e-space)
-  - [Suitability in E-space](#suitability-in-e-space)
-  - [Truncated predictions in E-space](#truncated-predictions-in-e-space)
-  - [Binary suitable vs. unsuitable environments](#binary-suitable-vs-unsuitable-environments)
-- [Visualizing predictions in geographic space](#visualizing-predictions-in-geographic-space)
-  - [Mahalanobis distance map](#mahalanobis-distance-map)
-  - [Suitability map](#suitability-map)
-  - [Truncated suitability map](#truncated-suitability-map)
-  - [Binary potential distribution map](#binary-potential-distribution-map)
-- [Three-dimensional example](#three-dimensional-example)
-- [Save and import](#save-and-import)
+-   [Description](#description)
+-   [Getting ready](#getting-ready)
+-   [Loading example data](#loading-example-data)
+-   [Using predict()](#using-predict)
+    -   [Basic predictions to a data frame](#basic-predictions-to-a-data-frame)
+    -   [Basic predictions to a SpatRaster](#basic-predictions-to-a-spatraster)
+    -   [Understanding the output](#understanding-the-output)
+    -   [Additional function arguments](#additional-function-arguments)
+    -   [All four outputs at once](#all-four-outputs-at-once)
+    -   [The role of the confidence level and truncation](#the-role-of-the-confidence-level-and-truncation)
+    -   [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions)
+-   [Visualizing predictions in environmental space](#visualizing-predictions-in-environmental-space)
+    -   [Mahalanobis distance in E-space](#mahalanobis-distance-in-e-space)
+    -   [Suitability in E-space](#suitability-in-e-space)
+    -   [Truncated predictions in E-space](#truncated-predictions-in-e-space)
+    -   [Binary suitable vs. unsuitable environments](#binary-suitable-vs-unsuitable-environments)
+-   [Visualizing predictions in geographic space](#visualizing-predictions-in-geographic-space)
+    -   [Mahalanobis distance map](#mahalanobis-distance-map)
+    -   [Suitability map](#suitability-map)
+    -   [Truncated suitability map](#truncated-suitability-map)
+    -   [Binary potential distribution map](#binary-potential-distribution-map)
+-   [Three-dimensional example](#three-dimensional-example)
+-   [Predicting with virtual data](#sec-predicting-with-virtual-data)
+    -   [Two-dimensional virtual data](#sec-two-dimensional-virtual-data)
+    -   [Three-dimensional virtual data](#sec-three-dimensional-virtual-data)
+-   [Save and import](#save-and-import)
 
 <hr>
 
-## Description
+## Description {#description}
 
 This vignette demonstrates how to use the `predict()` method for `nicheR_ellipsoid` objects to generate Mahalanobis distance and suitability predictions. The `predict()` function is the core tool for translating the estimated ellipsoidal niche built with `build_ellipsoid()` into quantitative estimates of environmental suitability, both in environmental space (E-space) and geographic space (G-space).
 
 The main function covered in this vignette is:
 
-- `predict()`: generates Mahalanobis distance, suitability, and truncated versions of these metrics from a `nicheR_ellipsoid` object. It accepts environmental data as a `data.frame` or a `SpatRaster`.
+-   `predict()`: generates Mahalanobis distance, suitability, and truncated versions of these metrics from a `nicheR_ellipsoid` object. It accepts environmental data as a `data.frame` or a `SpatRaster`.
 
 Understanding how predictions are computed and what each output represents is essential for interpreting virtual niches responsibly. This vignette covers the statistical theory behind the predictions, a detailed breakdown of all function arguments and output types, and visualizations of every output in both E-space and G-space.
 
 <br>
 
-## Getting ready
+## Getting ready {#getting-ready}
 
 If `nicheR` has not been installed yet, please do so. See the [Main guide](index.html) for installation instructions.
 
@@ -92,7 +95,7 @@ vir_pal  <- hcl.colors(100, palette = "Viridis")
 
 <br>
 
-## Loading example data
+## Loading example data {#loading-example-data}
 
 The example data included in `nicheR` consists of a `nicheR_ellipsoid` object representing the niche of a reference species defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation), background environmental data for North America, and a raster stack of the same variables for geographic projections.
 
@@ -132,13 +135,13 @@ This represents a two-dimensional `nicheR_ellipsoid` object built from `bio_1` a
 
 <br>
 
-## Using predict()
+## Using predict() {#using-predict}
 
 At its most basic, `predict()` requires two things: the `nicheR_ellipsoid` object produced by `build_ellipsoid()`, and `newdata`, the environmental data over which predictions will be made. The `newdata` must contain columns matching the variable names used to build the ellipsoid. Only those variables are used, so subsetting to `ref_ellipse$var_names` is good practice, though the function will handle extra columns automatically.
 
 <br>
 
-### Basic predictions to a data frame
+### Basic predictions to a data frame {#basic-predictions-to-a-data-frame}
 
 When `newdata` is a `data.frame`, `predict()` returns a `data.frame` with class `"nicheR_prediction"`. By default it includes the predictor columns followed by two prediction columns: `Mahalanobis` and `suitability`.
 
@@ -153,13 +156,17 @@ head(pred_df)
 
 <br>
 
-### Basic predictions to a SpatRaster
+### Basic predictions to a SpatRaster {#basic-predictions-to-a-spatraster}
 
 When `newdata` is a `SpatRaster`, `predict()` returns a `SpatRaster` where each requested output is a named layer. The coordinate reference system, extent, and resolution always match those of `newdata`. Cells with `NA` in any predictor layer receive `NA` in all prediction layers.
 
 ```{r raster_predict_basic}
 pred_rast <- predict(ref_ellipse,
                      newdata = ma_bios[[ref_ellipse$var_names]],
+                     include_suitability = TRUE,
+                     suitability_truncated = TRUE,
+                     include_mahalanobis = TRUE,
+                     mahalanobis_truncated = TRUE,
                      keep_data = TRUE)
 
 pred_rast
@@ -168,7 +175,7 @@ names(pred_rast)
 
 <br>
 
-### Understanding the output
+### Understanding the output {#understanding-the-output}
 
 Looking at both outputs above, the default call always returns a Mahalanobis distance and a suitability, regardless of whether the input is a data frame or a raster. These two quantities are mathematically connected, and understanding that connection is essential for interpreting what the model is telling you.
 
@@ -292,12 +299,12 @@ The histograms connect this to the MVN. Under the MVN assumption, $D^2$ follows 
 
 <br>
 
-### Additional function arguments
+### Additional function arguments {#additional-function-arguments}
 
 Beyond the basic call, `predict()` lets you control which outputs are returned independently. The four output types are:
 
 | Argument | Default | Description |
-|---|---|---|
+|------------------------|------------------------|------------------------|
 | `include_mahalanobis` | `TRUE` | Squared Mahalanobis distance $D^2$ for every point. Not truncated. Ranges from 0 at the centroid to infinity. |
 | `include_suitability` | `TRUE` | Suitability $S = \exp(-0.5\, D^2)$. Not truncated. Ranges from near 0 to 1. |
 | `mahalanobis_truncated` | `FALSE` | $D^2$ with values outside the ellipsoid set to `NA`. |
@@ -305,12 +312,12 @@ Beyond the basic call, `predict()` lets you control which outputs are returned i
 
 Two additional arguments control what is returned alongside predictions:
 
-- `keep_data`: whether predictor columns are included in the returned object. Default is `TRUE` for `data.frame` input and `FALSE` for `SpatRaster`. Coordinate columns (`x`, `y`, `lon`, `lat`, etc.) are always retained when `keep_data = TRUE`.
-- `adjust_truncation_level`: a number strictly between 0 and 1 that overrides the `cl` stored in the ellipsoid for truncated outputs, without refitting the ellipsoid. See [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions).
+-   `keep_data`: whether predictor columns are included in the returned object. Default is `TRUE` for `data.frame` input and `FALSE` for `SpatRaster`. Coordinate columns (`x`, `y`, `lon`, `lat`, etc.) are always retained when `keep_data = TRUE`.
+-   `adjust_truncation_level`: a number strictly between 0 and 1 that overrides the `cl` stored in the ellipsoid for truncated outputs, without refitting the ellipsoid. See [Effect of the confidence level on predictions](#effect-of-the-confidence-level-on-predictions).
 
 <br>
 
-### All four outputs at once
+### All four outputs at once {#all-four-outputs-at-once}
 
 Any combination of the four flags can be set to `TRUE` in a single call. All requested outputs are returned together.
 
@@ -355,20 +362,20 @@ names(pred_rast_all)
 
 <br>
 
-### The role of the confidence level and truncation
+### The role of the confidence level and truncation {#the-role-of-the-confidence-level-and-truncation}
 
 The ellipsoid boundary is defined by the chi-square cutoff $\chi^2_{p,\,\text{cl}}$. Without truncation, $D^2$ and $S$ are computed for every point in `newdata` regardless of whether it falls inside or outside the ellipsoid, and every point on Earth receives a positive suitability value. This can be misleading when the goal is to identify where the species could potentially occur.
 
 Truncation operationalizes the ellipsoid boundary ecologically:
 
-- `mahalanobis_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive `NA`, meaning those environments are outside the niche and their distance is not reported.
-- `suitability_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive $S = 0$, meaning unsuitable environments are explicitly scored as zero rather than receiving a small positive value.
+-   `mahalanobis_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive `NA`, meaning those environments are outside the niche and their distance is not reported.
+-   `suitability_truncated = TRUE`: points with $D^2 > \chi^2_{p,\,\text{cl}}$ receive $S = 0$, meaning unsuitable environments are explicitly scored as zero rather than receiving a small positive value.
 
 The plots in [Truncated predictions in E-space](#truncated-predictions-in-e-space) and [Truncated suitability map](#truncated-suitability-map) below show truncated outputs. Outside points are rendered in grey so the full background extent is preserved in the view.
 
 <br>
 
-### Effect of the confidence level on predictions
+### Effect of the confidence level on predictions {#effect-of-the-confidence-level-on-predictions}
 
 The choice of `cl` directly controls how much of the environmental space is classified as suitable. A lower `cl` produces a smaller, more conservative ellipsoid boundary; a higher `cl` produces a larger, more permissive one. The ellipsoid object itself remains unchanged, only the boundary used for truncation shifts.
 
@@ -424,13 +431,13 @@ As `cl` increases from 0.90 to 0.99 the suitable area grows larger while the ell
 
 <br>
 
-## Visualizing predictions in environmental space
+## Visualizing predictions in environmental space {#visualizing-predictions-in-environmental-space}
 
 Visualizing predictions in E-space is the most direct way to understand what the model is saying about the niche. Each point represents an environmental combination and its color encodes the prediction value. The ellipsoid boundary is overlaid to show the niche limit.
 
 <br>
 
-### Mahalanobis distance in E-space
+### Mahalanobis distance in E-space {#mahalanobis-distance-in-e-space}
 
 ```{r maha_espace}
 maha_df <- predict(ref_ellipse,
@@ -468,7 +475,7 @@ The gradient from dark to light radiates outward from the centroid. The distance
 
 <br>
 
-### Suitability in E-space
+### Suitability in E-space {#suitability-in-e-space}
 
 ```{r suit_espace}
 suit_df <- predict(ref_ellipse,
@@ -507,7 +514,7 @@ Suitability peaks at the centroid and declines outward. The brightest colors mar
 
 <br>
 
-### Truncated predictions in E-space
+### Truncated predictions in E-space {#truncated-predictions-in-e-space}
 
 ```{r trunc_espace, fig.width=7, fig.height=3.5, out.width="95%"}
 trunc_df <- predict(ref_ellipse,
@@ -601,13 +608,13 @@ The blue region corresponds exactly to the interior of the ellipsoid in E-space.
 
 <br>
 
-## Visualizing predictions in geographic space
+## Visualizing predictions in geographic space {#visualizing-predictions-in-geographic-space}
 
 Projecting predictions to G-space using a `SpatRaster` translates niche model outputs into maps of potential distribution. Each cell represents a geographic location evaluated against the niche model using the environmental values of its corresponding layers.
 
 <br>
 
-### Mahalanobis distance map
+### Mahalanobis distance map {#mahalanobis-distance-map}
 
 ```{r maha_gspace}
 maha_rast <- predict(ref_ellipse,
@@ -629,7 +636,7 @@ The Mahalanobis distance map highlights regions where environmental conditions c
 
 <br>
 
-### Suitability map
+### Suitability map {#suitability-map}
 
 ```{r suit_gspace}
 suit_rast <- predict(ref_ellipse,
@@ -651,7 +658,7 @@ The suitability map shows the continuous gradient of potential habitat quality. 
 
 <br>
 
-### Truncated suitability map
+### Truncated suitability map {#truncated-suitability-map}
 
 ```{r trunc_gspace, fig.width=7, fig.height=3.5, out.width="95%"}
 trunc_rast <- predict(ref_ellipse,
@@ -679,7 +686,7 @@ Truncated maps show predictions only within the region of geographic space where
 
 <br>
 
-### Binary potential distribution map
+### Binary potential distribution map {#binary-potential-distribution-map}
 
 ```{r binary_gspace}
 binary_rast <- (trunc_rast$suitability_trunc > 0) * 1
@@ -698,10 +705,9 @@ Blue cells represent areas where environmental conditions fall within the niche,
 
 <br>
 
-## Three-dimensional example
+## Three-dimensional example {#three-dimensional-example}
 
 The examples above use a two-dimensional ellipsoid defined by bio1 and bio12. `nicheR` works with any number of dimensions and both predictions and pairwise visualizations scale accordingly. Here we build a three-dimensional ellipsoid from known ranges for bio1 (Mean Annual Temperature), bio12 (Annual Precipitation), and bio15 (Precipitation Seasonality), and predict suitability over the background.
-
 
 ```{r ellipse_3d}
 range_3d <- data.frame(bio_1  = c(27, 35),
@@ -755,7 +761,55 @@ par(original_par)
 
 <br>
 
-## Save and import
+# Predicting with virtual data {#sec-predicting-with-virtual-data}
+
+In addition to predicting over extracted background data or spatial rasters, `predict()` works seamlessly with simulated environments generated by the `virtual_data()` function. This is particularly useful for testing theoretical community assemblies or running controlled simulations without the confounding factors of real-world geographic space.
+
+Here, we draw 1,000 points directly from the mathematical multivariate normal (MVN) distribution of the niche, and then use `predict()` to score their suitability.
+
+<br>
+
+## Two-dimensional virtual data {#sec-two-dimensional-virtual-data}
+
+First, we generate the virtual environmental points for our 2D reference ellipse, and then we score them.
+
+```{r}
+# We draw 1,000 points from the mathematical distribution of the niche
+virt_bg <- virtual_data(ref_ellipse, n = 1000, truncate = FALSE, 
+                        effect = "direct", seed = 1)
+
+# We score our background points so we can sample from them based on suitability
+pred_virt <- predict(ref_ellipse, newdata = virt_bg, 
+                     include_suitability = TRUE, 
+                     suitability_truncated = TRUE, 
+                     keep_data = TRUE)
+
+head(pred_virt)
+```
+
+<br>
+
+## Three-dimensional virtual data {#sec-three-dimensional-virtual-data}
+
+The exact same workflow applies to multidimensional niches. We can generate a theoretical 3D point cloud for `example_sp_4` and evaluate suitability across those simulated conditions.
+
+```{r}
+# We draw 1,000 points from the mathematical distribution of the 3D niche
+virt_3d_bg <- virtual_data(example_sp_4, n = 1000, truncate = FALSE, 
+                           effect = "direct", seed = 1)
+
+# Predict suitability for the 3D virtual background
+pred_3d_virt <- predict(example_sp_4, newdata = virt_3d_bg, 
+                        include_suitability = TRUE, 
+                        suitability_truncated = TRUE, 
+                        keep_data = TRUE)
+
+head(pred_3d_virt)
+```
+
+<br>
+
+## Save and import {#save-and-import}
 
 Prediction outputs are standard R objects and can be saved using standard functions. For `nicheR_ellipsoid` objects, use the `save_nicheR` and `read_nicheR` functions.
 
@@ -769,18 +823,38 @@ ref_ellipse_imported <- read_nicheR(temp_ellipse)
 <br>
 
 ```{r save_preds, eval=FALSE}
-temp_df   <- file.path(tempdir(), "predictions_df.csv")
-temp_rast <- file.path(tempdir(), "predictions_rast.tif")
+# 1. Define temporary file paths
+temp_df      <- file.path(tempdir(), "predictions_df.csv")
+temp_rast    <- file.path(tempdir(), "predictions_rast.tif")
 
 temp_3d_df   <- file.path(tempdir(), "predictions_3d_df.csv")
 temp_3d_rast <- file.path(tempdir(), "predictions_3d_rast.tif")
 
+temp_virt    <- file.path(tempdir(), "predictions_virt.csv")
+temp_virt_3d <- file.path(tempdir(), "predictions_virt_3d.csv")
+
+
+# 2. Save predictions to disk
+# Standard predictions
 write.csv(pred_df, file = temp_df, row.names = FALSE)
-terra::writeRaster(pred_rast, filename = temp_rast)
+terra::writeRaster(pred_rast, filename = temp_rast, overwrite = TRUE)
 
-write.csv(suit_3d, file = temp_3d_df, row.names = FALSE)
-terra::writeRaster(suit_3d, filename = temp_3d_rast)
+# 3D predictions (saved as both a data frame and a raster)
+write.csv(as.data.frame(suit_3d, xy = TRUE), file = temp_3d_df, row.names = FALSE)
+terra::writeRaster(suit_3d, filename = temp_3d_rast, overwrite = TRUE)
 
-pred_df_imported   <- read.csv(temp_df)
-pred_rast_imported <- terra::rast(temp_rast)
+# Virtual data predictions (these are data frames)
+write.csv(pred_virt, file = temp_virt, row.names = FALSE)
+write.csv(pred_3d_virt, file = temp_virt_3d, row.names = FALSE)
+
+
+# 3. Import predictions back into R
+pred_df_imported      <- read.csv(temp_df)
+pred_rast_imported    <- terra::rast(temp_rast)
+
+suit_3d_df_imported   <- read.csv(temp_3d_df)
+suit_3d_rast_imported <- terra::rast(temp_3d_rast)
+
+pred_virt_imported    <- read.csv(temp_virt)
+pred_3d_virt_imported <- read.csv(temp_virt_3d)
 ```
