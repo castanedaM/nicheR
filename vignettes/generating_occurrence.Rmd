@@ -72,11 +72,15 @@ bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 data("ref_ellipse", package = "nicheR")  # 2D Niche (Bio1, Bio12)
 data("example_sp_4", package = "nicheR") # 3D Niche (Bio1, Bio12, Bio15)
 
-# 3. Load pre-calculated geographic prediction surfaces
+# 3. Load pre-calculated virtual backgrounds (E-Space only)
+pred_virt_2d <- read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
+pred_virt_3d <- read.csv(system.file("extdata", "predictions_virt_3d.csv", package = "nicheR"))
+
+# 4. Load pre-calculated geographic prediction surfaces
 pred_2d <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
 pred_3d <- terra::rast(system.file("extdata", "predictions_3d_rast.tif", package = "nicheR"))
 
-# 4. Load pre-calculated biased prediction surfaces 
+# 5. Load pre-calculated biased prediction surfaces 
 # (Habitat Suitability * Accessibility Bias)
 bias_2d <- terra::rast(system.file("extdata", "applied_bias_rast.tif", package = "nicheR"))
 bias_3d <- terra::rast(system.file("extdata", "applied_bias_3d_rast.tif", package = "nicheR"))
@@ -88,16 +92,7 @@ bias_3d <- terra::rast(system.file("extdata", "applied_bias_3d_rast.tif", packag
 
 Virtual species are highly useful for controlled, purely theoretical experiments in quantitative ecology. Because the `virtual_data()` function generates points purely based on mathematical distributions, **these points do not possess spatial coordinates (Longitude/Latitude).** They exist exclusively in E-Space.
 
-First, we generate a mathematical "background" of 1,000 points that our virtual species can potentially inhabit, and score them based on suitability.
-
-```{r}
-# Generate Environmental Background for the 2D ellipse
-virt_bg <- virtual_data(ref_ellipse, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
-
-# Predict Suitability for the Background
-pred_virt <- predict(ref_ellipse, newdata = virt_bg, include_suitability = TRUE, 
-                     suitability_truncated = TRUE, keep_data = TRUE)
-```
+We will use the pre-calculated virtual backgrounds (`pred_virt` and `pred_virt_3d`) loaded during our setup phase. These data frames contain 1,000 theoretical background points that have already been scored for suitability.
 
 <br>
 
@@ -109,7 +104,7 @@ The `sample_virtual_data()` function acts as the non-spatial twin to `sample_dat
 occ_virt_basic <- sample_virtual_data(
   n_occ = 100, 
   object = ref_ellipse,
-  virtual_prediction = pred_virt, 
+  virtual_prediction = pred_virt_2d, 
   prediction_layer = "suitability", 
   seed = 123
 )
@@ -137,14 +132,7 @@ add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_
 We can simulate pure virtual points across a 3-dimensional niche. The workflow is identical: generate a 3D background, score its suitability, and sample from it.
 
 ```{r}
-# 1. Generate 3D virtual background
-virt_bg_3d <- virtual_data(example_sp_4, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
-
-# 2. Predict suitability
-pred_virt_3d <- predict(example_sp_4, newdata = virt_bg_3d, include_suitability = TRUE, 
-                        suitability_truncated = TRUE, keep_data = TRUE)
-
-# 3. Sample 100 virtual occurrences
+# Sample 100 virtual occurrences from the 3D background
 occ_virt_3d <- sample_virtual_data(
   n_occ = 100, 
   object = example_sp_4,
@@ -153,7 +141,7 @@ occ_virt_3d <- sample_virtual_data(
   seed = 123
 )
 
-# 4. Visualize across multiple dimensions in E-Space
+# Visualize across multiple dimensions in E-Space
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 
 plot_ellipsoid(example_sp_4, dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio12")
