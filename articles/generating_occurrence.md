@@ -8,7 +8,9 @@
 - [Getting ready](#getting-ready)
 - [Part 1: Virtual Data](#sec-part-1-virtual-data)
   - [Basic generation](#sec-basic-generation)
-  - [Visualizing virtual data](#sec-visualizing-virtual-data)
+  - [Visualizing virtual data](#sec-visualizing-virtual-data-in-2d)
+  - [Three-dimensional virtual
+    example](#sec-three-dimensional-virtual-example)
 - [Part 2: Spatially-Explicit Occurrence
   Data](#sec-part-2-spatially-explicit-occurrence-data)
   - [Basic generation in 2D](#sec-basic-generation-in-2d)
@@ -95,7 +97,7 @@ virtual species can potentially inhabit, and score them based on
 suitability.
 
 ``` r
-# Generate Environmental Background (The "Universe") for the 2D ellipse
+# Generate Environmental Background for the 2D ellipse
 virt_bg <- virtual_data(ref_ellipse, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
 
 # Predict Suitability for the Background
@@ -142,7 +144,7 @@ head(occ_virt_basic)
 
   
 
-### Visualizing virtual data
+### Visualizing virtual data in 2D
 
 Since virtual data lacks Geography, we visualize it exclusively in
 E-Space. The gray dots are our 1,000 background points. The orange dots
@@ -157,6 +159,53 @@ add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_
 ```
 
 ![](generating_occurrence_files/figure-html/unnamed-chunk-4-1.png)
+
+  
+
+### Three-dimensional virtual example
+
+We can simulate pure virtual points across a 3-dimensional niche. The
+workflow is identical: generate a 3D background, score its suitability,
+and sample from it.
+
+``` r
+# 1. Generate 3D virtual background
+virt_bg_3d <- virtual_data(example_sp_4, n = 1000, truncate = FALSE, effect = "direct", seed = 1)
+
+# 2. Predict suitability
+pred_virt_3d <- predict(example_sp_4, newdata = virt_bg_3d, include_suitability = TRUE, 
+                        suitability_truncated = TRUE, keep_data = TRUE)
+#> Starting: suitability prediction using newdata of class: matrix, array...
+#> Step: Using 3 predictor variables: bio_1, bio_12, bio_15
+#> Done: Prediction completed successfully. Returned columns: bio_1, bio_12, bio_15, Mahalanobis, suitability, suitability_trunc
+
+# 3. Sample 100 virtual occurrences
+occ_virt_3d <- sample_virtual_data(
+  n_occ = 100, 
+  object = example_sp_4,
+  virtual_prediction = pred_virt_3d, 
+  prediction_layer = "suitability", 
+  seed = 123
+)
+#> Starting: sample_virtual_data()
+#> Warning in resolve_prediction(virtual_prediction, prediction_layer):
+#> 'prediction' is a data.frame, and it is missing 'x' and 'y', results wont show
+#> geographical connections.
+#> Done: sampled 100 points.
+
+# 4. Visualize across multiple dimensions in E-Space
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
+
+plot_ellipsoid(example_sp_4, dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio12")
+add_data(occ_virt_3d, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
+
+plot_ellipsoid(example_sp_4, dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio15")
+add_data(occ_virt_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
+```
+
+![](generating_occurrence_files/figure-html/unnamed-chunk-5-1.png)
 
   
 
@@ -201,7 +250,7 @@ add_data(occ_geo_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-5-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-6-1.png)
 
   
 
@@ -249,7 +298,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_rand, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-6-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-7-1.png)
 
   
 
@@ -286,7 +335,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_meth_maha, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-7-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-8-1.png)
 
   
 
@@ -319,7 +368,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_strict, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-8-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-9-1.png)
 
   
 
@@ -346,7 +395,7 @@ plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12
 add_data(occ_geo_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-9-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-10-1.png)
 
   
 
@@ -394,7 +443,7 @@ add_data(occ_bias_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-10-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-11-1.png)
 
 **Notice the Distortion:** Because observers only sampled accessible
 areas, the orange dots are dragged away from the optimal centroid (red
@@ -439,7 +488,7 @@ plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12"
 add_data(occ_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-11-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-12-1.png)
 
   
 
@@ -467,7 +516,7 @@ add_data(occ_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 2
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
-![](generating_occurrence_files/figure-html/unnamed-chunk-12-1.png)
+![](generating_occurrence_files/figure-html/unnamed-chunk-13-1.png)
 
   
 
