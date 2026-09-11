@@ -91,10 +91,17 @@ update_ellipsoid_centroid <- function(ell, new_centroid, verbose = FALSE){
   # by column, since ranges built outside the app may not carry row names, and
   # sorted so the row names describe the values rather than assert an order.
   new_ranges <- ell$ranges
+
   for(v in vars){
     new_ranges[, v] <- sort(new_ranges[, v] + delta[[v]])
   }
+
   rownames(new_ranges) <- c("min", "max")
+
+  ell$axes_coordinates <- lapply(ell$axes_coordinates,
+                                    function(a){
+                                      sweep(a, 2L, delta, "+")
+                                    })
 
   ell$centroid <- new_centroid
   ell$ranges <- new_ranges

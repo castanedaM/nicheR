@@ -107,9 +107,9 @@ virtual_data <- function(object,
 
   if (truncate) {
     # Get the range for each variable across all axes
-    all_coords <- do.call(rbind, object$axes_coordinates)
-    v_min <- apply(all_coords, 2, min)
-    v_max <- apply(all_coords, 2, max)
+    half <- sqrt(diag(cov_matrix) * object$chi2_cutoff)
+    v_min <- centroid - half
+    v_max <- centroid + half
 
     # Truncating with Mahalanobis distance and chi-squared cutoff
     conf_cutoff <- object$chi2_cutoff
