@@ -313,8 +313,8 @@ generating occurrences.",
 prediction extent.",
 
   generate_library = HTML("Ellipsoids saved on the Build tab appear here,
-with how many occurrences each has generated. To edit an ellipsoid, go back
-to the Build tab. To view the gnerated set of occurences press on view (eye)"),
+with how many records each has generated. To edit an ellipsoid, go back
+to the Build tab. To view the generated set of records press on view (eye)"),
 
   generate_library_empty = "No saved ellipsoids yet.",
 

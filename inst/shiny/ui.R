@@ -96,7 +96,7 @@ dashboardPage(
                    tags$a(href = "https://castanedam.github.io/nicheR/articles/bias.html",
                           target = "_blank", rel = "noopener", "sampling bias"), ", and ",
                    tags$a(href = "https://castanedam.github.io/nicheR/articles/generating_occurrence.html",
-                          target = "_blank", rel = "noopener", "generating occurrences"), ".")
+                          target = "_blank", rel = "noopener", "generating data"), ".")
           )
         ),
 

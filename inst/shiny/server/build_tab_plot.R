@@ -1209,7 +1209,7 @@ observeEvent(input$build_open_export_modal, {
       column(width = 6,
              tags$span("File type", class = "text-widget-title"),
              radioButtons("build_export_filetype", label = NULL,
-                          choices = list(
+                          choiceNames = list(
                             tags$span("PNG", class = "text-widget-inner"),
                             tags$span("PDF", class = "text-widget-inner"),
                             tags$span("SVG", class = "text-widget-inner")

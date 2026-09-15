@@ -51,7 +51,6 @@
 #' rand_comm <- random_ellipses(object = ref_ellipse,
 #'                              background = back_data[, c(3, 7)],
 #'                              n = 10)
-
 random_ellipses <- function(object,
                             background,
                             n = 10,
