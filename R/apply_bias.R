@@ -1,11 +1,11 @@
-#' Apply sampling bias to suitability surfaces
+#' Apply sampling bias to prediction surfaces
 #'
 #' @description
-#' Applies a prepared composite sampling bias surface to a suitability raster
-#' by multiplication. The bias surface is aligned to the suitability grid when
-#' needed and the result is cropped and masked to the suitability domain. The
-#' output is a product of suitability and bias and is therefore no longer
-#' interpretable as a probability.
+#' Applies a prepared composite sampling bias surface to a prediction raster
+#' by multiplication. The bias surface is aligned to the prediction grid when
+#' needed and the result is cropped and masked to the prediction domain. The
+#' output is a product of the prediction and the bias and is therefore no
+#' longer interpretable as a probability.
 #'
 #' @usage apply_bias(prepared_bias, prediction, prediction_layer = NULL,
 #'                   effect_direction = "direct", verbose = TRUE)
@@ -13,38 +13,52 @@
 #' @param prepared_bias A single-layer \code{SpatRaster} composite bias
 #'   surface, or the list output from \code{\link{prepare_bias}} containing
 #'   a \code{composite_surface} element.
-#' @param prediction A \code{SpatRaster} containing one or more suitability
-#'   layers with values in \code{[0, 1]}.
+#' @param prediction A \code{SpatRaster} containing one or more prediction
+#'   layers, for example suitability or Mahalanobis distance.
 #' @param prediction_layer Character. Name of the layer to extract from
 #'   \code{prediction} when it contains multiple layers. If \code{NULL}
 #'   (default) and \code{prediction} has a single layer, that layer is used.
-#' @param effect_direction Character. How the bias surface is applied to the
-#'   suitability layer. \code{"direct"} (default) multiplies suitability by
-#'   the bias directly — higher bias increases sampling probability.
-#'   \code{"inverse"} multiplies by \eqn{1 - \text{bias}} — higher bias
-#'   decreases sampling probability.
+#' @param effect_direction Character. How the prediction layer enters the
+#'   product. \code{"direct"} (default) uses the prediction as is, so high
+#'   prediction values increase sampling probability. \code{"inverse"}
+#'   reflects the prediction around the midpoint of its own range,
+#'   \eqn{(\max + \min) - x}, so high values decrease sampling probability.
+#'   To reverse the bias surface instead, use \code{effect_direction} in
+#'   \code{\link{prepare_bias}}.
 #' @param verbose Logical. If \code{TRUE} (default), prints progress messages.
 #'
 #' @details
 #' The function performs the following steps:
 #' \enumerate{
 #'   \item Extracts the composite bias surface from \code{prepared_bias}.
-#'   \item Verifies both bias and suitability values are within \code{[0, 1]}.
-#'   \item Aligns the bias surface to the suitability grid if geometries differ,
-#'   using \code{terra::resample()} with nearest-neighbor interpolation.
-#'   \item Multiplies suitability by the (possibly inverted) bias surface.
-#'   \item Crops and masks the output to the suitability domain.
+#'   \item Verifies the bias values are within \code{[0, 1]} and that the
+#'   prediction values are non-negative.
+#'   \item Aligns the bias surface to the prediction grid if geometries
+#'   differ, using \code{terra::resample()} with nearest-neighbor
+#'   interpolation.
+#'   \item Reflects the prediction when \code{effect_direction = "inverse"}.
+#'   \item Multiplies the (possibly reflected) prediction by the bias surface.
+#'   \item Crops and masks the output to the prediction domain.
 #' }
+#'
+#' The reflection is \eqn{(\max + \min) - x}, with \eqn{\min} and \eqn{\max}
+#' taken from the layer being inverted. It preserves the units and the range
+#' of the layer, does not rescale it, and reduces to \eqn{1 - x} when the
+#' layer runs from 0 to 1. Because the bounds come from the raster supplied,
+#' an inverted layer depends on the extent of that raster. Unbounded layers
+#' such as Mahalanobis distance are the case where this matters most, since
+#' the maximum is set by the most extreme cell in the study area.
 #'
 #' @return
 #' A named list of class \code{"nicheR_biased_surface"} containing:
 #' \itemize{
-#'   \item One \code{SpatRaster} per input suitability layer, named
+#'   \item One \code{SpatRaster} per input prediction layer, named
 #'   \code{"<layer>_biased"}. The raster layer name includes the applied
 #'   direction (e.g., \code{"suitability_biased_direct"}).
 #'   \item \code{combination_formula}: a character string describing the
 #'   operation applied (e.g., \code{"suitability * bias"} or
-#'   \code{"suitability * (1-bias)"}).
+#'   \code{"(1 - suitability) * bias"}), including the reflection constant
+#'   actually used.
 #' }
 #'
 #' @seealso \code{\link{prepare_bias}} to build the composite bias surface,
@@ -59,16 +73,24 @@
 #' bias_rast <- terra::rast(system.file("extdata/ma_biases.tif",
 #'                                      package = "nicheR"))
 #'
-#' # 1. Prepare and standardized bias layers
+#' # 1. Prepare and standardize bias layers
 #' bias <- prepare_bias(bias_surface = bias_rast[[1]],
 #'                      effect_direction = "direct")
 #'
-#' # 2. Apply bias into suitability layer
+#' # 2. Apply bias to the suitability layer
 #' biased_pred <- apply_bias(prepared_bias = bias,
 #'                           prediction = pred_rast,
 #'                           prediction_layer = "suitability")
 #'
 #' terra::plot(biased_pred$suitability_biased)
+#'
+#' # 3. Sample away from the niche instead
+#' biased_inv <- apply_bias(prepared_bias = bias,
+#'                          prediction = pred_rast,
+#'                          prediction_layer = "suitability",
+#'                          effect_direction = "inverse")
+#'
+#' biased_inv$combination_formula
 #'
 #' @export
 apply_bias <- function(prepared_bias,
@@ -96,6 +118,9 @@ apply_bias <- function(prepared_bias,
   }
 
   prediction <- resolve_prediction(prediction, prediction_layer)$rast
+
+  effect_direction <- match.arg(effect_direction,
+                                choices = c("direct", "inverse"))
 
 
   # 1. Extract composite bias surface ----------------------------------------
@@ -128,8 +153,8 @@ apply_bias <- function(prepared_bias,
                             fun = c("min", "max"),
                             na.rm = TRUE)
 
-  bias_min <- as.numeric(bias_rng[1, 1])
-  bias_max <- as.numeric(bias_rng[1, 2])
+  bias_min <- as.numeric(bias_rng[1, "min"])
+  bias_max <- as.numeric(bias_rng[1, "max"])
 
   if(is.finite(bias_min) && bias_min < 0){
     stop("'prepared_bias' has values < 0. Bias must be standardized to [0, 1].")
@@ -139,37 +164,23 @@ apply_bias <- function(prepared_bias,
     stop("'prepared_bias' has values > 1. Bias must be standardized to [0, 1].")
   }
 
-  # 3. Check prediction range [0, 1] ------------------------------
+  # 3. Prediction range ------------------------------------------------------
 
+  # global() returns one row per layer, with min and max as columns. No upper
+  # bound is imposed, the prediction can be suitability in [0, 1] or an
+  # unbounded layer such as Mahalanobis distance. Negatives are rejected
+  # because the product is used directly as a sampling weight.
   env_rng <- terra::global(prediction,
                            fun = c("min", "max"),
                            na.rm = TRUE)
 
-  env_min <- suppressWarnings(min(as.numeric(env_rng[1, ]), na.rm = TRUE))
-  env_max <- suppressWarnings(max(as.numeric(env_rng[2, ]), na.rm = TRUE))
+  env_min <- suppressWarnings(min(env_rng[, "min"], na.rm = TRUE))
 
   if(is.finite(env_min) && env_min < 0){
-    stop("'prediction' has values < 0. Expected suitability surfaces in [0, 1].")
+    stop("'prediction' has values < 0. Expected non-negative prediction surfaces.")
   }
 
-  if(is.finite(env_max) && env_max > 1){
-    stop("'prediction' has values > 1. Expected suitability surfaces in [0, 1].")
-  }
-
-  # 4. Effect direction -------------------------------------------------------
-
-  effect_direction <- match.arg(effect_direction,
-                                choices = c("direct", "inverse"),
-                                several.ok = TRUE)
-
-  if(length(effect_direction) > 1) stop("'effect_direction' can only be a length of 1")
-
-  verbose_message(verbose, "Step: applying bias with '",
-                  effect_direction,
-                  "' effect to to \"", names(prediction), "\" layer...\n")
-
-
-  # 5. Align bias to prediction grid -------------------------------
+  # 4. Align bias to prediction grid -----------------------------------------
 
   same_grid <- terra::compareGeom(bias_rast,
                                   prediction[[1]],
@@ -182,64 +193,90 @@ apply_bias <- function(prepared_bias,
                                  method = "near")
   }
 
-  # 6. Apply bias to each suitable layer -------------------------------------
+  verbose_message(verbose, "Step: applying bias with '",
+                  effect_direction,
+                  "' effect to \"", paste(names(prediction), collapse = "\", \""),
+                  "\" layer(s)...\n")
+
+  # 5. Apply bias to each prediction layer -----------------------------------
 
   out_list <- vector("list", terra::nlyr(prediction))
   formula_entries <- character(terra::nlyr(prediction))
 
 
   for(i in 1:terra::nlyr(prediction)){
+
     s <- prediction[[i]]
-    dir_i <- effect_direction[i]
 
-      if(dir_i == "inverse"){
-        bias_effect <- 1 - bias_rast
-        dir_tag <- "inverse"
-      }else{
-        bias_effect <- bias_rast
-        dir_tag <- "direct"
-      }
-
-      # Safe bias name
-      bias_name <- names(bias_rast)
-      if(is.null(bias_name) || length(bias_name) == 0L || !nzchar(bias_name[1]) || bias_name[1] == "lyr.1"){
-        bias_name <- "bias"
-      }else{
-        bias_name <- bias_name[1]
-      }
-
-      # Safe suitability name
-      suit_name <- names(s)
-      if(is.null(suit_name) || length(suit_name) == 0L || !nzchar(suit_name[1]) || suit_name[1] == "lyr.1"){
-        suit_name <- paste0("suitability_", i)
-      }else{
-        suit_name <- suit_name[1]
-      }
-
-      # Formula entry
-      if(dir_i == "inverse"){
-        formula_entries[i] <- paste0(suit_name, " * (1-", bias_name, ")")
-      }else{
-        formula_entries[i] <- paste0(suit_name, " * ", bias_name)
-      }
-
-      # Compute output raster
-      out_r <- s * bias_effect
-      out_r <- terra::crop(out_r, prediction[[1]], mask = TRUE)
-
-      # Name list element + raster layer safely
-      list_name <- paste0(suit_name, "_biased")
-      if(!nzchar(list_name)){
-        list_name <- paste0("suitability_", i, "_biased")
-      }
-      names(out_r) <- paste0(list_name, "_", dir_tag)
-
-      out_list[[i]] <- out_r
-      names(out_list)[i] <- list_name
+    # Safe bias name
+    bias_name <- names(bias_rast)
+    if(is.null(bias_name) || length(bias_name) == 0L || !nzchar(bias_name[1]) || bias_name[1] == "lyr.1"){
+      bias_name <- "bias"
+    }else{
+      bias_name <- bias_name[1]
     }
 
+    # Safe prediction name
+    suit_name <- names(s)
+    if(is.null(suit_name) || length(suit_name) == 0L || !nzchar(suit_name[1]) || suit_name[1] == "lyr.1"){
+      suit_name <- paste0("prediction_", i)
+    }else{
+      suit_name <- suit_name[1]
+    }
 
-  # 8. Attach message / metadata ---------------------------------------------
+    # Direction applies to the prediction, not to the bias. Inverting the
+    # bias surface is prepare_bias()'s job, doing it here as well meant the
+    # same flip could be applied twice without warning.
+    if(effect_direction == "inverse"){
+
+      lims <- c(env_rng[i, "min"], env_rng[i, "max"])
+
+      if(any(!is.finite(lims))){
+        stop("Cannot invert layer '", suit_name, "', its range is not finite.")
+      }
+
+      if(lims[1] == lims[2]){
+        stop("Cannot invert layer '", suit_name, "', it is constant.")
+      }
+
+      # Reflection around the midpoint of the layer's own range. Preserves
+      # units and range, no rescaling, and equals 1 - x on a [0, 1] layer.
+      reflect <- lims[2] + lims[1]
+
+      suit_effect <- reflect - s
+      dir_tag <- "inverse"
+
+      # The constant is data dependent, so it is recorded rather than
+      # described, otherwise the formula cannot be reproduced later.
+      suit_label <- paste0("(", signif(reflect, 6), " - ", suit_name, ")")
+
+    }else{
+
+      suit_effect <- s
+      dir_tag <- "direct"
+      suit_label <- suit_name
+    }
+
+    # Formula entry
+    formula_entries[i] <- paste0(suit_label, " * ", bias_name)
+
+    # Compute output raster
+    out_r <- suit_effect * bias_rast
+    out_r <- terra::crop(out_r, prediction[[1]], mask = TRUE)
+
+    # Name list element + raster layer safely
+    list_name <- paste0(suit_name, "_biased")
+    if(!nzchar(list_name)){
+      list_name <- paste0("prediction_", i, "_biased")
+    }
+    names(out_r) <- paste0(list_name, "_", dir_tag)
+
+    out_list[[i]] <- out_r
+    names(out_list)[i] <- list_name
+  }
+
+
+  # 6. Attach message / metadata ---------------------------------------------
   out_list$combination_formula <- formula_entries
 
   class(out_list) <- "nicheR_biased_surface"

@@ -1,13 +1,15 @@
 # Title: Build Tab Server Script
 
-# Description: This script includes the code for the range, covariance, and
-# centroid mover logic, plus the ellipsoid library. Functions from nicheR:
-# build_ellipsoid(), update_ellipsoid_covariance(),
-# update_ellipsoid_centroid(), ranges_from_data(), ranges_from_stats()
+# Description: This script includes the code for the range, confidence level,
+# covariance, and centroid mover logic, plus the ellipsoid library and the
+# export of single ellipsoids. Functions from nicheR: build_ellipsoid(),
+# ellipsoid_calculator(), update_ellipsoid_covariance(),
+# update_ellipsoid_centroid(), ranges_from_data(), ranges_from_stats(),
+# save_nicheR()
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 08/04/2026
+# Date last updated: 09/15/2026
 
 
 # DEBUG -------------------------------------------------------------------
@@ -20,6 +22,9 @@ cov_owner <- reactiveVal(NULL)
 
 # Which ellipsoid the centroid sliders currently on screen belong to
 centroid_owner <- reactiveVal(NULL)
+
+# Which ellipsoid the confidence level box currently on screen belongs to
+cl_owner <- reactiveVal(NULL)
 
 # Pairwise covariances as a flat named vector, in the same order as the
 # sliders.
@@ -96,7 +101,7 @@ output$build_range_method_choice_ui <- renderUI({
   ell <- isolate(session_data$current_ellipsoid)
   is_view <- identical(ell_mode(), "view")
 
-  # View mode, ranges are read-only
+  # View mode, ranges and cl are read-only
   if(is_view && !is.null(ell)){
 
     range_rows <- lapply(ell$var_names, function(v){
@@ -120,16 +125,48 @@ output$build_range_method_choice_ui <- renderUI({
             column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
             column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
           ),
-          range_rows
+          range_rows,
+          tags$hr(style = "margin: 8px 0;"),
+          fluidRow(
+            column(width = 5, tags$span("Ellipsoid confidence level",
+                                        class = "text-widget-title")),
+            column(width = 4, tags$span(ell$cl,
+                                        class = "text-widget-inner text-center"))
+          )
       )
     )
   }
+
+  # cl belongs to the ellipsoid, not to a range method, so it lives here
+  # rather than inside build_range_method_ui. That panel only exists once a
+  # method is picked, and the radio comes back unselected every time a new
+  # ellipsoid enters the slot.
+  cl_owner(if(is.null(ell)) NULL else ell$ell_id)
+
+  cl_row <- fluidRow(
+    column(width = 5,
+           tags$div(class = "tooltip-label-row",
+                    tags$span("Ellipsoid confidence level",
+                              class = "text-widget-title"),
+                    tags$span(icon("circle-info"),
+                              title = instructions$build_cl_ell_tooltip,
+                              class = "tooltip-icon"))),
+    column(width = 4,
+           numericInput(inputId = "build_cl_ell",
+                        label = NULL,
+                        value = if(is.null(ell)) 0.95 else ell$cl,
+                        min = 0.5, max = 0.999,
+                        step = 0.01))
+  )
 
   box(title = tags$span("Ranges", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
       collapsed = !is.null(ell),
       p(instructions$build_range_choice, class = "text-instruction"),
+      tags$hr(style = "margin: 8px 0;"),
+      cl_row,
+      br(),
       radioButtons("build_range_method_choice",
                    label = tagList(tags$span("Select how to define the ranges for your ellipsoid ",
                                              class = "text-widget-title"),
@@ -159,25 +196,11 @@ output$build_range_method_ui <- renderUI({
   # No background data in virtual mode, defaults fall back to a standard scale
   has_bg_df <- !is.null(session_data$bg_df)
 
-  # Same confidence level row in every range method
-  cl_row <- fluidRow(
-    column(width = 5,
-           tags$div(class = "tooltip-label-row",
-                    tags$span("Confidence Level (%)",
-                              class = "text-widget-title text-center"),
-                    tags$span(icon("circle-info"),
-                              title = instructions$build_cl_range_tooltip,
-                              class = "tooltip-icon"))),
-    column(width = 4,
-           numericInput(inputId = "build_cl_range",
-                        label = NULL,
-                        value = 0.95,
-                        min = 0, max = 1,
-                        step = 0.1))
-  )
-
-  # Label changes once something is already in the working slot
-  build_label <- if(is.null(session_data$current_ellipsoid)){
+  # Isolated on purpose. Reading current_ellipsoid reactively rebuilds this
+  # whole panel on every covariance and centroid slider move, which resets
+  # the range inputs to their defaults mid-edit. The parent already tears
+  # this panel down whenever the slot changes, so the label stays correct.
+  build_label <- if(is.null(isolate(session_data$current_ellipsoid))){
     "Initialize Ellipsoid"
   } else {
     "Rebuild Ellipsoid"
@@ -186,10 +209,10 @@ output$build_range_method_ui <- renderUI({
   build_btn <- fluidRow(
     column(width = 12,
            div(class = "action-btn-row",
-           actionButton("build_init_ell_btn",
-                        build_label,
-                        class = "btn-continue"))
-           )
+               actionButton("build_init_ell_btn",
+                            build_label,
+                            class = "btn-continue"))
+    )
   )
 
   reset_btn <- fluidRow(
@@ -233,7 +256,7 @@ output$build_range_method_ui <- renderUI({
              )
            })
 
-           column(width = 12, header, var_rows, cl_row, reset_btn, br(), build_btn)
+           column(width = 12, header, var_rows, reset_btn, br(), build_btn)
          },
 
          "df" = {
@@ -328,10 +351,29 @@ output$build_range_method_ui <- renderUI({
              NULL
            }
 
-           column(width = 12, upload_row, range_rows, cl_row, reset_btn, br(), build_btn)
+           column(width = 12, upload_row, range_rows, reset_btn, br(), build_btn)
          },
 
          "stats" = {
+
+           # Stats needs its own cl. This one is the normal interval that
+           # becomes the ranges, it is not the ellipsoid cutoff, and editing
+           # it is a range edit like any other.
+           cl_row <- fluidRow(
+             column(width = 5,
+                    tags$div(class = "tooltip-label-row",
+                             tags$span("Range confidence level for range",
+                                       class = "text-widget-title text-center"),
+                             tags$span(icon("circle-info"),
+                                       title = instructions$build_cl_interval_tooltip,
+                                       class = "tooltip-icon"))),
+             column(width = 4,
+                    numericInput(inputId = "build_range_cl_stats",
+                                 label = NULL,
+                                 value = 0.95,
+                                 min = 0, max = 1,
+                                 step = 0.05))
+           )
 
            header1 <- fluidRow(
              column(width = 12,
@@ -519,7 +561,7 @@ range_preview <- reactive({
              if(is.null(val) || is.na(val)) 0 else val
            }), vars)
 
-           cl <- if(!is.null(input$build_cl_range)) input$build_cl_range else 0.95
+           cl <- if(!is.null(input$build_range_cl_stats)) input$build_range_cl_stats else 0.95
 
            range_stats <- ranges_from_stats(mean = means, sd = sds, cl = cl,
                                             expand_min = as.list(expand_min),
@@ -533,7 +575,8 @@ range_preview <- reactive({
                               mean = as.list(means),
                               sd = as.list(sds),
                               expand_min = as.list(expand_min),
-                              expand_max = as.list(expand_max)))
+                              expand_max = as.list(expand_max),
+                              cl = cl))
          }
   )
 })
@@ -545,7 +588,7 @@ observeEvent({
   vars <- session_data$vars
   list(
     input$build_range_method_choice,
-    input$build_cl_range,
+    input$build_range_cl_stats,
     lapply(vars, function(v) input[[paste0("build_min_", v)]]),
     lapply(vars, function(v) input[[paste0("build_max_", v)]]),
     lapply(vars, function(v) input[[paste0("build_mean_", v)]]),
@@ -601,8 +644,60 @@ observeEvent(input$build_reset_ranges_link, {
          }
   )
 
-  updateNumericInput(session, "build_cl_range", value = 0.95)
+  # Only the interval cl is reset here. The ellipsoid cl is not a range
+  # input, so Reset to defaults leaves it alone.
+  updateNumericInput(session, "build_range_cl_stats", value = 0.95)
 })
+
+
+# CONFIDENCE LEVEL --------------------------------------------------------
+
+# cl only rescales the boundary. Sigma and the centroid go straight back to
+# ellipsoid_calculator(), which is why this is applied live and never marks
+# the ranges dirty.
+observeEvent(input$build_cl_ell, {
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+  req(!identical(ell_mode(), "view"))
+
+  # The box on screen still belongs to a previous ellipsoid
+  if(!identical(cl_owner(), ell$ell_id)){
+    return()
+  }
+
+  cl <- input$build_cl_ell
+
+  if(is.null(cl) || is.na(cl) || cl <= 0 || cl >= 1){
+    return()
+  }
+
+  if(abs(cl - ell$cl) < 1e-8){
+    return()
+  }
+
+  updated_ell <- tryCatch(
+    ellipsoid_calculator(cov_matrix = ell$cov_matrix,
+                         centroid = ell$centroid,
+                         cl = cl,
+                         verbose = FALSE),
+    error = function(e){
+      showNotification(paste("Confidence level update failed:", e$message),
+                       type = "error", duration = 5)
+      NULL
+    }
+  )
+
+  req(updated_ell)
+
+  # ellipsoid_calculator() does not carry ranges, build_ellipsoid() assigns
+  # them afterwards. sigma is (max - min) / 6 and does not depend on cl, so
+  # the ranges this ellipsoid was built from are still the right ones.
+  updated_ell$ranges <- ell$ranges
+
+  session_data$current_ellipsoid <- carry_ell_meta(updated_ell, ell)
+
+}, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 
 # ELLIPSOID BUILD ---------------------------------------------------------
@@ -624,7 +719,14 @@ observeEvent(input$build_init_ell_btn, {
                             row.names = c("min", "max"))
   colnames(range_df) <- vars
 
-  cl <- if(!is.null(input$build_cl_range)) input$build_cl_range else 0.95
+  # The cl box is always on screen, so whatever it shows is what gets built.
+  # A rebuild keeps the cl the user last set instead of dropping back to a
+  # default, because the box is redrawn from the working ellipsoid.
+  cl <- input$build_cl_ell
+
+  if(is.null(cl) || is.na(cl) || cl <= 0 || cl >= 1){
+    cl <- 0.95
+  }
 
   new_ell <- tryCatch(
     build_ellipsoid(range = range_df, cl = cl, verbose = FALSE),
@@ -740,6 +842,10 @@ output$build_ellipsoid_library_ui <- renderUI({
                     onclick = sprintf("Shiny.setInputValue('build_ell_add', '%s', {priority: 'event'}); return false;", id),
                     title = paste0("New copy from ", ell$ell_name),
                     icon("plus")),
+             tags$a(href = "#",
+                    onclick = sprintf("Shiny.setInputValue('build_ell_export', '%s', {priority: 'event'}); return false;", id),
+                    title = paste0("Export ", ell$ell_name),
+                    icon("download")),
              tags$a(href = "#",
                     class = "ell-action-danger",
                     onclick = sprintf("Shiny.setInputValue('build_ell_delete', '%s', {priority: 'event'}); return false;", id),
@@ -1006,6 +1112,81 @@ observeEvent(input$build_next_step_btn, {
 
   updateTabItems(session, "sidebar_menu", selected = target)
 })
+
+
+# ELLIPSOID EXPORT --------------------------------------------------------
+
+# Default file name is the internal id plus today, so an exported file can
+# always be traced back to the library entry it came from. The user can
+# overwrite it in the modal.
+ell_export_name <- function(ell){
+  paste0(ell$ell_id, "_", format(Sys.Date(), "%Y%m%d"))
+}
+
+# The working ellipsoid may not be in the library yet, so fall back to it
+ell_export_target <- function(id){
+  ell <- session_data$ellipsoid_list[[id]]
+  cur <- session_data$current_ellipsoid
+  if(is.null(ell) && !is.null(cur) && identical(cur$ell_id, id)){
+    ell <- cur
+  }
+  ell
+}
+
+observeEvent(input$build_ell_export, {
+
+  ell <- ell_export_target(input$build_ell_export)
+  req(ell)
+
+  session_data$pending_ell_export <- input$build_ell_export
+
+  showModal(modalDialog(
+    title = paste0("Export ", ell$ell_name),
+    p(instructions$build_export_ell, class = "text-instruction"),
+    textInput("build_ell_export_name",
+              label = NULL,
+              value = ell_export_name(ell),
+              placeholder = ell_export_name(ell)),
+    tags$small("Saved as .rds. Letters, numbers, dashes and underscores only.",
+               class = "text-muted-small"),
+    footer = tagList(
+      modalButton("Close"),
+      downloadButton("build_ell_export_dl", "Download", class = "btn-save")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+output$build_ell_export_dl <- downloadHandler(
+
+  filename = function(){
+    ell <- ell_export_target(session_data$pending_ell_export)
+    nm <- input$build_ell_export_name
+    if(is.null(nm) || !nzchar(trimws(nm))){
+      nm <- ell_export_name(ell)
+    }
+    nm <- gsub("\\s+", "_", trimws(nm))
+    nm <- gsub("[^A-Za-z0-9._-]", "", nm)
+    nm <- sub("\\.rds$", "", nm, ignore.case = TRUE)
+    paste0(substr(nm, 1, 50), ".rds")
+  },
+
+  content = function(file){
+
+    ell <- ell_export_target(session_data$pending_ell_export)
+
+    if(is.null(ell)){
+      stop("No ellipsoid available to export.")
+    }
+
+    # save_nicheR() appends .rds when the path does not end in it, and the
+    # temp path Shiny provides has no extension. Writing straight to file
+    # would leave the download empty, so write beside it and rename.
+    tmp <- paste0(file, ".rds")
+    save_nicheR(object = ell, file = tmp, overwrite = TRUE)
+    file.rename(tmp, file)
+  }
+)
 
 
 # COVARIANCE --------------------------------------------------------------

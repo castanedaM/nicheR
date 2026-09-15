@@ -177,9 +177,9 @@ output$generate_controls_ui <- renderUI({
                radioButtons("generate_sampling",
                             label = NULL,
                             choiceNames = list(
-                              tags$span("Direct", class = "text-widget-inner"),
-                              tags$span("Inverse", class = "text-widget-inner"),
-                              tags$span("Uniform", class = "text-widget-inner")
+                              tags$span("Centroid", class = "text-widget-inner"),
+                              tags$span("Edge", class = "text-widget-inner"),
+                              tags$span("Random", class = "text-widget-inner")
                             ),
                             choiceValues = c("centroid", "edge", "random"),
                             selected = "centroid",
@@ -376,7 +376,7 @@ generate_virtual_controls <- function(){
 output$generate_effect_ui <- renderUI({
   truncate <- !identical(input$generate_truncate, "FALSE")
 
-  effect_labels <- if(truncate) c("Direct", "Inverse", "Uniform") else "Direct"
+  effect_labels <- if(truncate) c("Centroid", "Edge", "Random") else "Centroid"
   effect_values <- if(truncate) c("direct", "inverse", "uniform") else "direct"
 
   keep <- if(!is.null(input$generate_effect) &&

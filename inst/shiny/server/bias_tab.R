@@ -533,7 +533,7 @@ output$bias_apply_ui <- renderUI({
       fluidRow(
         column(width = 12,
                tags$div(class = "tooltip-label-row",
-                        tags$span("Effect direction", class = "text-widget-title"),
+                        tags$span("Prediction layer effect direction", class = "text-widget-title"),
                         tags$span(icon("circle-info"),
                                   title = instructions$bias_apply_direction_tooltip,
                                   class = "tooltip-icon")),

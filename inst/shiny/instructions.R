@@ -142,9 +142,6 @@ with optional expansion.",
   build_range_stats_tooltip = "Derive ranges from mean and standard deviation,
 either from your background data or entered manually.",
 
-  build_cl_range_tooltip = "Confidence level used with the chi-square distribution
-when building the ellipsoid. Higher values produce a larger ellipsoid.",
-
   build_expand_range_tooltip = "Percentage to widen the range outward from the
 observed or computed bounds. Can be negative to shrink the range inward.",
 
@@ -157,6 +154,27 @@ selected variables. Column names must match exactly.",
   build_range_invalid = "Please check your range inputs before building. Every
 variable needs a valid minimum below its maximum.",
 
+  build_cl_ell_tooltip = paste0(
+    "Sets the chi-square cutoff that defines the boundary of the ellipsoid. ",
+    "A higher value draws a larger ellipsoid around the same centroid. ",
+    "It does not change the centroid, the covariances, or the ranges, so it ",
+    "applies right away and does not need a rebuild. Default is 0.95."
+  ),
+
+  build_cl_interval_tooltip = paste0(
+    "Used only by From Stats. It is the normal interval around each mean ",
+    "that becomes the minimum and maximum, so 0.95 gives mean +/- 1.96 SD. ",
+    "This is a range input, not the ellipsoid boundary, so changing it ",
+    "means rebuilding the ellipsoid. Use 0.9973 if you want the ellipsoid's ",
+    "marginal SD to match the SD you typed."
+  ),
+
+  build_export_ell = paste0(
+    "Saves this ellipsoid to an .rds file, including its ranges, covariances, ",
+    "centroid, and confidence level. Read it back with read_nicheR(). The ",
+    "name starts as the internal ID plus today's date so the file can be ",
+    "traced back to the library, but you can change it."
+  ),
 
   # BUILD TAB: COVARIANCE --------------------------------------------------
 
@@ -177,7 +195,6 @@ variable, and the ellipsoid follows. Use Reset all to return to the centroid
 this version started from. Click 'Set centroid' when ready."),
 
   build_centroid_set = "Centroid has been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to original values or those of their root",
-
 
   # BUILD TAB: LIBRARY -----------------------------------------------------
 
@@ -292,12 +309,13 @@ Inverse: higher values decrease sampling probability.",
 
   bias_layer_tooltip = "Layer must be a suitability surface with values in [0, 1].",
 
-  bias_apply_direction_tooltip = "Direct: prediction x bias.
-Inverse: prediction x (1 - bias).",
-
   bias_ellipsoid_select_tooltip = "Choose which ellipsoid's prediction to
 apply bias to, or All versions to apply to every one.",
 
+  bias_apply_direction_tooltip = paste0(
+    "Direct samples toward high prediction values, inverse away from them, ",
+    "using (max + min) - x. Changes the prediction, not the bias surface."
+  ),
 
   # GENERATE TAB -----------------------------------------------------------
 

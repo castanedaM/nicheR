@@ -228,7 +228,7 @@ dashboardPage(
                         icon("user-group"), "If you use nicheR in your research, please cite:"),
                  br(),
                  tags$code(
-                   "Castaneda-Guzman M, Hughes C, Paansri P, Cobos M E (2026). ",
+                   "Castaneda-Guzman M., Hughes C., Paansri P., Cobos M. E. (2026). ",
                    "nicheR: Ellipsoid-based ecological niche modeling. ",
                    "R package version 0.1.0. DOI: ",
                    tags$a("10.32614/CRAN.package.nicheR",
