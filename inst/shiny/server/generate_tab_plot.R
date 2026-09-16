@@ -866,7 +866,9 @@ observeEvent(input$generate_open_export_modal, {
 
     footer = tagList(
       modalButton("Cancel"),
-      downloadButton("generate_confirm_export", "Export", class = "btn-save")
+      downloadButton("generate_confirm_export", "Export", class = "btn-save",
+                     onclick = "Shiny.setInputValue('generate_export_done',
+                     Math.random(), {priority: 'event'});")
     ),
     easyClose = TRUE
   ))
@@ -1072,3 +1074,11 @@ output$generate_confirm_export <- downloadHandler(
     )
   }
 )
+
+observeEvent(input$generate_export_done, {
+
+  removeModal()
+
+  showNotification("Figure exported successfully.",
+                   type = "message", duration = 4)
+})

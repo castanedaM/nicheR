@@ -345,7 +345,9 @@ observeEvent(input$bias_open_export_modal, {
 
     footer = tagList(
       modalButton("Cancel"),
-      downloadButton("bias_confirm_export", "Export", class = "btn-save")
+      downloadButton("bias_confirm_export", "Export", class = "btn-save",
+                     onclick = "Shiny.setInputValue('bias_export_done',
+                     Math.random(), {priority: 'event'});")
     ),
     easyClose = TRUE
   ))
@@ -516,3 +518,12 @@ output$bias_confirm_export <- downloadHandler(
     )
   }
 )
+
+
+observeEvent(input$bias_export_done, {
+
+  removeModal()
+
+  showNotification("Figure exported successfully.",
+                   type = "message", duration = 4)
+})
