@@ -2,7 +2,7 @@
 % Please edit documentation in R/apply_bias.R
 \name{apply_bias}
 \alias{apply_bias}
-\title{Apply sampling bias to suitability surfaces}
+\title{Apply sampling bias to prediction surfaces}
 \usage{
 apply_bias(prepared_bias, prediction, prediction_layer = NULL,
                   effect_direction = "direct", verbose = TRUE)
@@ -12,49 +12,63 @@ apply_bias(prepared_bias, prediction, prediction_layer = NULL,
 surface, or the list output from \code{\link{prepare_bias}} containing
 a \code{composite_surface} element.}
 
-\item{prediction}{A \code{SpatRaster} containing one or more suitability
-layers with values in \code{[0, 1]}.}
+\item{prediction}{A \code{SpatRaster} containing one or more prediction
+layers, for example suitability or Mahalanobis distance.}
 
 \item{prediction_layer}{Character. Name of the layer to extract from
 \code{prediction} when it contains multiple layers. If \code{NULL}
 (default) and \code{prediction} has a single layer, that layer is used.}
 
-\item{effect_direction}{Character. How the bias surface is applied to the
-suitability layer. \code{"direct"} (default) multiplies suitability by
-the bias directly — higher bias increases sampling probability.
-\code{"inverse"} multiplies by \eqn{1 - \text{bias}} — higher bias
-decreases sampling probability.}
+\item{effect_direction}{Character. How the prediction layer enters the
+product. \code{"direct"} (default) uses the prediction as is, so high
+prediction values increase sampling probability. \code{"inverse"}
+reflects the prediction around the midpoint of its own range,
+\eqn{(\max + \min) - x}, so high values decrease sampling probability.
+To reverse the bias surface instead, use \code{effect_direction} in
+\code{\link{prepare_bias}}.}
 
 \item{verbose}{Logical. If \code{TRUE} (default), prints progress messages.}
 }
 \value{
 A named list of class \code{"nicheR_biased_surface"} containing:
 \itemize{
-  \item One \code{SpatRaster} per input suitability layer, named
+  \item One \code{SpatRaster} per input prediction layer, named
   \code{"<layer>_biased"}. The raster layer name includes the applied
   direction (e.g., \code{"suitability_biased_direct"}).
   \item \code{combination_formula}: a character string describing the
   operation applied (e.g., \code{"suitability * bias"} or
-  \code{"suitability * (1-bias)"}).
+  \code{"(1 - suitability) * bias"}), including the reflection constant
+  actually used.
 }
 }
 \description{
-Applies a prepared composite sampling bias surface to a suitability raster
-by multiplication. The bias surface is aligned to the suitability grid when
-needed and the result is cropped and masked to the suitability domain. The
-output is a product of suitability and bias and is therefore no longer
-interpretable as a probability.
+Applies a prepared composite sampling bias surface to a prediction raster
+by multiplication. The bias surface is aligned to the prediction grid when
+needed and the result is cropped and masked to the prediction domain. The
+output is a product of the prediction and the bias and is therefore no
+longer interpretable as a probability.
 }
 \details{
 The function performs the following steps:
 \enumerate{
   \item Extracts the composite bias surface from \code{prepared_bias}.
-  \item Verifies both bias and suitability values are within \code{[0, 1]}.
-  \item Aligns the bias surface to the suitability grid if geometries differ,
-  using \code{terra::resample()} with nearest-neighbor interpolation.
-  \item Multiplies suitability by the (possibly inverted) bias surface.
-  \item Crops and masks the output to the suitability domain.
+  \item Verifies the bias values are within \code{[0, 1]} and that the
+  prediction values are non-negative.
+  \item Aligns the bias surface to the prediction grid if geometries
+  differ, using \code{terra::resample()} with nearest-neighbor
+  interpolation.
+  \item Reflects the prediction when \code{effect_direction = "inverse"}.
+  \item Multiplies the (possibly reflected) prediction by the bias surface.
+  \item Crops and masks the output to the prediction domain.
 }
+
+The reflection is \eqn{(\max + \min) - x}, with \eqn{\min} and \eqn{\max}
+taken from the layer being inverted. It preserves the units and the range
+of the layer, does not rescale it, and reduces to \eqn{1 - x} when the
+layer runs from 0 to 1. Because the bounds come from the raster supplied,
+an inverted layer depends on the extent of that raster. Unbounded layers
+such as Mahalanobis distance are the case where this matters most, since
+the maximum is set by the most extreme cell in the study area.
 }
 \examples{
 pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
@@ -63,16 +77,24 @@ pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
 bias_rast <- terra::rast(system.file("extdata/ma_biases.tif",
                                      package = "nicheR"))
 
-# 1. Prepare and standardized bias layers
+# 1. Prepare and standardize bias layers
 bias <- prepare_bias(bias_surface = bias_rast[[1]],
                      effect_direction = "direct")
 
-# 2. Apply bias into suitability layer
+# 2. Apply bias to the suitability layer
 biased_pred <- apply_bias(prepared_bias = bias,
                           prediction = pred_rast,
                           prediction_layer = "suitability")
 
 terra::plot(biased_pred$suitability_biased)
+
+# 3. Sample away from the niche instead
+biased_inv <- apply_bias(prepared_bias = bias,
+                         prediction = pred_rast,
+                         prediction_layer = "suitability",
+                         effect_direction = "inverse")
+
+biased_inv$combination_formula
 
 }
 \seealso{
