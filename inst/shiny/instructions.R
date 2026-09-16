@@ -229,6 +229,16 @@ your ellipsoid."),
 version of the app. It has been loaded, but bias layers may be missing and
 ellipsoid ids may need checking."),
 
+  build_range_locked = paste0(
+    "These are the ranges this ellipsoid was built from. To use different ",
+    "ranges, start over."
+  ),
+
+  build_start_over = paste0(
+    "This clears the working ellipsoid and takes you back to choosing a ",
+    "range method."
+  ),
+
   # PREDICT TAB ------------------------------------------------------------
 
   predict_adjust_trunc_tooltip = "Adjust the level of truncation within the

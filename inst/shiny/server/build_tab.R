@@ -9,7 +9,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 09/15/2026
+# Date last updated: 09/16/2026
 
 
 # DEBUG -------------------------------------------------------------------
@@ -59,7 +59,6 @@ set_working_ellipsoid <- function(ell, mode = "edit"){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
-  range_dirty(FALSE)
 }
 
 # Empties the working slot. Separate from the above so every caller goes
@@ -73,7 +72,6 @@ clear_working_ellipsoid <- function(){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
-  range_dirty(FALSE)
 }
 
 carry_ell_meta <- function(new_ell, old_ell){
@@ -84,11 +82,6 @@ carry_ell_meta <- function(new_ell, old_ell){
   new_ell$range_inputs <- old_ell$range_inputs
   new_ell
 }
-
-# TRUE once the user edits a range input after an ellipsoid is in the slot.
-# Range lines follow the live inputs while this is TRUE, so edits preview
-# without being committed until Rebuild.
-range_dirty <- reactiveVal(FALSE)
 
 # RANGES ------------------------------------------------------------------
 
@@ -101,10 +94,13 @@ output$build_range_method_choice_ui <- renderUI({
   ell <- isolate(session_data$current_ellipsoid)
   is_view <- identical(ell_mode(), "view")
 
-  # View mode, ranges and cl are read-only
-  if(is_view && !is.null(ell)){
-
-    range_rows <- lapply(ell$var_names, function(v){
+  # Read-only range table, shared by view mode and edit mode. Ranges are only
+  # editable while the slot is empty, changing them later goes through
+  # Start over.
+  range_rows <- if(is.null(ell)){
+    NULL
+  } else {
+    lapply(ell$var_names, function(v){
       fluidRow(
         column(width = 4, tags$span(v, class = "text-widget-inner")),
         column(width = 4, tags$span(round(ell$ranges["min", v], 2),
@@ -113,6 +109,16 @@ output$build_range_method_choice_ui <- renderUI({
                                     class = "text-widget-inner text-center"))
       )
     })
+  }
+
+  range_header <- fluidRow(
+    column(width = 4, tags$span("Variable", class = "text-widget-title text-center")),
+    column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
+    column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
+  )
+
+  # View mode, ranges and cl are read-only
+  if(is_view && !is.null(ell)){
 
     return(
       box(title = tags$span("Ranges", class = "text-section-header"),
@@ -120,11 +126,7 @@ output$build_range_method_choice_ui <- renderUI({
           collapsible = TRUE,
           collapsed = TRUE,
           p(instructions$build_view_only, class = "text-instruction"),
-          fluidRow(
-            column(width = 4, tags$span("Variable", class = "text-widget-title text-center")),
-            column(width = 4, tags$span("Min", class = "text-widget-title text-center")),
-            column(width = 4, tags$span("Max", class = "text-widget-title text-center"))
-          ),
+          range_header,
           range_rows,
           tags$hr(style = "margin: 8px 0;"),
           fluidRow(
@@ -159,10 +161,39 @@ output$build_range_method_choice_ui <- renderUI({
                         step = 0.01))
   )
 
+  # Edit mode with an ellipsoid in the slot. The ranges are fixed, so the
+  # method radio is replaced by one explicit way out. Open by default,
+  # since cl is now the only thing in here the user can still change.
+  if(!is.null(ell)){
+
+    return(
+      box(title = tags$span("Ranges", class = "text-section-header"),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = FALSE,
+          p(instructions$build_range_locked, class = "text-instruction"),
+          range_header,
+          range_rows,
+          tags$hr(style = "margin: 8px 0;"),
+          cl_row,
+          br(),
+          fluidRow(
+            column(width = 12,
+                   div(class = "action-btn-row",
+                       actionButton("build_start_over_btn",
+                                    label = tagList(icon("rotate-left"),
+                                                    "Start over"),
+                                    class = "btn-cancel")))
+          )
+      )
+    )
+  }
+
+  # Empty slot, pick a method and build
   box(title = tags$span("Ranges", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = !is.null(ell),
+      collapsed = FALSE,
       p(instructions$build_range_choice, class = "text-instruction"),
       tags$hr(style = "margin: 8px 0;"),
       cl_row,
@@ -196,15 +227,10 @@ output$build_range_method_ui <- renderUI({
   # No background data in virtual mode, defaults fall back to a standard scale
   has_bg_df <- !is.null(session_data$bg_df)
 
-  # Isolated on purpose. Reading current_ellipsoid reactively rebuilds this
-  # whole panel on every covariance and centroid slider move, which resets
-  # the range inputs to their defaults mid-edit. The parent already tears
-  # this panel down whenever the slot changes, so the label stays correct.
-  build_label <- if(is.null(isolate(session_data$current_ellipsoid))){
-    "Initialize Ellipsoid"
-  } else {
-    "Rebuild Ellipsoid"
-  }
+  # This panel only renders when the slot is empty, so the button is always
+  # the first build. Rebuilding in place is gone, ranges change through
+  # Start over.
+  build_label <- "Initialize Ellipsoid"
 
   build_btn <- fluidRow(
     column(width = 12,
@@ -581,27 +607,6 @@ range_preview <- reactive({
   )
 })
 
-# Marks the range inputs as edited so the plot previews them. Ignores the
-# initial render, which fires once as the widgets are created.
-observeEvent({
-  req(session_data$vars)
-  vars <- session_data$vars
-  list(
-    input$build_range_method_choice,
-    input$build_range_cl_stats,
-    lapply(vars, function(v) input[[paste0("build_min_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_max_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_mean_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_sd_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_expand_min_df_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_expand_max_df_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_expand_min_stats_", v)]]),
-    lapply(vars, function(v) input[[paste0("build_expand_max_stats_", v)]])
-  )
-}, {
-  if(!is.null(session_data$current_ellipsoid)) range_dirty(TRUE)
-}, ignoreInit = TRUE)
-
 observeEvent(input$build_reset_ranges_link, {
 
   req(input$build_range_method_choice, session_data$vars)
@@ -649,7 +654,56 @@ observeEvent(input$build_reset_ranges_link, {
   updateNumericInput(session, "build_range_cl_stats", value = 0.95)
 })
 
+observeEvent(input$build_start_over_btn, {
 
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  is_saved <- ell$ell_id %in% names(session_data$ellipsoid_list)
+
+  showModal(modalDialog(
+    title = "Start over?",
+    p(instructions$build_start_over, class = "text-instruction"),
+    if(is_saved){
+      p(paste0(ell$ell_name, " stays in the library and can be loaded again. ",
+               "Only the working copy is cleared."),
+        class = "text-muted-small")
+    } else {
+      p(paste0(ell$ell_name, " has not been saved, so it will be lost."),
+        class = "text-muted-small")
+    },
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("build_confirm_start_over_btn",
+                   "Yes, start over",
+                   class = "btn-cancel")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$build_confirm_start_over_btn, {
+
+  removeModal()
+
+  ell <- session_data$current_ellipsoid
+
+  # An unsaved ellipsoid becomes unreachable the moment the slot is cleared,
+  # so anything keyed to its id goes with it. A saved one keeps its entries,
+  # the library still points at it.
+  if(!is.null(ell) && !(ell$ell_id %in% names(session_data$ellipsoid_list))){
+    session_data$ellipsoid_prediction_list[[ell$ell_id]] <- NULL
+    session_data$ellipsoid_prediction_list_biased[[ell$ell_id]] <- NULL
+  }
+
+  clear_working_ellipsoid()
+
+  session_data$session_range <- NULL
+  session_data$df_range <- NULL
+
+  showNotification("Cleared. Choose how to define the new ranges.",
+                   type = "message", duration = 4)
+})
 # CONFIDENCE LEVEL --------------------------------------------------------
 
 # cl only rescales the boundary. Sigma and the centroid go straight back to
@@ -739,17 +793,9 @@ observeEvent(input$build_init_ell_btn, {
 
   req(new_ell)
 
-  # Keep the identity if we are rebuilding a version that is already saved,
-  # so the library shows Update rather than Save. Otherwise tag a new one.
-  cur <- session_data$current_ellipsoid
-  is_saved <- !is.null(cur) && cur$ell_id %in% names(session_data$ellipsoid_list)
-
-  if(is_saved){
-    new_ell$ell_id <- cur$ell_id
-    new_ell$ell_name <- cur$ell_name
-  } else {
-    new_ell <- tag_ellipsoid(new_ell)
-  }
+  # Every build starts a new ellipsoid now. Rebuilding in place is gone,
+  # ranges only change by starting over, and that empties the slot first.
+  new_ell <- tag_ellipsoid(new_ell)
 
   # Store the range inputs so this ellipsoid can be reloaded and edited later
   new_ell$range_method <- ranges$inputs$method

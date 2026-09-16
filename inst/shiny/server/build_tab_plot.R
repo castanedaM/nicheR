@@ -210,7 +210,7 @@ collect_plot_settings <- function(){
 
   ranges <- if(is.null(cur_ell)){
     live_ranges
-  } else if(isTRUE(range_dirty()) && !is.null(live_ranges)){
+  } else if(!is.null(live_ranges)){
     live_ranges
   } else if(!is.null(cur_ell$range_inputs)){
     list(mins = cur_ell$range_inputs$min,
