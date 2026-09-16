@@ -482,10 +482,10 @@ output$build_gspace_plot_top_options_ui <- renderUI({
   has_ell <- !is.null(isolate(session_data$current_ellipsoid))
 
   show_choices_names <- if(has_ell){
-    list(tags$span("Within range", class = "text-widget-inner"),
+    list(tags$span("Within ranges", class = "text-widget-inner"),
          tags$span("Suitable area", class = "text-widget-inner"))
   } else {
-    list(tags$span("Within range", class = "text-widget-inner"))
+    list(tags$span("Within ranges", class = "text-widget-inner"))
   }
   show_choices_values <- if(has_ell) c("range", "suitable") else "range"
 
@@ -613,7 +613,7 @@ output$build_gspace_plot <- renderPlot({
       for(v in vars){
         if(has_range){
           build_draw_gspace_panel(binarize_by_range(v), s,
-                                  title = paste0(v, " (within range)"),
+                                  title = paste0(v, " (within ranges)"),
                                   col = c(outside_col, within_col))
         } else {
           build_draw_gspace_panel(rast[[v]], s, title = v)
@@ -624,7 +624,7 @@ output$build_gspace_plot <- renderPlot({
       par(mar = c(4, 4, 2, 4))
       if(has_range){
         build_draw_gspace_panel(binarize_by_range(lyr), s,
-                                title = paste0(lyr, " (within range)"),
+                                title = paste0(lyr, " (within ranges)"),
                                 col = c(outside_col, within_col))
       } else {
         build_draw_gspace_panel(rast[[lyr]], s, title = lyr)
