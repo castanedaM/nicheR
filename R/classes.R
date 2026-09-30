@@ -2,6 +2,7 @@
 #'
 #' Internal helper to create a nicheR_ellipsoid object.
 #'
+#' @param ranges user specified ranges
 #' @param dimensions The number of variables/dimensions.
 #' @param var_names Names of the original variables.
 #' @param centroid The numeric center vector.
@@ -15,6 +16,7 @@
 #' @param axes_coordinates List of vertex matrices.
 #' @param volume Calculated hyper-volume.
 #' @param cov_limits Axis-aligned limits.
+#' @param cov_limits_remaining remaining available limits for axis.
 #'
 #' @return
 #' An object of class \code{nicheR_ellipsoid} with the fields described above.
@@ -79,8 +81,6 @@ new_nicheR_ellipsoid <- function(ranges, dimensions, var_names, centroid, cov_ma
 #'
 #' @keywords internal
 #'
-#' @export
-
 new_nicheR_community <- function(ellipse_community, reference, pattern, n,
                                  smallest_proportion, largest_proportion = NA,
                                  bias = NA, thin_background = NA,

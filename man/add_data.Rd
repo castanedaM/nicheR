@@ -5,10 +5,10 @@
 \title{Add occurrence points or other data to an existing E-space plot}
 \usage{
 add_data(data, x, y,
-                pts_col = "#000000",pts_alpha  = 1,
-                col_layer = NULL,
-                pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
-                pch = 1, cex = 1, bg_sample = NULL, ...)
+ pts_col = "#000000",pts_alpha  = 1,
+ col_layer = NULL,
+ pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
+ pch = 1, cex = 1, bg_sample = NULL, ...)
 }
 \arguments{
 \item{data}{A data frame containing the points to plot. Must include
@@ -25,7 +25,7 @@ columns matching \code{x} and \code{y}, and \code{col_layer} if provided.}
 \code{col_layer} is \code{NULL}. Default is \code{1} (fully opaque).}
 
 \item{col_layer}{Character or \code{NULL}. Name of a column in \code{data}
-to use for coloring points by a continuous variable. If \code{NULL}
+ to use for coloring points by a continuous variable. If \code{NULL}
 (default), all points are drawn with \code{pts_col}.}
 
 \item{pal}{A color palette function or character vector of colors used when
@@ -46,7 +46,7 @@ plotting. Useful for large data frames. Default is \code{NULL} (plot all).}
 }
 \value{
 Called for its side effect of adding points to the current plot.
-  Returns \code{NULL} invisibly.
+ Returns \code{NULL} invisibly.
 }
 \description{
 Adds points to an existing environmental space plot created with
@@ -65,22 +65,22 @@ data("back_data", package = "nicheR")
 
 # Open base plot then add centroid as a cross
 plot_ellipsoid(ref_ellipse,
-               background = back_data,
-               col_ell = "#e10000", col_bg = "grey80",
-               lwd = 2, pch = 20, cex_bg = 0.4,
-               xlab = "Bio1", ylab = "Bio12")
+ background = back_data,
+ col_ell = "#e10000", col_bg = "grey80",
+ lwd = 2, pch = 20, cex_bg = 0.4,
+ xlab = "Bio1", ylab = "Bio12")
 
 # Add points colored by suitability on top of background
 pred_df <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
 plot_ellipsoid(ref_ellipse,
-               background = back_data,
-               col_ell = "#e10000", col_bg = "grey80",
-               lwd = 2, pch = 20, cex_bg = 0.4,
-               xlab = "Bio1", ylab = "Bio12")
+ background = back_data,
+ col_ell = "#e10000", col_bg = "grey80",
+ lwd = 2, pch = 20, cex_bg = 0.4,
+ xlab = "Bio1", ylab = "Bio12")
 add_data(pred_df,
-         x = "bio_1", y = "bio_12",
-         col_layer = "suitability",
-         pch = 20, cex = 0.5)
+ x = "bio_1", y = "bio_12",
+ col_layer = "suitability",
+ pch = 20, cex = 0.5)
 
 }
 \seealso{

@@ -8,89 +8,89 @@
 #' data onto the plot after calling this function.
 #'
 #' @usage plot_ellipsoid(object, background = NULL, prediction = NULL,
-#'                dim = c(1, 2), col_layer = NULL,
-#'                pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
-#'                bg_sample = NULL,
-#'                lty = 1, lwd = 1, col_ell = "#000000",col_bg = "#8A8A8A",
-#'                pch = 1, alpha_bg = 1, alpha_ell = 1,
-#'                cex_ell = 1, cex_bg = 1,
-#'                fixed_lims = NULL,...)
+#'  dim = c(1, 2), col_layer = NULL,
+#'  pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
+#'  bg_sample = NULL,
+#'  lty = 1, lwd = 1, col_ell = "#000000",col_bg = "#8A8A8A",
+#'  pch = 1, alpha_bg = 1, alpha_ell = 1,
+#'  cex_ell = 1, cex_bg = 1,
+#'  fixed_lims = NULL,...)
 #'
 #' @param object A \code{nicheR_ellipsoid} object containing at least
-#'   \code{centroid}, \code{cov_matrix}, \code{chi2_cutoff}, and
-#'   \code{var_names}.
+#' \code{centroid}, \code{cov_matrix}, \code{chi2_cutoff}, and
+#' \code{var_names}.
 #' @param background Optional data frame or matrix of background points to plot
-#'   behind the ellipsoid. Rows are observations, columns are environmental
-#'   variables. If provided, \code{prediction} is ignored.
+#'  behind the ellipsoid. Rows are observations, columns are environmental
+#'  variables. If provided, \code{prediction} is ignored.
 #' @param prediction Optional data frame or matrix of prediction values to plot.
-#'   Used when \code{background} is \code{NULL}. Can be colored by a continuous
-#'   variable using \code{col_layer}.
+#'  Used when \code{background} is \code{NULL}. Can be colored by a continuous
+#'  variable using \code{col_layer}.
 #' @param dim Integer vector of length 2. Indices of the two dimensions to plot.
-#'   Default is \code{c(1, 2)}.
+#'  Default is \code{c(1, 2)}.
 #' @param col_layer Character or \code{NULL}. Name of a column in
-#'   \code{prediction} to use for coloring points by a continuous variable.
-#'   If \code{NULL} (default), all prediction points are drawn with
-#'   \code{col_bg}.
+#' \code{prediction} to use for coloring points by a continuous variable.
+#'  If \code{NULL} (default), all prediction points are drawn with
+#' \code{col_bg}.
 #' @param pal A color palette function or character vector used when
-#'   \code{col_layer} is provided. Default is \code{hcl.colors(100, palette = "Viridis")}.
+#' \code{col_layer} is provided. Default is \code{hcl.colors(100, palette = "Viridis")}.
 #' @param rev_pal Logical. If \code{TRUE}, reverses the color palette. Default
-#'   is \code{FALSE}.
+#'  is \code{FALSE}.
 #' @param bg_sample Integer or \code{NULL}. If provided and the number of
-#'   background or prediction rows exceeds this value, a random subsample of
-#'   this size is drawn before plotting. Useful for large data frames. Default
-#'   is \code{NULL} (plot all points).
+#'  background or prediction rows exceeds this value, a random subsample of
+#'  this size is drawn before plotting. Useful for large data frames. Default
+#'  is \code{NULL} (plot all points).
 #' @param lty Integer. Line type for the ellipsoid boundary. Default is
-#'   \code{1} (solid).
+#' \code{1} (solid).
 #' @param lwd Numeric. Line width for the ellipsoid boundary. Default is
-#'   \code{1}.
+#' \code{1}.
 #' @param col_ell Character. Color of the ellipsoid boundary line. Default is
-#'   \code{"#000000"} (black).
+#' \code{"#000000"} (black).
 #' @param col_bg Character. Color of background or prediction points when
-#'   \code{col_layer} is \code{NULL}. Default is \code{"#8A8A8A"} (grey).
+#' \code{col_layer} is \code{NULL}. Default is \code{"#8A8A8A"} (grey).
 #' @param pch Integer or character. Point symbol for background or prediction
-#'   points. Default is \code{1}.
+#'  points. Default is \code{1}.
 #' @param alpha_bg Numeric in \code{[0, 1]}. Transparency of background or
-#'   prediction points. Default is \code{1} (fully opaque).
+#'  prediction points. Default is \code{1} (fully opaque).
 #' @param alpha_ell Numeric in \code{[0, 1]}. Transparency of the ellipsoid
-#'   boundary line. Default is \code{1} (fully opaque).
+#'  boundary line. Default is \code{1} (fully opaque).
 #' @param cex_ell Numeric. Size scaling for the ellipsoid boundary line.
-#'   Default is \code{1}.
+#'  Default is \code{1}.
 #' @param cex_bg Numeric. Size scaling for background or prediction points.
-#'   Default is \code{1}.
+#'  Default is \code{1}.
 #' @param fixed_lims A named list with elements \code{xlim} and \code{ylim},
-#'   each a numeric vector of length 2. When provided, overrides the limits
-#'   computed by \code{safe_lims()}. Intended for use by
-#'   \code{\link{plot_ellipsoid_pairs}} to enforce consistent axis scales across
-#'   panels, but can also be set manually by the user. Default is \code{NULL}
-#'   (limits computed from data).
+#'  each a numeric vector of length 2. When provided, overrides the limits
+#'  computed by \code{safe_lims()}. Intended for use by
+#' \code{\link{plot_ellipsoid_pairs}} to enforce consistent axis scales across
+#'  panels, but can also be set manually by the user. Default is \code{NULL}
+#' (limits computed from data).
 #' @param ... Additional graphical parameters passed to
-#'   \code{\link[graphics]{plot}}.
+#' \code{\link[graphics]{plot}}.
 #'
 #' @details
 #' The function has three display modes depending on what is provided:
 #' \enumerate{
-#'   \item \strong{Background only} (\code{background} is not \code{NULL}):
-#'   plots background points in \code{col_bg} with the ellipsoid boundary
-#'   overlaid.
-#'   \item \strong{Prediction surface} (\code{background} is \code{NULL},
-#'   \code{prediction} is not \code{NULL}): plots prediction points, optionally
-#'   colored by \code{col_layer} using values mapped onto \code{pal}.
-#'   When \code{col_layer} is provided, points outside the ellipsoid (zero or
-#'   \code{NA} in \code{col_layer}, as produced by truncated prediction types)
-#'   are drawn in \code{col_bg} behind the colored interior points. Axis limits
-#'   are computed from the full \code{prediction} extent so the view is never
-#'   collapsed to the ellipsoid interior.
-#'   \item \strong{Ellipsoid only} (both \code{NULL}): plots the ellipsoid
-#'   boundary alone with no background.
+#' \item \strong{Background only} (\code{background} is not \code{NULL}):
+#'  plots background points in \code{col_bg} with the ellipsoid boundary
+#'  overlaid.
+#' \item \strong{Prediction surface} (\code{background} is \code{NULL},
+#' \code{prediction} is not \code{NULL}): plots prediction points, optionally
+#'  colored by \code{col_layer} using values mapped onto \code{pal}.
+#'  When \code{col_layer} is provided, points outside the ellipsoid (zero or
+#' \code{NA} in \code{col_layer}, as produced by truncated prediction types)
+#'  are drawn in \code{col_bg} behind the colored interior points. Axis limits
+#'  are computed from the full \code{prediction} extent so the view is never
+#'  collapsed to the ellipsoid interior.
+#' \item \strong{Ellipsoid only} (both \code{NULL}): plots the ellipsoid
+#'  boundary alone with no background.
 #' }
 #'
 #' @return Called for its side effect of creating a plot. Returns \code{NULL}
-#'   invisibly.
+#'  invisibly.
 #'
 #' @seealso \code{\link{add_data}} to overlay occurrence points,
-#'   \code{\link{add_ellipsoid}} to overlay additional ellipsoid boundaries,
-#'   \code{\link{plot_ellipsoid_pairs}} for pairwise plots of all dimensions
-#'   \code{vignette("plotting_vignette", package = "nicheR")}
+#' \code{\link{add_ellipsoid}} to overlay additional ellipsoid boundaries,
+#' \code{\link{plot_ellipsoid_pairs}} for pairwise plots of all dimensions
+#' \code{vignette("plotting_vignette", package = "nicheR")}
 #'
 #' @importFrom graphics plot lines
 #' @importFrom grDevices hcl.colors adjustcolor
@@ -101,35 +101,35 @@
 #'
 #' # Mode 1: ellipsoid boundary only
 #' plot_ellipsoid(ref_ellipse,
-#'                col_ell = "#e10000", lwd = 2,
-#'                xlab = "Bio1 (Mean Annual Temperature)",
-#'                ylab = "Bio12 (Annual Precipitation)")
+#'  col_ell = "#e10000", lwd = 2,
+#'  xlab = "Bio1 (Mean Annual Temperature)",
+#'  ylab = "Bio12 (Annual Precipitation)")
 #'
 #' # Mode 2: with background points
 #' plot_ellipsoid(ref_ellipse,
-#'                background = back_data,
-#'                col_ell = "#e10000", col_bg = "grey70",
-#'                lwd = 2, pch = 20, cex_bg = 0.4,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  background = back_data,
+#'  col_ell = "#e10000", col_bg = "grey70",
+#'  lwd = 2, pch = 20, cex_bg = 0.4,
+#'  xlab = "Bio1", ylab = "Bio12")
 #'
 #' # Mode 3: prediction colored by suitability
 #' pred_df <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
 #'
 #' plot_ellipsoid(ref_ellipse,
-#'                prediction = pred_df,
-#'                col_layer = "suitability",
-#'                bg_sample = 1000,
-#'                col_ell = "#e10000", lwd = 2,
-#'                pch = 20, cex_bg = 0.4,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  prediction = pred_df,
+#'  col_layer = "suitability",
+#'  bg_sample = 1000,
+#'  col_ell = "#e10000", lwd = 2,
+#'  pch = 20, cex_bg = 0.4,
+#'  xlab = "Bio1", ylab = "Bio12")
 #'
 #' # Mode 3b: truncated suitability, outside points shown in grey
 #' plot_ellipsoid(ref_ellipse,
-#'                prediction = pred_df,
-#'                col_layer = "suitability_trunc",
-#'                col_bg  = "#d4d4d4",
-#'                col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  prediction = pred_df,
+#'  col_layer = "suitability_trunc",
+#'  col_bg  = "#d4d4d4",
+#'  col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
+#'  xlab = "Bio1", ylab = "Bio12")
 #'
 #' @export
 plot_ellipsoid <- function(object,
@@ -187,7 +187,7 @@ plot_ellipsoid <- function(object,
     }
 
     pts_xy <- background[pts_indx, c(object$var_names[dim]), drop = FALSE]
-    lims   <- if (!is.null(fixed_lims)) fixed_lims else safe_lims(pts_xy, ell_points)
+    lims  <- if (!is.null(fixed_lims)) fixed_lims else safe_lims(pts_xy, ell_points)
 
     plot(pts_xy,
          col = adjustcolor(col_bg, alpha.f = alpha_bg),
@@ -213,7 +213,7 @@ plot_ellipsoid <- function(object,
       }
 
       pts_xy <- prediction[pts_indx, c(object$var_names[dim]), drop = FALSE]
-      lims   <- if (!is.null(fixed_lims)) fixed_lims else safe_lims(pts_xy, ell_points)
+      lims  <- if (!is.null(fixed_lims)) fixed_lims else safe_lims(pts_xy, ell_points)
 
       plot(pts_xy,
            col = adjustcolor(col_bg, alpha.f = alpha_bg),
@@ -244,7 +244,7 @@ plot_ellipsoid <- function(object,
       # NAs arise from Mahalanobis_trunc outside the ellipsoid.
       # Both cases get col_bg. Limits use the full prediction so the view
       # never collapses to the ellipsoid interior when data are truncated.
-      col_vals   <- prediction[ , col_layer]
+      col_vals  <- prediction[ , col_layer]
       is_outside <- is.na(col_vals) | col_vals == 0
       is_inside  <- !is_outside
 
@@ -320,31 +320,31 @@ plot_ellipsoid <- function(object,
 #' colored by a continuous variable (e.g., suitability) using a color palette.
 #'
 #' @usage add_data(data, x, y,
-#'                 pts_col = "#000000",pts_alpha  = 1,
-#'                 col_layer = NULL,
-#'                 pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
-#'                 pch = 1, cex = 1, bg_sample = NULL, ...)
+#'  pts_col = "#000000",pts_alpha  = 1,
+#'  col_layer = NULL,
+#'  pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
+#'  pch = 1, cex = 1, bg_sample = NULL, ...)
 #'
 #' @param data A data frame containing the points to plot. Must include
-#'   columns matching \code{x} and \code{y}, and \code{col_layer} if provided.
+#'  columns matching \code{x} and \code{y}, and \code{col_layer} if provided.
 #' @param x Character. Name of the column to use as the x-axis variable.
 #' @param y Character. Name of the column to use as the y-axis variable.
 #' @param pts_col Character. Color for all points when \code{col_layer} is
-#'   \code{NULL}. Default is \code{"#000000"} (black).
+#' \code{NULL}. Default is \code{"#000000"} (black).
 #' @param pts_alpha Numeric in \code{[0, 1]}. Transparency of points when
-#'   \code{col_layer} is \code{NULL}. Default is \code{1} (fully opaque).
+#' \code{col_layer} is \code{NULL}. Default is \code{1} (fully opaque).
 #' @param col_layer Character or \code{NULL}. Name of a column in \code{data}
-#'   to use for coloring points by a continuous variable. If \code{NULL}
-#'   (default), all points are drawn with \code{pts_col}.
+#'  to use for coloring points by a continuous variable. If \code{NULL}
+#' (default), all points are drawn with \code{pts_col}.
 #' @param pal A color palette function or character vector of colors used when
-#'   \code{col_layer} is provided. Default is \code{hcl.colors(100, palette = "Viridis")}.
+#' \code{col_layer} is provided. Default is \code{hcl.colors(100, palette = "Viridis")}.
 #' @param rev_pal Logical. If \code{TRUE}, reverses the color palette before
-#'   applying it. Default is \code{FALSE}.
+#'  applying it. Default is \code{FALSE}.
 #' @param pch Integer or character. Point symbol. Default is \code{1}.
 #' @param cex Numeric. Size scaling for points. Default is \code{1}.
 #' @param bg_sample Integer or \code{NULL}. If provided and \code{nrow(data)}
-#'   exceeds this value, a random subsample of this size is drawn before
-#'   plotting. Useful for large data frames. Default is \code{NULL} (plot all).
+#'  exceeds this value, a random subsample of this size is drawn before
+#'  plotting. Useful for large data frames. Default is \code{NULL} (plot all).
 #' @param ... Additional arguments passed to \code{\link[graphics]{points}}.
 #'
 #' @details
@@ -354,7 +354,7 @@ plot_ellipsoid <- function(object,
 #' suitability predictions outside the ellipsoid boundary).
 #'
 #' @return Called for its side effect of adding points to the current plot.
-#'   Returns \code{NULL} invisibly.
+#'  Returns \code{NULL} invisibly.
 #'
 #' @seealso \code{\link{plot_ellipsoid}}, \code{\link{add_ellipsoid}}
 #'
@@ -367,22 +367,22 @@ plot_ellipsoid <- function(object,
 #'
 #' # Open base plot then add centroid as a cross
 #' plot_ellipsoid(ref_ellipse,
-#'                background = back_data,
-#'                col_ell = "#e10000", col_bg = "grey80",
-#'                lwd = 2, pch = 20, cex_bg = 0.4,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  background = back_data,
+#'  col_ell = "#e10000", col_bg = "grey80",
+#'  lwd = 2, pch = 20, cex_bg = 0.4,
+#'  xlab = "Bio1", ylab = "Bio12")
 #'
 #' # Add points colored by suitability on top of background
 #' pred_df <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
 #' plot_ellipsoid(ref_ellipse,
-#'                background = back_data,
-#'                col_ell = "#e10000", col_bg = "grey80",
-#'                lwd = 2, pch = 20, cex_bg = 0.4,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  background = back_data,
+#'  col_ell = "#e10000", col_bg = "grey80",
+#'  lwd = 2, pch = 20, cex_bg = 0.4,
+#'  xlab = "Bio1", ylab = "Bio12")
 #' add_data(pred_df,
-#'          x = "bio_1", y = "bio_12",
-#'          col_layer = "suitability",
-#'          pch = 20, cex = 0.5)
+#'  x = "bio_1", y = "bio_12",
+#'  col_layer = "suitability",
+#'  pch = 20, cex = 0.5)
 #'
 #' @export
 add_data <- function(data, x, y,
@@ -450,25 +450,25 @@ add_data <- function(data, x, y,
 #' dimensions.
 #'
 #' @usage add_ellipsoid(object,
-#'                      dim = c(1, 2), lty = 1, lwd = 1,
-#'                      col_ell = "#000000", alpha_ell = 1,
-#'                      cex_ell = 1, ...)
+#'  dim = c(1, 2), lty = 1, lwd = 1,
+#'  col_ell = "#000000", alpha_ell = 1,
+#'  cex_ell = 1, ...)
 #'
 #' @param object A \code{nicheR_ellipsoid} object.
 #' @param dim Integer vector of length 2. Indices of the two dimensions to
-#'   plot. Default is \code{c(1, 2)}.
+#'  plot. Default is \code{c(1, 2)}.
 #' @param lty Integer. Line type. Default is \code{1} (solid).
 #' @param lwd Numeric. Line width. Default is \code{1}.
 #' @param col_ell Character. Color of the ellipsoid boundary line. Default is
-#'   \code{"#000000"} (black).
+#' \code{"#000000"} (black).
 #' @param alpha_ell Numeric in \code{[0, 1]}. Transparency of the ellipsoid
-#'   boundary line. Default is \code{1} (fully opaque).
+#'  boundary line. Default is \code{1} (fully opaque).
 #' @param cex_ell Numeric. Size scaling for the ellipsoid boundary. Default
-#'   is \code{1}.
+#'  is \code{1}.
 #' @param ... Additional arguments passed to \code{\link[graphics]{lines}}.
 #'
 #' @return Called for its side effect of adding lines to the current plot.
-#'   Returns \code{NULL} invisibly.
+#'  Returns \code{NULL} invisibly.
 #'
 #' @seealso \code{\link{plot_ellipsoid}}, \code{\link{add_data}}
 #'
@@ -483,20 +483,20 @@ add_data <- function(data, x, y,
 #'
 #' # Open a plot, then overlay the ellipsoid prominently
 #' plot_ellipsoid(example_sp_2,
-#'                background = back_data,
-#'                col_ell = "grey70", col_bg = "grey80",
-#'                lwd = 1, pch = 20, cex_bg = 0.3,
-#'                xlab = "Bio1", ylab = "Bio12")
+#'  background = back_data,
+#'  col_ell = "grey70", col_bg = "grey80",
+#'  lwd = 1, pch = 20, cex_bg = 0.3,
+#'  xlab = "Bio1", ylab = "Bio12")
 #'
 #' add_ellipsoid(example_sp_1, col_ell = "#e10000", lwd = 2)
 #'
 #' # Compare two ellipsoids on the same plot
 #' plot_ellipsoid(example_sp_1,
-#'                background = back_data,
-#'                col_ell = "#e10000", col_bg = "grey80",
-#'                lwd = 2, pch = 20, cex_bg = 0.3,
-#'                xlab = "Bio1", ylab = "Bio12",
-#'                main = "Two ellipsoids")
+#'  background = back_data,
+#'  col_ell = "#e10000", col_bg = "grey80",
+#'  lwd = 2, pch = 20, cex_bg = 0.3,
+#'  xlab = "Bio1", ylab = "Bio12",
+#'  main = "Two ellipsoids")
 #'
 #' add_ellipsoid(example_sp_2, col_ell = "#0004d5", lwd = 2)
 #'
@@ -536,12 +536,12 @@ add_ellipsoid <- function(object,
 #'
 #' @param object A \code{nicheR_ellipsoid} object.
 #' @param n_segments Integer. Number of boundary points to generate
-#'   (must be >= 4).
+#' (must be >= 4).
 #' @param dim Integer vector of length 2 indicating which dimensions
-#'   (indices of the original variables) to use for the 2D slice.
+#' (indices of the original variables) to use for the 2D slice.
 #'
 #' @return A \code{data.frame} with \code{n_segments} ordered boundary points
-#'   in the selected dimensions.
+#'  in the selected dimensions.
 #'
 #' @examples
 #' data("example_sp_4", package = "nicheR")
@@ -598,13 +598,13 @@ ellipsoid_boundary_2d <- function(object,
 #'
 #' @param object A \code{nicheR_ellipsoid} object.
 #' @param background Optional data frame or matrix of background points passed
-#'   to each \code{plot_ellipsoid()} call. When provided, global axis limits
-#'   are computed from the range of all variables in \code{background} combined
-#'   with all pairwise ellipsoid boundaries.
+#'  to each \code{plot_ellipsoid()} call. When provided, global axis limits
+#'  are computed from the range of all variables in \code{background} combined
+#'  with all pairwise ellipsoid boundaries.
 #' @param prediction Optional data frame or matrix of prediction values passed
-#'   to each \code{plot_ellipsoid()} call. Used when \code{background} is
-#'   \code{NULL}. Global limits are computed from the range of all variables
-#'   in \code{prediction}.
+#'  to each \code{plot_ellipsoid()} call. Used when \code{background} is
+#' \code{NULL}. Global limits are computed from the range of all variables
+#'  in \code{prediction}.
 #' @param ... Additional graphical arguments passed to \code{plot_ellipsoid()}.
 #'
 #' @details
@@ -635,22 +635,22 @@ ellipsoid_boundary_2d <- function(object,
 #' back_df <- as.data.frame(ma_bios, xy = TRUE)
 #'
 #' plot_ellipsoid_pairs(ell3d,
-#'                      background = back_df,
-#'                      col_ell = "#e10000", col_bg = "grey70",
-#'                      lwd = 2, pch = 20, cex_bg = 0.3)
+#'  background = back_df,
+#'  col_ell = "#e10000", col_bg = "grey70",
+#'  lwd = 2, pch = 20, cex_bg = 0.3)
 #'
 #' # With truncated suitability predictions
 #' pred_trunc <- predict(ell3d,
-#'                       newdata = back_df[, ell3d$var_names],
-#'                       include_suitability = FALSE,
-#'                       include_mahalanobis = FALSE,
-#'                       suitability_truncated = TRUE)
+#'  newdata = back_df[, ell3d$var_names],
+#'  include_suitability = FALSE,
+#'  include_mahalanobis = FALSE,
+#'  suitability_truncated = TRUE)
 #'
 #' plot_ellipsoid_pairs(ell3d,
-#'                      prediction = pred_trunc,
-#'                      col_layer  = "suitability_trunc",
-#'                      col_bg  = "#d4d4d4",
-#'                      col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
+#'  prediction = pred_trunc,
+#'  col_layer  = "suitability_trunc",
+#'  col_bg  = "#d4d4d4",
+#'  col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
 #'
 #'
 #' @export
@@ -663,9 +663,9 @@ plot_ellipsoid_pairs <- function(object,
     stop("'object' must be a nicheR_ellipsoid.")
 
   pairs_idx <- t(combn(seq_len(object$dimensions), 2))
-  n_pairs   <- nrow(pairs_idx)
-  n_cols    <- ceiling(sqrt(n_pairs))
-  n_rows    <- ceiling(n_pairs / n_cols)
+  n_pairs <- nrow(pairs_idx)
+  n_cols <- ceiling(sqrt(n_pairs))
+  n_rows <- ceiling(n_pairs / n_cols)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
@@ -702,12 +702,12 @@ plot_ellipsoid_pairs <- function(object,
       NULL
     }
 
-    plot_ellipsoid(object     = object,
+    plot_ellipsoid(object  = object,
                    background = background,
                    prediction = prediction,
-                   dim        = pairs_idx[i, ],
+                   dim = pairs_idx[i, ],
                    fixed_lims = fixed_lims,
-                   main       = paste0(v1, " vs. ", v2),
+                   main = paste0(v1, " vs. ", v2),
                    ...)
   }
 
@@ -731,7 +731,7 @@ plot_ellipsoid_pairs <- function(object,
 #' @param pal_len Integer. Length of the target palette.
 #'
 #' @return Integer vector of the same length as \code{vals}, with values in
-#'   \code{[1, pal_len]}.
+#' \code{[1, pal_len]}.
 #'
 #' @keywords internal
 #' @export
@@ -755,12 +755,12 @@ map_to_pal <- function(vals, pal_len) {
 #' never clipped by the data extent when passed to \code{plot()}.
 #'
 #' @param pts_xy A data frame or matrix with at least two columns. The first
-#'   column is used for x, the second for y.
+#'  column is used for x, the second for y.
 #' @param ell_xy A data frame or matrix of ellipsoid boundary points with the
-#'   same column structure as \code{pts_xy}.
+#'  same column structure as \code{pts_xy}.
 #'
 #' @return A named list with elements \code{xlim} and \code{ylim}, each a
-#'   numeric vector of length 2.
+#'  numeric vector of length 2.
 #'
 #' @keywords internal
 #' @export

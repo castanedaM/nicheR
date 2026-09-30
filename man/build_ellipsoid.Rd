@@ -4,11 +4,11 @@
 \alias{build_ellipsoid}
 \title{Build a probabilistic ellipsoidal niche from ranges}
 \usage{
-build_ellipsoid(range, cl = 0.99,
+build_ellipsoid(ranges, cl = 0.99,
                        verbose = TRUE)
 }
 \arguments{
-\item{range}{A 2-row \code{matrix} or \code{data.frame} of bounds, with variables
+\item{ranges}{A 2-row \code{matrix} or \code{data.frame} of bounds, with variables
 as columns. Rows may be ordered as min/max or max/min. Column names are required
 and used as variable names.}
 
@@ -32,7 +32,7 @@ a centroid and marginal standard deviations, and assuming a diagonal covariance
 matrix.
 }
 \details{
-\code{range} must be a 2-row \code{matrix} or \code{data.frame} with variables
+\code{ranges} must be a 2-row \code{matrix} or \code{data.frame} with variables
 in columns. Rows represent lower and upper bounds for each variable (row order
 may be min/max or max/min). The centroid is computed as:
 \deqn{\mu_i = (m_i + M_i)/2.}
@@ -50,14 +50,14 @@ The ellipsoid contour is defined using a chi-square cutoff
 # Two-dimensional ellipsoid from environmental ranges
 range_df <- data.frame(bio_1  = c(22, 28),
                        bio_12 = c(1000, 3500))
-ell2d <- build_ellipsoid(range = range_df)
+ell2d <- build_ellipsoid(ranges = range_df)
 ell2d
 
 # Three-dimensional ellipsoid
 range_3d <- data.frame(bio_1  = c(22, 28),
                        bio_12 = c(1000, 3500),
                        bio_15 = c(50, 70))
-ell3d <- build_ellipsoid(range = range_3d)
+ell3d <- build_ellipsoid(ranges = range_3d)
 ell3d
 
 }

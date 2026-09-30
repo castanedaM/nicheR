@@ -266,6 +266,7 @@ apply_bias <- function(prepared_bias,
 
     # Name list element + raster layer safely
     list_name <- paste0(suit_name, "_biased")
+
     if(!nzchar(list_name)){
       list_name <- paste0("prediction_", i, "_biased")
     }

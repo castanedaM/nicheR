@@ -12,7 +12,7 @@
 #'
 #' @param object A nicheR_ellipsoid object used as a reference ellipse
 #'   (the biggest to be generated), and containing at least
-#'   \code{covariance_matrix} and \code{cl}.
+#'   \code{cov_matrix} and \code{cl}.
 #' @param background Matrix or Dataframe. The 2D point cloud (coordinates)
 #'   used to select random centroids.
 #' @param n Integer. Number of ellipses to generate.

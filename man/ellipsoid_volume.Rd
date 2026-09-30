@@ -32,7 +32,7 @@ covariance eigenvalues and a chi-square cutoff.
 \examples{
 range_df <- data.frame(bio_1 = c(22, 28),
                        bio_12 = c(1000, 3500))
-ell <- nicheR::build_ellipsoid(range = range_df)
+ell <- nicheR::build_ellipsoid(ranges = range_df)
 
 ell$volume
 

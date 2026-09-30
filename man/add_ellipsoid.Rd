@@ -5,9 +5,9 @@
 \title{Add an ellipsoid boundary to an existing E-space plot}
 \usage{
 add_ellipsoid(object,
-                     dim = c(1, 2), lty = 1, lwd = 1,
-                     col_ell = "#000000", alpha_ell = 1,
-                     cex_ell = 1, ...)
+ dim = c(1, 2), lty = 1, lwd = 1,
+ col_ell = "#000000", alpha_ell = 1,
+ cex_ell = 1, ...)
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object.}
@@ -32,7 +32,7 @@ is \code{1}.}
 }
 \value{
 Called for its side effect of adding lines to the current plot.
-  Returns \code{NULL} invisibly.
+ Returns \code{NULL} invisibly.
 }
 \description{
 Draws the 2D boundary of a \code{nicheR_ellipsoid} object onto an existing
@@ -47,20 +47,20 @@ data("back_data", package = "nicheR")
 
 # Open a plot, then overlay the ellipsoid prominently
 plot_ellipsoid(example_sp_2,
-               background = back_data,
-               col_ell = "grey70", col_bg = "grey80",
-               lwd = 1, pch = 20, cex_bg = 0.3,
-               xlab = "Bio1", ylab = "Bio12")
+ background = back_data,
+ col_ell = "grey70", col_bg = "grey80",
+ lwd = 1, pch = 20, cex_bg = 0.3,
+ xlab = "Bio1", ylab = "Bio12")
 
 add_ellipsoid(example_sp_1, col_ell = "#e10000", lwd = 2)
 
 # Compare two ellipsoids on the same plot
 plot_ellipsoid(example_sp_1,
-               background = back_data,
-               col_ell = "#e10000", col_bg = "grey80",
-               lwd = 2, pch = 20, cex_bg = 0.3,
-               xlab = "Bio1", ylab = "Bio12",
-               main = "Two ellipsoids")
+ background = back_data,
+ col_ell = "#e10000", col_bg = "grey80",
+ lwd = 2, pch = 20, cex_bg = 0.3,
+ xlab = "Bio1", ylab = "Bio12",
+ main = "Two ellipsoids")
 
 add_ellipsoid(example_sp_2, col_ell = "#0004d5", lwd = 2)
 

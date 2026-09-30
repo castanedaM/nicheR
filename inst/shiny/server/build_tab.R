@@ -9,7 +9,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 09/16/2026
+# Date last updated: 09/29/2026
 
 
 # DEBUG -------------------------------------------------------------------
@@ -18,10 +18,16 @@
 # Set when they render, checked before any slider value is applied.
 cov_owner <- reactiveVal(NULL)
 
-# Debug message for covariance
+# Step of each covariance slider, set when they render. Half a step is the
+# tolerance for "the user moved this one", since the slider snaps its value
+# to the step grid and reports something slightly off the stored value.
+cov_steps <- reactiveVal(NULL)
 
 # Which ellipsoid the centroid sliders currently on screen belong to
 centroid_owner <- reactiveVal(NULL)
+
+# Same as cov_steps, for the centroid sliders
+centroid_steps <- reactiveVal(NULL)
 
 # Which ellipsoid the confidence level box currently on screen belongs to
 cl_owner <- reactiveVal(NULL)
@@ -42,6 +48,10 @@ covariance_set <- reactiveVal(FALSE)
 centroid_set <- reactiveVal(FALSE)
 ell_mode <- reactiveVal("edit")
 
+# TRUE right after Create new ellipsoid, so Ranges and the library come back
+# collapsed and the user starts from the variables box
+panels_collapsed <- reactiveVal(FALSE)
+
 # Bumped whenever a different ellipsoid enters the working slot. The panels
 # below depend on this instead of current_ellipsoid, so editing a slider
 # does not tear down the panel holding that slider.
@@ -59,6 +69,7 @@ set_working_ellipsoid <- function(ell, mode = "edit"){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
+  panels_collapsed(FALSE)
 }
 
 # Empties the working slot. Separate from the above so every caller goes
@@ -73,6 +84,20 @@ clear_working_ellipsoid <- function(){
   covariance_set(FALSE)
   centroid_set(FALSE)
 }
+
+# TRUE when the working ellipsoid is not in the library, or differs from the
+# copy stored there (edited but not updated)
+ell_has_unsaved <- function(ell){
+  if(is.null(ell)) return(FALSE)
+  saved <- session_data$ellipsoid_list[[ell$ell_id]]
+  is.null(saved) || !identical(saved, ell)
+}
+
+# Puts the value, min and max of a slider on multiples of step, so the slider
+# has nothing to snap and reports back what it was drawn with
+snap_down <- function(x, step) floor(x / step + 1e-9) * step
+snap_up <- function(x, step) ceiling(x / step - 1e-9) * step
+snap_near <- function(x, step) round(x / step) * step
 
 carry_ell_meta <- function(new_ell, old_ell){
   new_ell$ell_id <- old_ell$ell_id
@@ -93,10 +118,11 @@ output$build_range_method_choice_ui <- renderUI({
 
   ell <- isolate(session_data$current_ellipsoid)
   is_view <- identical(ell_mode(), "view")
+  is_collapsed <- panels_collapsed()
 
   # Read-only range table, shared by view mode and edit mode. Ranges are only
   # editable while the slot is empty, changing them later goes through
-  # Start over.
+  # Create new ellipsoid in the library.
   range_rows <- if(is.null(ell)){
     NULL
   } else {
@@ -161,9 +187,9 @@ output$build_range_method_choice_ui <- renderUI({
                         step = 0.01))
   )
 
-  # Edit mode with an ellipsoid in the slot. The ranges are fixed, so the
-  # method radio is replaced by one explicit way out. Open by default,
-  # since cl is now the only thing in here the user can still change.
+  # Edit mode with an ellipsoid in the slot. The ranges are fixed, the way out
+  # is Create new ellipsoid in the library. Open by default, since cl is now
+  # the only thing in here the user can still change.
   if(!is.null(ell)){
 
     return(
@@ -175,28 +201,22 @@ output$build_range_method_choice_ui <- renderUI({
           range_header,
           range_rows,
           tags$hr(style = "margin: 8px 0;"),
-          cl_row,
-          br(),
-          fluidRow(
-            column(width = 12,
-                   div(class = "action-btn-row",
-                       actionButton("build_start_over_btn",
-                                    label = tagList(icon("rotate-left"),
-                                                    "Start over"),
-                                    class = "btn-cancel")))
-          )
+          cl_row
       )
     )
   }
 
-  # Empty slot, pick a method and build
+  # Empty slot, pick a method and build. Comes back collapsed after Create
+  # new ellipsoid, so the user checks the variables first.
   box(title = tags$span("Ranges", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = FALSE,
-      p(instructions$build_range_choice, class = "text-instruction"),
+      collapsed = is_collapsed,
       tags$hr(style = "margin: 8px 0;"),
+      p(instructions$build_range_intro, class = "text-instruction"),
       cl_row,
+      br(),
+      p(instructions$build_range_choice, class = "text-instruction"),
       br(),
       radioButtons("build_range_method_choice",
                    label = tagList(tags$span("Select how to define the ranges for your ellipsoid ",
@@ -229,7 +249,7 @@ output$build_range_method_ui <- renderUI({
 
   # This panel only renders when the slot is empty, so the button is always
   # the first build. Rebuilding in place is gone, ranges change through
-  # Start over.
+  # Create new ellipsoid.
   build_label <- "Initialize Ellipsoid"
 
   build_btn <- fluidRow(
@@ -654,37 +674,11 @@ observeEvent(input$build_reset_ranges_link, {
   updateNumericInput(session, "build_range_cl_stats", value = 0.95)
 })
 
-observeEvent(input$build_start_over_btn, {
+# NEW ELLIPSOID -----------------------------------------------------------
 
-  ell <- session_data$current_ellipsoid
-  req(ell)
-
-  is_saved <- ell$ell_id %in% names(session_data$ellipsoid_list)
-
-  showModal(modalDialog(
-    title = "Start over?",
-    p(instructions$build_start_over, class = "text-instruction"),
-    if(is_saved){
-      p(paste0(ell$ell_name, " stays in the library and can be loaded again. ",
-               "Only the working copy is cleared."),
-        class = "text-muted-small")
-    } else {
-      p(paste0(ell$ell_name, " has not been saved, so it will be lost."),
-        class = "text-muted-small")
-    },
-    footer = tagList(
-      modalButton("Cancel"),
-      actionButton("build_confirm_start_over_btn",
-                   "Yes, start over",
-                   class = "btn-cancel")
-    ),
-    easyClose = FALSE
-  ))
-})
-
-observeEvent(input$build_confirm_start_over_btn, {
-
-  removeModal()
+# Empties the slot, collapses Ranges and the library, and sends the user back
+# to the variables box
+start_new_ellipsoid <- function(){
 
   ell <- session_data$current_ellipsoid
 
@@ -697,13 +691,74 @@ observeEvent(input$build_confirm_start_over_btn, {
   }
 
   clear_working_ellipsoid()
+  panels_collapsed(TRUE)
 
   session_data$session_range <- NULL
   session_data$df_range <- NULL
 
-  showNotification("Cleared. Choose how to define the new ranges.",
-                   type = "message", duration = 4)
+  # Opens the variables box (id set in data_tab.R) and scrolls to it
+  shinyjs::runjs("
+    var box = document.getElementById('build_vars_box');
+    if(box){
+      if(box.classList.contains('collapsed-box')){
+        var btn = box.querySelector('[data-widget=\"collapse\"]');
+        if(btn) btn.click();
+      }
+      box.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+  ")
+
+  showNotification("Check the variables, then open Ranges to define the new ellipsoid.",
+                   type = "message", duration = 5)
+}
+
+# Only asks first when something would be lost
+observeEvent(input$build_new_ell_btn, {
+
+  ell <- session_data$current_ellipsoid
+
+  if(!ell_has_unsaved(ell)){
+    start_new_ellipsoid()
+    return()
+  }
+
+  is_saved <- ell$ell_id %in% names(session_data$ellipsoid_list)
+
+  showModal(modalDialog(
+    title = "Create new ellipsoid?",
+    p(instructions$build_start_over, class = "text-instruction"),
+    if(is_saved){
+      p(paste0(ell$ell_name, " has changes that were not updated. ",
+               "The library keeps the last updated version."),
+        class = "text-muted-small")
+    } else {
+      p(paste0(ell$ell_name, " has not been saved, so it will be lost."),
+        class = "text-muted-small")
+    },
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("build_confirm_new_ell_btn",
+                   "Yes, create new",
+                   class = "btn-cancel")
+    ),
+    easyClose = FALSE
+  ))
 })
+
+observeEvent(input$build_confirm_new_ell_btn, {
+  removeModal()
+  start_new_ellipsoid()
+})
+
+# Any change to the variable set (confirm, edit, switching input type) empties
+# the slot through the one helper that bumps ell_slot. The data tab sets
+# current_ellipsoid to NULL directly, which left the covariance and centroid
+# panels showing the old ellipsoid, since they only redraw on ell_slot.
+observeEvent(session_data$vars, {
+  clear_working_ellipsoid()
+  panels_collapsed(FALSE)
+}, ignoreNULL = FALSE, ignoreInit = TRUE)
+
 # CONFIDENCE LEVEL --------------------------------------------------------
 
 # cl only rescales the boundary. Sigma and the centroid go straight back to
@@ -900,10 +955,24 @@ output$build_ellipsoid_library_ui <- renderUI({
     )
   })
 
+  # Sits under the last ellipsoid, right above Continue. Hidden while the
+  # slot is already empty, since the Ranges box is the way in then.
+  new_ell_row <- if(!is.null(cur_ell)){
+    tagList(
+      tags$hr(style = "margin: 8px 0;"),
+      fluidRow(
+        column(width = 12, class = "btn-spaced",
+              actionLink("build_new_ell_btn",
+                                label = tagList(icon("plus"),
+                                                "Create new ellipsoid")))
+      )
+    )
+  }
+
   box(title = tags$span("Ellipsoid library", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = FALSE,
+      collapsed = panels_collapsed(),
       p(instructions$build_library, class = "text-instruction"),
 
       if(!is.null(cur_ell)){
@@ -923,7 +992,9 @@ output$build_ellipsoid_library_ui <- renderUI({
         )
       } else {
         p(instructions$build_library_empty, class = "text-muted-small")
-      }
+      },
+
+      new_ell_row
   )
 })
 
@@ -1086,25 +1157,32 @@ observeEvent(input$build_save_ell_btn, {
   ))
 })
 
-observeEvent(input$build_confirm_save_ell_btn, {
+# Saves the working ellipsoid to the library under a cleaned name. Shared by
+# the Save modal and Save and continue. Returns the name used.
+save_working_ellipsoid <- function(raw_name){
 
-  req(session_data$current_ellipsoid)
+  ell_to_save <- session_data$current_ellipsoid
 
-  raw_name <- if(!is.null(input$build_ell_save_name) &&
-                 nzchar(trimws(input$build_ell_save_name))){
-    input$build_ell_save_name
-  } else {
-    session_data$current_ellipsoid$ell_name
+  if(is.null(raw_name) || !nzchar(trimws(raw_name))){
+    raw_name <- ell_to_save$ell_name
   }
 
   clean_name <- gsub("\\s+", "_", trimws(raw_name))
   clean_name <- substr(clean_name, 1, 30)
 
-  ell_to_save <- session_data$current_ellipsoid
   ell_to_save$ell_name <- clean_name
 
   session_data$ellipsoid_list[[ell_to_save$ell_id]] <- ell_to_save
   session_data$current_ellipsoid <- ell_to_save
+
+  clean_name
+}
+
+observeEvent(input$build_confirm_save_ell_btn, {
+
+  req(session_data$current_ellipsoid)
+
+  clean_name <- save_working_ellipsoid(input$build_ell_save_name)
 
   removeModal()
 
@@ -1149,7 +1227,7 @@ output$build_next_step_ui <- renderUI({
   )
 })
 
-observeEvent(input$build_next_step_btn, {
+go_to_next_tab <- function(){
   target <- if(identical(session_data$input_mode, "virtual")){
     "generate_tab"
   } else {
@@ -1157,6 +1235,104 @@ observeEvent(input$build_next_step_btn, {
   }
 
   updateTabItems(session, "sidebar_menu", selected = target)
+}
+
+# The next tabs read from the library, so the working ellipsoid only carries
+# over if it was saved, or updated after its last edit
+observeEvent(input$build_next_step_btn, {
+
+  ell <- session_data$current_ellipsoid
+
+  if(!ell_has_unsaved(ell)){
+    go_to_next_tab()
+    return()
+  }
+
+  is_saved <- ell$ell_id %in% names(session_data$ellipsoid_list)
+
+  # A saved ellipsoid is updated under its own name. An unsaved one needs a
+  # name, so the modal asks for it the same way the Save modal does.
+  body <- if(is_saved){
+    p(paste0(ell$ell_name, " has changes that were not updated. ",
+             "If you continue without saving, those changes are discarded and ",
+             "the last updated version is used."),
+      class = "text-instruction")
+  } else {
+    tagList(
+      p(paste0(ell$ell_name, " has not been saved. If you continue without ",
+               "saving, it is discarded."),
+        class = "text-instruction"),
+      textInput("build_continue_save_name",
+                label = NULL,
+                value = ell$ell_name,
+                placeholder = ell$ell_name),
+      tags$small("Max 30 characters.", class = "text-muted-small")
+    )
+  }
+
+  showModal(modalDialog(
+    title = "Save before continuing?",
+    body,
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("build_nosave_continue_btn",
+                   "Don't save, continue",
+                   class = "btn-cancel"),
+      actionButton("build_save_continue_btn",
+                   "Save and continue",
+                   class = "btn-save")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+observeEvent(input$build_nosave_continue_btn, {
+
+  ell <- session_data$current_ellipsoid
+  lib <- session_data$ellipsoid_list
+
+  # Downstream tabs read the working slot, so the unsaved version has to leave
+  # it. A saved ellipsoid goes back to its library copy. An unsaved one is
+  # dropped along with anything keyed to its id, and the slot falls back to
+  # its parent, or to the last ellipsoid saved.
+  if(!is.null(ell) && ell$ell_id %in% names(lib)){
+    fallback <- lib[[ell$ell_id]]
+  } else {
+    if(!is.null(ell)){
+      session_data$ellipsoid_prediction_list[[ell$ell_id]] <- NULL
+      session_data$ellipsoid_prediction_list_biased[[ell$ell_id]] <- NULL
+    }
+    fallback <- if(!is.null(ell$parent_id) && ell$parent_id %in% names(lib)){
+      lib[[ell$parent_id]]
+    } else {
+      lib[[length(lib)]]
+    }
+  }
+
+  set_working_ellipsoid(fallback, mode = "edit")
+
+  removeModal()
+  showNotification(paste0("Changes discarded. Continuing with ",
+                          fallback$ell_name, "."),
+                   type = "message", duration = 4)
+  go_to_next_tab()
+})
+
+observeEvent(input$build_save_continue_btn, {
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  if(ell$ell_id %in% names(session_data$ellipsoid_list)){
+    session_data$ellipsoid_list[[ell$ell_id]] <- ell
+    msg <- paste0(ell$ell_name, " updated.")
+  } else {
+    msg <- paste0(save_working_ellipsoid(input$build_continue_save_name), " saved.")
+  }
+
+  removeModal()
+  showNotification(msg, type = "message", duration = 3)
+  go_to_next_tab()
 })
 
 
@@ -1235,20 +1411,89 @@ output$build_ell_export_dl <- downloadHandler(
 )
 
 
+# SLIDER HELPERS ----------------------------------------------------------
+
+# Min, max, value and step for one slider, all on the same step grid. With
+# inward = TRUE the ends are pulled in to the nearest grid point, so the
+# slider never offers a value past the admissible limit (covariances). With
+# inward = FALSE they are pushed out (centroid). keep holds values that must
+# fall inside the slider, like the current value or the reset target.
+slider_spec <- function(lo, hi, cur, step = NULL, inward = TRUE, keep = NULL){
+
+  lo <- suppressWarnings(as.numeric(lo)[1])
+  hi <- suppressWarnings(as.numeric(hi)[1])
+
+  # Bad limits should give a usable slider around the value, not crash the panel
+  if(!isTRUE(is.finite(lo) && is.finite(hi) && hi > lo)){
+    spread <- max(abs(cur), 1)
+    lo <- cur - spread
+    hi <- cur + spread
+  }
+
+  if(is.null(step)) step <- signif((hi - lo) / 100, 2)
+  if(length(step) != 1 || !isTRUE(is.finite(step) && step > 0)) step <- 1e-4
+
+  value <- snap_near(cur, step)
+  keep <- snap_near(c(value, keep), step)
+
+  s_min <- if(inward) snap_up(lo, step) else snap_down(lo, step)
+  s_max <- if(inward) snap_down(hi, step) else snap_up(hi, step)
+
+  list(min = min(s_min, keep),
+       max = max(s_max, keep),
+       value = value,
+       step = step)
+}
+
+
 # COVARIANCE --------------------------------------------------------------
 
+# Admissible range for the covariance between v1 and v2, holding every other
+# entry of Sigma at its current value. cov_limits_remaining from nicheR only
+# covers pairs that were not passed in, and the app passes all of them, so it
+# cannot be used here.
+# Changing one pair by x is a rank-2 update of Sigma. With P = solve(Sigma),
+# det(Sigma + xE) / det(Sigma) = (1 + x P12)^2 - x^2 P11 P22, and Sigma stays
+# positive definite between its two roots. The ends are pulled in by shrink
+# (a share of the width) so the slider never sits on a singular matrix.
+cov_pair_limits <- function(ell, v1, v2, shrink = 0.01){
+
+  S <- ell$cov_matrix
+  P <- tryCatch(solve(S), error = function(e) NULL)
+
+  if(is.null(P)){
+    return(c(min = NA_real_, max = NA_real_))
+  }
+
+  r <- sqrt(P[v1, v1] * P[v2, v2])
+  up <- 1 / (r - P[v1, v2])
+  down <- -1 / (r + P[v1, v2])
+  width <- up - down
+  cur <- S[v1, v2]
+
+  c(min = cur + down + shrink * width,
+    max = cur + up - shrink * width)
+}
+
+# The sliders are drawn in this panel, not in a nested uiOutput. A nested
+# output keeps its last HTML on the client, and when the panel came back
+# (Edit covariances) Shiny redrew the sliders from that cached HTML, holding
+# the values from when the ellipsoid was loaded. Those old values were then
+# applied as if the user had moved them. Drawn here, every redraw reads the
+# current ellipsoid.
 output$build_covariance_ui <- renderUI({
 
   ell_slot()
+  is_set <- covariance_set()
 
   ell <- isolate(session_data$current_ellipsoid)
   req(ell)
 
+  pairs <- t(combn(ell$var_names, 2))
+  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+
   # View mode, show the matrix without controls
   if(identical(ell_mode(), "view")){
-
-    pairs <- t(combn(ell$var_names, 2))
-    pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
 
     cov_rows <- lapply(seq_along(pair_names), function(i){
       fluidRow(
@@ -1271,7 +1516,7 @@ output$build_covariance_ui <- renderUI({
     )
   }
 
-  if(isTRUE(covariance_set())){
+  if(isTRUE(is_set)){
     return(
       box(title = tags$span("Covariances", class = "text-section-header"),
           width = 12,
@@ -1287,56 +1532,27 @@ output$build_covariance_ui <- renderUI({
     )
   }
 
-  box(title = tags$span("Covariances", class = "text-section-header"),
-      width = 12,
-      collapsible = TRUE,
-      collapsed = FALSE,
-      p(instructions$build_covariance, class = "text-instruction"),
-      uiOutput("build_covariance_sliders_ui"),
-      br(),
-      fluidRow(
-        column(width = 12,
-               div(class = "action-btn-row",
-                   actionButton("build_set_cov_btn",
-                                "Set Covariances",
-                                class = "btn-continue")))
-      )
-  )
-})
-
-output$build_covariance_sliders_ui <- renderUI({
-
-  # Depend on the slot so the sliders redraw when the working ellipsoid
-  # changes. Without this the panel renders once and never again.
-  ell_slot()
-
-  ell <- isolate(session_data$current_ellipsoid)
-  req(ell)
-
   cov_owner(ell$ell_id)
 
-  vars <- ell$var_names
-  pairs <- t(combn(vars, 2))
-  pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
+  cur_cov <- cov_upper(ell)
 
-  lims <- ell$cov_limits
-  rownames(lims) <- pair_names
+  specs <- lapply(seq_along(pair_names), function(i){
+    pn <- pair_names[i]
+    lim <- cov_pair_limits(ell, pairs[i, 1], pairs[i, 2])
+    slider_spec(lim[["min"]], lim[["max"]], cur_cov[[pn]], inward = TRUE)
+  })
+
+  cov_steps(vapply(specs, function(s) s$step, numeric(1)))
 
   sliders <- lapply(seq_along(pair_names), function(i){
-    pn <- pair_names[i]
-    min_val <- lims[pn, "min"]
-    max_val <- lims[pn, "max"]
-    step <- round((max_val - min_val) / 100, 4)
-    cur_cov <- ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
-
     fluidRow(
       column(width = 10,
              sliderInput(inputId = paste0("build_cov_", i),
-                         label = pn,
-                         min = round(min_val, 2),
-                         max = round(max_val, 2),
-                         value = round(cur_cov, 4),
-                         step = step)),
+                         label = pair_names[i],
+                         min = specs[[i]]$min,
+                         max = specs[[i]]$max,
+                         value = specs[[i]]$value,
+                         step = specs[[i]]$step)),
       column(width = 2,
              tags$a(href = "#",
                     onclick = sprintf("Shiny.setInputValue('build_cov_reset_pair', %d, {priority: 'event'}); return false;", i),
@@ -1353,8 +1569,35 @@ output$build_covariance_sliders_ui <- renderUI({
                   tagList(icon("rotate-left"), "Reset all to zero")))
   )
 
-  tagList(sliders, reset_all_btn)
+  box(title = tags$span("Covariances", class = "text-section-header"),
+      width = 12,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      p(instructions$build_covariance, class = "text-instruction"),
+      sliders,
+      reset_all_btn,
+      br(),
+      fluidRow(
+        column(width = 12,
+               div(class = "action-btn-row",
+                   actionButton("build_set_cov_btn",
+                                "Set Covariances",
+                                class = "btn-continue")))
+      )
+  )
 })
+
+# Puts the sliders back on the stored covariances, used when an update fails
+# so the sliders never show a value the ellipsoid does not have
+cov_sliders_to_ell <- function(ell){
+  cur_cov <- cov_upper(ell)
+  steps <- cov_steps()
+  lapply(seq_along(cur_cov), function(i){
+    updateSliderInput(session,
+                      inputId = paste0("build_cov_", i),
+                      value = snap_near(cur_cov[[i]], steps[i]))
+  })
+}
 
 # Applies slider changes to the working ellipsoid
 observeEvent({
@@ -1365,7 +1608,7 @@ observeEvent({
 
   ell <- session_data$current_ellipsoid
   req(ell)
-  req(!identical(session_data$ell_mode, "view"))
+  req(!identical(ell_mode(), "view"))
 
   # The sliders on screen still belong to a previous ellipsoid. Their
   # values describe that one, not this one, so applying them would
@@ -1377,32 +1620,30 @@ observeEvent({
   pairs <- t(combn(ell$var_names, 2))
   pair_names <- apply(pairs, 1, function(p) paste(p, collapse = "-"))
 
+  # Sliders for a newly loaded ellipsoid may not have rendered yet
   cov_list <- lapply(seq_along(pair_names),
                      function(i) input[[paste0("build_cov_", i)]])
 
-  if(any(vapply(cov_list, is.null, logical(1)))){
-    return()
-  }
-
-  # Sliders for a newly loaded ellipsoid may not have rendered yet
   if(any(vapply(cov_list, is.null, logical(1)))) return()
 
+  steps <- cov_steps()
+  if(length(steps) != length(pair_names)) return()
+
   cov_vals <- setNames(unlist(cov_list), pair_names)
+  current_cov <- cov_upper(ell)
 
-  current_cov <- setNames(sapply(seq_len(nrow(pairs)), function(i){
-    ell$cov_matrix[pairs[i, 1], pairs[i, 2]]
-  }), pair_names)
+  # A slider nobody touched sits within half a step of the stored value
+  changed <- abs(cov_vals - current_cov) > steps / 2
 
+  if(!any(changed)) return()
 
-  if(all(abs(cov_vals - current_cov) < 1e-8)){
-    return()
-  }
-
-  if(all(abs(cov_vals - current_cov) < 1e-8)) return()
+  # Only the moved pairs come from the sliders, the rest keep full precision
+  new_cov <- current_cov
+  new_cov[changed] <- cov_vals[changed]
 
   updated_ell <- tryCatch(
     update_ellipsoid_covariance(object = ell,
-                                covariance = cov_vals,
+                                covariance = new_cov,
                                 verbose = FALSE),
     error = function(e){
       showNotification(paste("Covariance update failed:", e$message),
@@ -1411,34 +1652,29 @@ observeEvent({
     }
   )
 
-  req(updated_ell)
+  if(is.null(updated_ell)){
+    cov_sliders_to_ell(ell)
+    return()
+  }
 
   session_data$current_ellipsoid <- carry_ell_meta(updated_ell, ell)
 
-  # Rotating one pair narrows what the others can take
-  remaining <- updated_ell$cov_limits_remaining
+  # Rotating one pair narrows or widens what the others can take. Only the
+  # limits change, the stored values are already inside them.
+  new_vals <- cov_upper(updated_ell)
 
-  if(!is.null(remaining)){
-    if(is.null(rownames(remaining))) rownames(remaining) <- pair_names
+  lapply(seq_along(pair_names), function(i){
+    pn <- pair_names[i]
+    lim <- cov_pair_limits(updated_ell, pairs[i, 1], pairs[i, 2])
 
-    lapply(seq_along(pair_names), function(i){
-      pn <- pair_names[i]
-      if(!pn %in% rownames(remaining)) return(NULL)
+    spec <- slider_spec(lim[["min"]], lim[["max"]], new_vals[[pn]],
+                        step = steps[i], inward = TRUE)
 
-      cur_val <- input[[paste0("build_cov_", i)]]
-      if(is.null(cur_val)) return(NULL)
-
-      new_min <- remaining[pn, "min"]
-      new_max <- remaining[pn, "max"]
-      clamped <- max(new_min, min(new_max, cur_val))
-
-      updateSliderInput(session,
-                        inputId = paste0("build_cov_", i),
-                        min = round(new_min, 2),
-                        max = round(new_max, 2),
-                        value = round(clamped, 2))
-    })
-  }
+    updateSliderInput(session,
+                      inputId = paste0("build_cov_", i),
+                      min = spec$min,
+                      max = spec$max)
+  })
 }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 # Resets one covariance pair to zero, index arrives as the input value
@@ -1455,12 +1691,15 @@ observeEvent(input$build_cov_reset_pair, {
   lims <- ell$cov_limits
   rownames(lims) <- pair_names
 
+  spec <- slider_spec(lims[pair_names[i], "min"], lims[pair_names[i], "max"],
+                      0, step = cov_steps()[i], inward = TRUE)
+
   # Restore the full limits as well as the value, since earlier rotations
-  # narrowed this slider and the panel is isolated
+  # narrowed this slider
   updateSliderInput(session,
                     inputId = paste0("build_cov_", i),
-                    min = round(lims[pair_names[i], "min"], 2),
-                    max = round(lims[pair_names[i], "max"], 2),
+                    min = spec$min,
+                    max = spec$max,
                     value = 0)
 })
 
@@ -1475,12 +1714,15 @@ observeEvent(input$build_cov_reset_all, {
 
   lims <- ell$cov_limits
   rownames(lims) <- pair_names
+  steps <- cov_steps()
 
   lapply(seq_along(pair_names), function(i){
+    spec <- slider_spec(lims[pair_names[i], "min"], lims[pair_names[i], "max"],
+                        0, step = steps[i], inward = TRUE)
     updateSliderInput(session,
                       inputId = paste0("build_cov_", i),
-                      min = round(lims[pair_names[i], "min"], 2),
-                      max = round(lims[pair_names[i], "max"], 2),
+                      min = spec$min,
+                      max = spec$max,
                       value = 0)
   })
 })
@@ -1495,9 +1737,14 @@ observeEvent(input$build_edit_cov_link, {
 
 # CENTROID ----------------------------------------------------------------
 
+# Sliders are drawn in this panel for the same reason as the covariances.
+# This panel also redraws when Set Covariances is clicked (it opens), which
+# with the nested output brought back stale centroid values.
 output$build_centroid_mover_ui <- renderUI({
 
   ell_slot()
+  is_set <- centroid_set()
+  cov_done <- covariance_set()
 
   ell <- isolate(session_data$current_ellipsoid)
   req(ell)
@@ -1524,7 +1771,7 @@ output$build_centroid_mover_ui <- renderUI({
     )
   }
 
-  if(isTRUE(centroid_set())){
+  if(isTRUE(is_set)){
     return(
       box(title = tags$span("Centroid Mover", class = "text-section-header"),
           width = 12,
@@ -1540,12 +1787,64 @@ output$build_centroid_mover_ui <- renderUI({
     )
   }
 
+  centroid_owner(ell$ell_id)
+
+  vars <- ell$var_names
+  centroid <- ell$centroid
+  bg_df <- isolate(session_data$bg_df)
+
+  # The reset target has to sit inside the slider range or it gets clamped
+  target <- isolate(ell_reset_target(ell))
+  target_centroid <- if(!is.null(target)) target$centroid else centroid
+
+  specs <- lapply(vars, function(v){
+
+    # Background data gives the widest sensible range. In virtual mode there
+    # is none, so fall back to the ellipsoid's own spread along this variable.
+    if(!is.null(bg_df)){
+      spread <- 3 * sd(bg_df[, v], na.rm = TRUE)
+      lo <- min(bg_df[, v], na.rm = TRUE) - spread
+      hi <- max(bg_df[, v], na.rm = TRUE) + spread
+    } else {
+      spread <- 3 * sqrt(ell$cov_matrix[v, v])
+      lo <- centroid[[v]] - spread
+      hi <- centroid[[v]] + spread
+    }
+
+    slider_spec(lo, hi, centroid[[v]], inward = FALSE,
+                keep = target_centroid[[v]])
+  })
+
+  centroid_steps(vapply(specs, function(s) s$step, numeric(1)))
+
+  sliders <- lapply(seq_along(vars), function(j){
+    fluidRow(
+      column(width = 12,
+             sliderInput(inputId = paste0("build_centroid_", j),
+                         label = vars[j],
+                         min = specs[[j]]$min,
+                         max = specs[[j]]$max,
+                         value = specs[[j]]$value,
+                         step = specs[[j]]$step))
+    )
+  })
+
+  reset_all_btn <- fluidRow(
+    column(width = 12,
+           tags$a(href = "#",
+                  onclick = "Shiny.setInputValue('build_centroid_reset_all', Math.random(), {priority: 'event'}); return false;",
+                  tagList(icon("rotate-left"), ell_reset_label(ell))))
+  )
+
   box(title = tags$span("Centroid Mover", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = !isTRUE(covariance_set()),
+      collapsed = !isTRUE(cov_done),
       p(instructions$build_centroid_mover, class = "text-instruction"),
-      uiOutput("build_centroid_sliders_ui"),
+      sliders,
+      br(),
+      reset_all_btn,
+      br(),
       fluidRow(
         column(width = 12,
                div(class = "action-btn-row",
@@ -1557,66 +1856,16 @@ output$build_centroid_mover_ui <- renderUI({
   )
 })
 
-output$build_centroid_sliders_ui <- renderUI({
-
-  # Depend on the slot so the sliders redraw when the working ellipsoid
-  # changes. Without this the panel renders once and never again.
-  ell_slot()
-
-  ell <- isolate(session_data$current_ellipsoid)
-  req(ell)
-
-  centroid_owner(ell$ell_id)
-
-  vars <- ell$var_names
-  centroid <- ell$centroid
-
-  # The reset target has to sit inside the slider range or it gets clamped
-  target <- isolate(ell_reset_target(ell))
-  target_centroid <- if(!is.null(target)) target$centroid else centroid
-
-  sliders <- lapply(seq_along(vars), function(j){
-
-    v <- vars[j]
-
-    # Background data gives the widest sensible range. In virtual mode there
-    # is none, so fall back to the ellipsoid's own spread along this variable.
-    if(!is.null(session_data$bg_df)){
-      spread <- 3 * sd(session_data$bg_df[, v], na.rm = TRUE)
-      min_val <- round(min(session_data$bg_df[, v], na.rm = TRUE) - spread, 2)
-      max_val <- round(max(session_data$bg_df[, v], na.rm = TRUE) + spread, 2)
-    } else {
-      spread <- 3 * sqrt(ell$cov_matrix[v, v])
-      min_val <- round(centroid[v] - spread, 2)
-      max_val <- round(centroid[v] + spread, 2)
-    }
-
-    min_val <- min(min_val, round(centroid[v], 2), round(target_centroid[v], 2))
-    max_val <- max(max_val, round(centroid[v], 2), round(target_centroid[v], 2))
-
-    step <- (max_val - min_val) / 100
-    step <- signif(step, 2)
-
-    fluidRow(
-      column(width = 12,
-             sliderInput(inputId = paste0("build_centroid_", j),
-                         label = v,
-                         min = min_val,
-                         max = max_val,
-                         value = round(centroid[v], 2),
-                         step = step))
-    )
+# Puts the sliders back on the stored centroid
+centroid_sliders_to_ell <- function(ell){
+  steps <- centroid_steps()
+  lapply(seq_along(ell$var_names), function(j){
+    v <- ell$var_names[j]
+    updateSliderInput(session,
+                      inputId = paste0("build_centroid_", j),
+                      value = snap_near(ell$centroid[[v]], steps[j]))
   })
-
-  reset_all_btn <- fluidRow(
-    column(width = 12,
-           tags$a(href = "#",
-                  onclick = "Shiny.setInputValue('build_centroid_reset_all', Math.random(), {priority: 'event'}); return false;",
-                  tagList(icon("rotate-left"), ell_reset_label(ell))))
-  )
-
-  tagList(sliders, br(), reset_all_btn, br())
-})
+}
 
 # Applies slider changes to the working ellipsoid
 observeEvent({
@@ -1640,25 +1889,21 @@ observeEvent({
   centroid_list <- lapply(seq_along(vars),
                           function(j) input[[paste0("build_centroid_", j)]])
 
-  if(any(vapply(centroid_list, is.null, logical(1)))){
-    return()
-  }
+  if(any(vapply(centroid_list, is.null, logical(1)))) return()
+
+  steps <- centroid_steps()
+  if(length(steps) != length(vars)) return()
 
   centroid_vals <- setNames(unlist(centroid_list), vars)
-  current_centroid <- setNames(sapply(vars, function(v) ell$centroid[v]), vars)
+  current_centroid <- setNames(sapply(vars, function(v) ell$centroid[[v]]), vars)
 
-  # The sliders are drawn with the centroid rounded to two decimals, so on
-  # first render they report values that differ from the stored centroid by up
-  # to half a step. Comparing against the rounded value makes the untouched
-  # case exact instead of relying on a tolerance.
-  changed <- centroid_vals != round(current_centroid, 2)
+  # A slider nobody touched sits within half a step of the stored value
+  changed <- abs(centroid_vals - current_centroid) > steps / 2
 
-  if(!any(changed)){
-    return()
-  }
+  if(!any(changed)) return()
 
-  # Only the variables the user moved are taken from the sliders. Taking all of
-  # them would round the untouched ones to two decimals on every move.
+  # Only the variables the user moved are taken from the sliders, the rest
+  # keep full precision
   new_centroid <- current_centroid
   new_centroid[changed] <- centroid_vals[changed]
 
@@ -1673,7 +1918,10 @@ observeEvent({
     }
   )
 
-  req(updated_ell)
+  if(is.null(updated_ell)){
+    centroid_sliders_to_ell(ell)
+    return()
+  }
 
   # range_inputs is deliberately left alone. It records the ranges this
   # ellipsoid was built from, which is what a reset with no parent
@@ -1691,11 +1939,14 @@ observeEvent(input$build_edit_centroid_link, {
 }, ignoreInit = TRUE)
 
 # Resets the centroid to the parent ellipsoid, or to what this ellipsoid's
-# own ranges produce when it has no parent
+# own ranges produce when it has no parent. The exact target goes straight
+# onto the ellipsoid, the sliders only follow, so the reset is not rounded
+# to the slider step.
 observeEvent(input$build_centroid_reset_all, {
 
   ell <- session_data$current_ellipsoid
   req(ell)
+  req(!identical(ell_mode(), "view"))
 
   target <- ell_reset_target(ell)
 
@@ -1705,10 +1956,24 @@ observeEvent(input$build_centroid_reset_all, {
     return()
   }
 
-  lapply(seq_along(ell$var_names), function(j){
-    v <- ell$var_names[j]
-    updateSliderInput(session,
-                      inputId = paste0("build_centroid_", j),
-                      value = round(target$centroid[[v]], 2))
-  })
+  vars <- ell$var_names
+  new_centroid <- setNames(sapply(vars, function(v) target$centroid[[v]]), vars)
+
+  updated_ell <- tryCatch(
+    update_ellipsoid_centroid(ell,
+                              new_centroid = new_centroid,
+                              verbose = FALSE),
+    error = function(e){
+      showNotification(paste("Centroid reset failed:", e$message),
+                       type = "error", duration = 5)
+      NULL
+    }
+  )
+
+  req(updated_ell)
+
+  updated_ell <- carry_ell_meta(updated_ell, ell)
+  session_data$current_ellipsoid <- updated_ell
+
+  centroid_sliders_to_ell(updated_ell)
 })

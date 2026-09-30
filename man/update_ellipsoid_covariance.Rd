@@ -48,7 +48,7 @@ find the safe range before calling this function.
 \examples{
 range_df <- data.frame(bio_1  = c(22, 28),
                        bio_12 = c(1000, 3500))
-ell <- build_ellipsoid(range = range_df)
+ell <- build_ellipsoid(ranges = range_df)
 
 # Check covariance allowed covariance range
 ell$cov_limits

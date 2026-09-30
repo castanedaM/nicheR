@@ -5,13 +5,13 @@
 \title{Plot a nicheR ellipsoid in environmental space}
 \usage{
 plot_ellipsoid(object, background = NULL, prediction = NULL,
-               dim = c(1, 2), col_layer = NULL,
-               pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
-               bg_sample = NULL,
-               lty = 1, lwd = 1, col_ell = "#000000",col_bg = "#8A8A8A",
-               pch = 1, alpha_bg = 1, alpha_ell = 1,
-               cex_ell = 1, cex_bg = 1,
-               fixed_lims = NULL,...)
+ dim = c(1, 2), col_layer = NULL,
+ pal = hcl.colors(100, palette = "Viridis"), rev_pal = FALSE,
+ bg_sample = NULL,
+ lty = 1, lwd = 1, col_ell = "#000000",col_bg = "#8A8A8A",
+ pch = 1, alpha_bg = 1, alpha_ell = 1,
+ cex_ell = 1, cex_bg = 1,
+ fixed_lims = NULL,...)
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object containing at least
@@ -31,7 +31,7 @@ Default is \code{c(1, 2)}.}
 
 \item{col_layer}{Character or \code{NULL}. Name of a column in
 \code{prediction} to use for coloring points by a continuous variable.
-If \code{NULL} (default), all prediction points are drawn with
+ If \code{NULL} (default), all prediction points are drawn with
 \code{col_bg}.}
 
 \item{pal}{A color palette function or character vector used when
@@ -73,10 +73,10 @@ Default is \code{1}.}
 Default is \code{1}.}
 
 \item{fixed_lims}{A named list with elements \code{xlim} and \code{ylim},
-each a numeric vector of length 2. When provided, overrides the limits
-computed by \code{safe_lims()}. Intended for use by
+ each a numeric vector of length 2. When provided, overrides the limits
+ computed by \code{safe_lims()}. Intended for use by
 \code{\link{plot_ellipsoid_pairs}} to enforce consistent axis scales across
-panels, but can also be set manually by the user. Default is \code{NULL}
+ panels, but can also be set manually by the user. Default is \code{NULL}
 (limits computed from data).}
 
 \item{...}{Additional graphical parameters passed to
@@ -84,7 +84,7 @@ panels, but can also be set manually by the user. Default is \code{NULL}
 }
 \value{
 Called for its side effect of creating a plot. Returns \code{NULL}
-  invisibly.
+ invisibly.
 }
 \description{
 Plots the 2D boundary of a \code{nicheR_ellipsoid} object in environmental
@@ -96,19 +96,19 @@ data onto the plot after calling this function.
 \details{
 The function has three display modes depending on what is provided:
 \enumerate{
-  \item \strong{Background only} (\code{background} is not \code{NULL}):
-  plots background points in \code{col_bg} with the ellipsoid boundary
-  overlaid.
-  \item \strong{Prediction surface} (\code{background} is \code{NULL},
-  \code{prediction} is not \code{NULL}): plots prediction points, optionally
-  colored by \code{col_layer} using values mapped onto \code{pal}.
-  When \code{col_layer} is provided, points outside the ellipsoid (zero or
-  \code{NA} in \code{col_layer}, as produced by truncated prediction types)
-  are drawn in \code{col_bg} behind the colored interior points. Axis limits
-  are computed from the full \code{prediction} extent so the view is never
-  collapsed to the ellipsoid interior.
-  \item \strong{Ellipsoid only} (both \code{NULL}): plots the ellipsoid
-  boundary alone with no background.
+\item \strong{Background only} (\code{background} is not \code{NULL}):
+ plots background points in \code{col_bg} with the ellipsoid boundary
+ overlaid.
+\item \strong{Prediction surface} (\code{background} is \code{NULL},
+\code{prediction} is not \code{NULL}): plots prediction points, optionally
+ colored by \code{col_layer} using values mapped onto \code{pal}.
+ When \code{col_layer} is provided, points outside the ellipsoid (zero or
+\code{NA} in \code{col_layer}, as produced by truncated prediction types)
+ are drawn in \code{col_bg} behind the colored interior points. Axis limits
+ are computed from the full \code{prediction} extent so the view is never
+ collapsed to the ellipsoid interior.
+\item \strong{Ellipsoid only} (both \code{NULL}): plots the ellipsoid
+ boundary alone with no background.
 }
 }
 \examples{
@@ -117,40 +117,40 @@ data("back_data", package = "nicheR")
 
 # Mode 1: ellipsoid boundary only
 plot_ellipsoid(ref_ellipse,
-               col_ell = "#e10000", lwd = 2,
-               xlab = "Bio1 (Mean Annual Temperature)",
-               ylab = "Bio12 (Annual Precipitation)")
+ col_ell = "#e10000", lwd = 2,
+ xlab = "Bio1 (Mean Annual Temperature)",
+ ylab = "Bio12 (Annual Precipitation)")
 
 # Mode 2: with background points
 plot_ellipsoid(ref_ellipse,
-               background = back_data,
-               col_ell = "#e10000", col_bg = "grey70",
-               lwd = 2, pch = 20, cex_bg = 0.4,
-               xlab = "Bio1", ylab = "Bio12")
+ background = back_data,
+ col_ell = "#e10000", col_bg = "grey70",
+ lwd = 2, pch = 20, cex_bg = 0.4,
+ xlab = "Bio1", ylab = "Bio12")
 
 # Mode 3: prediction colored by suitability
 pred_df <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
 
 plot_ellipsoid(ref_ellipse,
-               prediction = pred_df,
-               col_layer = "suitability",
-               bg_sample = 1000,
-               col_ell = "#e10000", lwd = 2,
-               pch = 20, cex_bg = 0.4,
-               xlab = "Bio1", ylab = "Bio12")
+ prediction = pred_df,
+ col_layer = "suitability",
+ bg_sample = 1000,
+ col_ell = "#e10000", lwd = 2,
+ pch = 20, cex_bg = 0.4,
+ xlab = "Bio1", ylab = "Bio12")
 
 # Mode 3b: truncated suitability, outside points shown in grey
 plot_ellipsoid(ref_ellipse,
-               prediction = pred_df,
-               col_layer = "suitability_trunc",
-               col_bg  = "#d4d4d4",
-               col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
-               xlab = "Bio1", ylab = "Bio12")
+ prediction = pred_df,
+ col_layer = "suitability_trunc",
+ col_bg  = "#d4d4d4",
+ col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.4,
+ xlab = "Bio1", ylab = "Bio12")
 
 }
 \seealso{
 \code{\link{add_data}} to overlay occurrence points,
-  \code{\link{add_ellipsoid}} to overlay additional ellipsoid boundaries,
-  \code{\link{plot_ellipsoid_pairs}} for pairwise plots of all dimensions
-  \code{vignette("plotting_vignette", package = "nicheR")}
+\code{\link{add_ellipsoid}} to overlay additional ellipsoid boundaries,
+\code{\link{plot_ellipsoid_pairs}} for pairwise plots of all dimensions
+\code{vignette("plotting_vignette", package = "nicheR")}
 }

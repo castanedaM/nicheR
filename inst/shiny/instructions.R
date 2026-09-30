@@ -35,24 +35,24 @@ frame to produce continuous or binary suitability surfaces."),
     "Batch predict across multiple saved versions"
   ),
 
-  about_bias = HTML("Upload a sampling bias raster to weight occurrence
+  about_bias = HTML("Upload a sampling bias raster to weight data
 generation toward areas with specific detection effort."),
 
   about_bias_points = c(
     "Optional but important for data-limited species",
     "Accepts any raster matching the background extent",
-    "Higher cell values increase occurrence probability",
+    "Applies a controlled bias to prediction layers",
     "Examples: urbanization, distance to water, road density, collector coverage, any detection proxy"
   ),
 
-  about_generate = HTML("Sample virtual data from the fitted niche,
+  about_generate = HTML("Generate occurences or sample virtual data from the fitted niche,
 optionally weighted by the bias layer."),
 
   about_generate_points = c(
-    "Specify number of presences and background ratio",
+    "Specify number of records",
     "Output is a data frame of coordinates and environmental values",
-    "Designed for virtual species and simulation workflows",
-    "Supports rare-species SDM validation studies"
+    "Batch generate across multiple saved versions",
+    "Save batch generation or individual data frames"
   ),
 
 
@@ -111,10 +111,12 @@ current selection, the ellipsoid, and any covariance adjustments.",
 
   # BUILD TAB: RANGES ------------------------------------------------------
 
-  build_range_choice = HTML("Ranges set the minimum and maximum value of each
-variable, which together define the extent of the ellipsoid. Choose one of
-the three methods below. You can switch methods and change values at any
-time, then rebuild."),
+  build_range_intro = HTML("Ranges set the minimum and maximum value of each
+variable, which together define the extent of the ellipsoid. Start by specifiyng
+the confidence level the statistical metric that defines the limits of the ellipsoid"),
+
+  build_range_choice = HTML("Choose one of the three methods below.
+  You can switch methods and change values at any time, then rebuild."),
 
   build_range_manual = HTML("Define the minimum and maximum values for each
 variable.<br>
@@ -241,6 +243,25 @@ ellipsoid ids may need checking."),
 
   # PREDICT TAB ------------------------------------------------------------
 
+  predict_run = paste0(
+    "Choose an ellipsoid, or All versions, and the layers you want, then click Predict. ",
+    "Each run replaces the previous prediction for that ellipsoid, it doesn't add to it. ",
+    "To keep several layers, select all of them and predict once. ",
+    "You can still download just the ones you need afterward from the ellipsoid library,
+    but a layer has to be predicted to be downloaded."
+  ),
+
+  predict_trunc_default = paste0(
+    "Defaults to the ellipsoid's own confidence level. ",
+    "Leave it blank or unchanged for no adjustment."
+  ),
+
+ predict_download = paste0(
+    "Choose the layers to download and the format. ",
+    "Only layers from the last prediction are listed. ",
+    "To download a layer that isn't here, predict again with it selected."
+  ),
+
   predict_adjust_trunc_tooltip = "Adjust the level of truncation within the
 current ellipsoid. This truncates the prediction inwards.",
 
@@ -251,8 +272,8 @@ predictions made from it. To edit an ellipsoid, go back to the Build tab."),
   predict_library_empty = "No saved ellipsoids yet. Save one on the Build tab
 to predict with it.",
 
-  predict_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, and any biased predictions derived from them.",
+  predict_delete_ell = "This will permanently remove the ellipsoid and its
+predictions, and any other layer (bias, data) derived from it.",
 
   predict_ellipsoid_select_tooltip = "Choose which saved ellipsoid to predict
 with, or All versions to predict with every one at once.",
@@ -263,6 +284,7 @@ directly from the ellipsoid."),
 
   bias_virtual_unavailable = HTML("Sampling bias is geographic, so it is
 unavailable in virtual mode."),
+
   # BIAS TAB ---------------------------------------------------------------
 
   bias = HTML("Bias input adds controlled sampling bias to a prediction

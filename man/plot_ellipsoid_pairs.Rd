@@ -15,9 +15,9 @@ are computed from the range of all variables in \code{background} combined
 with all pairwise ellipsoid boundaries.}
 
 \item{prediction}{Optional data frame or matrix of prediction values passed
-to each \code{plot_ellipsoid()} call. Used when \code{background} is
+ to each \code{plot_ellipsoid()} call. Used when \code{background} is
 \code{NULL}. Global limits are computed from the range of all variables
-in \code{prediction}.}
+ in \code{prediction}.}
 
 \item{...}{Additional graphical arguments passed to \code{plot_ellipsoid()}.}
 }
@@ -54,22 +54,22 @@ ma_bios <- terra::rast(system.file("extdata/ma_bios.tif", package = "nicheR"))
 back_df <- as.data.frame(ma_bios, xy = TRUE)
 
 plot_ellipsoid_pairs(ell3d,
-                     background = back_df,
-                     col_ell = "#e10000", col_bg = "grey70",
-                     lwd = 2, pch = 20, cex_bg = 0.3)
+ background = back_df,
+ col_ell = "#e10000", col_bg = "grey70",
+ lwd = 2, pch = 20, cex_bg = 0.3)
 
 # With truncated suitability predictions
 pred_trunc <- predict(ell3d,
-                      newdata = back_df[, ell3d$var_names],
-                      include_suitability = FALSE,
-                      include_mahalanobis = FALSE,
-                      suitability_truncated = TRUE)
+ newdata = back_df[, ell3d$var_names],
+ include_suitability = FALSE,
+ include_mahalanobis = FALSE,
+ suitability_truncated = TRUE)
 
 plot_ellipsoid_pairs(ell3d,
-                     prediction = pred_trunc,
-                     col_layer  = "suitability_trunc",
-                     col_bg  = "#d4d4d4",
-                     col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
+ prediction = pred_trunc,
+ col_layer  = "suitability_trunc",
+ col_bg  = "#d4d4d4",
+ col_ell = "#e10000", lwd = 2, pch = 20, cex_bg = 0.3)
 
 
 }

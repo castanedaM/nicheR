@@ -17,7 +17,7 @@ ellipsoid_boundary_2d(object, n_segments = 50, dim = c(1, 2))
 }
 \value{
 A \code{data.frame} with \code{n_segments} ordered boundary points
-  in the selected dimensions.
+ in the selected dimensions.
 }
 \description{
 Computes ordered boundary points for a two-dimensional slice of a

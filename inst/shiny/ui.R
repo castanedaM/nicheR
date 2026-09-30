@@ -274,352 +274,302 @@ dashboardPage(
       tabItem(
         tabName = "build_tab",
         fluidRow(class = "row-tight",
-          column(width = 5,
-                 tabBox(
-                   id = "build_tabs",
-                   width = 12,
+                 column(width = 5,
+                        tabBox(
+                          id = "build_tabs",
+                          width = 12,
 
-                   tabPanel(
-                     tags$span("Input", class = "text-tab-title"),
-                     value = "build_data_tab",
-                     fluidRow(
-                       column(width = 12,
-                              p(instructions$data_input_type, class = "text-instruction"),
-                              radioButtons("build_data_input_type_choice",
-                                           label = tags$span("Select input type:",
-                                                             class = "text-widget-title"),
-                                           choiceNames = list(
-                                             tags$span("Background layers",
-                                                       class = "text-widget-inner"),
-                                             tags$span("Previous session",
-                                                       class = "text-widget-inner"),
-                                             tags$span("Virtual mode",
-                                                       class = "text-widget-inner"),
-                                             tags$span("Example data",
-                                                       class = "text-widget-inner")
-                                           ),
-                                           choiceValues = c("bg_layers", "prev_session", "virtual_mode", "example_data"),
-                                           selected = character(0),
-                                           inline = TRUE),
-                              uiOutput("build_data_input_type_ui")
-                       )
-                     )
-                   ),
+                          tabPanel(
+                            tags$span("Input", class = "text-tab-title"),
+                            value = "build_data_tab",
+                            fluidRow(
+                              column(width = 12,
+                                     p(instructions$data_input_type, class = "text-instruction"),
+                                     radioButtons("build_data_input_type_choice",
+                                                  label = tags$span("Select input type:",
+                                                                    class = "text-widget-title"),
+                                                  choiceNames = list(
+                                                    tags$span("Background layers",
+                                                              class = "text-widget-inner"),
+                                                    tags$span("Previous session",
+                                                              class = "text-widget-inner"),
+                                                    tags$span("Virtual mode",
+                                                              class = "text-widget-inner"),
+                                                    tags$span("Example data",
+                                                              class = "text-widget-inner")
+                                                  ),
+                                                  choiceValues = c("bg_layers", "prev_session", "virtual_mode", "example_data"),
+                                                  selected = character(0),
+                                                  inline = TRUE),
+                                     uiOutput("build_data_input_type_ui")
+                              )
+                            )
+                          ),
 
-                   tabPanel(
-                     title = tags$span("Build", class = "text-tab-title"),
-                     value = "build_range_tab",
-                     fluidRow(
-                       uiOutput("build_variable_selector_ui")
-                     ),
-                     fluidRow(
-                       uiOutput("build_range_method_choice_ui")
-                     ),
-                     fluidRow(
-                       uiOutput("build_covariance_ui")
-                     ),
-                     fluidRow(
-                       uiOutput("build_centroid_mover_ui")
-                     ),
-                     fluidRow(
-                       uiOutput("build_ellipsoid_library_ui"),
-                       uiOutput("build_reference_select_ui")
-                     ),
-                     fluidRow(
-                       column(width = 12,
-                              uiOutput("build_next_step_ui")
-                       )
-                     )
-                   )
-                 )
-          ),
-
-          column(width = 7,
-                 tabBox(
-                   id = "build_plot_tabs",
-                   width = 12,
-
-                   tabPanel(
-                     title = tags$span("E-space", class = "text-tab-title"),
-                     value = "build_espace_plot_tab",
-                     uiOutput("build_espace_plot_top_options_ui"),
-                     plotOutput("build_espace_plot"),
-                     br(),
-                     uiOutput("build_espace_plot_bottom_options_ui")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("G-space", class = "text-tab-title"),
-                     value = "build_gspace_plot_tab",
-                     uiOutput("build_gspace_plot_top_options_ui"),
-                     plotOutput("build_gspace_plot"),
-                     br(),
-                     uiOutput("build_gspace_plot_bottom_options_ui")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Combined", class = "text-tab-title"),
-                     value = "build_combined_plot_tab",
-                     uiOutput("build_combined_plot_top_options_ui"),
-                     plotOutput("build_combined_plot"),
-                     br(),
-                     uiOutput("build_combined_plot_bottom_options_ui")
-                   )
-
+                          tabPanel(
+                            title = tags$span("Build", class = "text-tab-title"),
+                            value = "build_range_tab",
+                            fluidRow(
+                              uiOutput("build_variable_selector_ui")
+                            ),
+                            fluidRow(
+                              uiOutput("build_range_method_choice_ui")
+                            ),
+                            fluidRow(
+                              uiOutput("build_covariance_ui")
+                            ),
+                            fluidRow(
+                              uiOutput("build_centroid_mover_ui")
+                            ),
+                            fluidRow(
+                              uiOutput("build_ellipsoid_library_ui"),
+                              uiOutput("build_reference_select_ui")
+                            ),
+                            fluidRow(
+                              column(width = 12,
+                                     uiOutput("build_next_step_ui")
+                              )
+                            )
+                          )
+                        )
                  ),
 
-                 uiOutput("build_ellipsoid_info_ui"),
-                 uiOutput("build_plot_settings_ui")
+                 column(width = 7,
+                        tabBox(
+                          id = "build_plot_tabs",
+                          width = 12,
 
-          )
+                          tabPanel(
+                            title = tags$span("E-space", class = "text-tab-title"),
+                            value = "build_espace_plot_tab",
+                            uiOutput("build_espace_plot_top_options_ui"),
+                            plotOutput("build_espace_plot"),
+                            br(),
+                            uiOutput("build_espace_plot_bottom_options_ui")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("G-space", class = "text-tab-title"),
+                            value = "build_gspace_plot_tab",
+                            uiOutput("build_gspace_plot_top_options_ui"),
+                            plotOutput("build_gspace_plot"),
+                            br(),
+                            uiOutput("build_gspace_plot_bottom_options_ui")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("Combined", class = "text-tab-title"),
+                            value = "build_combined_plot_tab",
+                            uiOutput("build_combined_plot_top_options_ui"),
+                            plotOutput("build_combined_plot"),
+                            br(),
+                            uiOutput("build_combined_plot_bottom_options_ui")
+                          )
+
+                        ),
+
+                        uiOutput("build_ellipsoid_info_ui"),
+                        uiOutput("build_plot_settings_ui")
+
+                 )
         )
       ),
 
       tabItem(
         tabName = "predict_tab",
         fluidRow(class = "row-tight",
-          column(width = 5,
-                 box(width = 12,
-                     title = tags$span("Prediction",
-                                       class = "text-tab-title"),
-                     uiOutput("predict_ellipsoid_selector_ui"),
+                 column(width = 5,
+                        box(width = 12,
+                            title = tags$span("Prediction",
+                                              class = "text-tab-title"),
+                            p(instructions$predict_run, class = "text-instruction"),
+                            uiOutput("predict_ellipsoid_selector_ui"),
 
-                     fluidRow(
-                       column(width = 8,
-                              tags$span("Prediction layers to include",
-                                        class = "text-widget-title"))
-                     ),
+                            uiOutput("predict_layers_ui"),
 
-                     fluidRow(
-                       column(width = 6,
-                              checkboxInput("predict_suitability",
-                                            label = tags$span("Suitability",
-                                                              class = "text-widget-inner"),
-                                            value = TRUE)),
-                       column(width = 6,
-                              checkboxInput("predict_suitability_trunc",
-                                            label = tags$span("Suitability (truncated)",
-                                                              class = "text-widget-inner"),
-                                            value = FALSE))
-                     ),
+                            br(),
 
-                     fluidRow(
-                       column(width = 6,
-                              checkboxInput("predict_mahalanobis",
-                                            label = tags$span("Mahalanobis",
-                                                              class = "text-widget-inner"),
-                                            value = TRUE)),
-                       column(width = 6,
-                              checkboxInput("predict_mahalanobis_trunc",
-                                            label = tags$span("Mahalanobis (truncated)", class = "text-widget-inner"),
-                                            value = FALSE))
+                            fluidRow(
+                              uiOutput("predict_advanced_settings_ui")
+                            ),
 
-                     ),
-
-                     br(),
-
-                     fluidRow(
-                       box(title = tags$span("Advanced prediction settings",
-                                             class = "text-section-header"),
-                           width = 12,
-                           collapsible = TRUE,
-                           collapsed = TRUE,
-                           fluidRow(
-                             column(width = 8,
-                                    tagList(tags$span("Truncation level adjustment",
-                                                      class = "text-widget-title"),
-                                            tags$span(icon("circle-info"),
-                                                      title = instructions$adjust_trunc_tooltip,
-                                                      class = "tooltip-icon"))),
-                             column(width = 4,
-                                    numericInput(inputId = "predict_adjust_trunc",
-                                                 label = NULL,
-                                                 value = 0.95,
-                                                 min = 0.0001,
-                                                 max = 0.99999,
-                                                 step = 0.05)
-                             )
-                           )
-                       )
-                     ),
-
-                     fluidRow(
-                       column(width = 12,
-                              div(class = "action-btn-row",
-                                  actionButton(inputId = "predict_run_btn",
-                                               label = "Predict",
-                                               class = "btn-continue")
+                            fluidRow(
+                              column(width = 12,
+                                     div(class = "action-btn-row",
+                                         actionButton(inputId = "predict_run_btn",
+                                                      label = "Predict",
+                                                      class = "btn-continue")
+                                     )
                               )
-                       )
-                     ),
+                            ),
 
-                     br(),  br(),
+                            br(),  br(),
 
-                     fluidRow(
-                       uiOutput("predict_ellipsoid_library_ui")
-                     ),
+                            fluidRow(
+                              uiOutput("predict_ellipsoid_library_ui")
+                            ),
 
-                     fluidRow(
-                       column(width = 12,
-                              uiOutput("predict_next_step_ui")
-                       )
-                     )
-                 )
-          ),
-
-          column(width = 7,
-
-                 tabBox(
-                   id    = "predict_plot_tabs",
-                   width = 12,
-
-                   tabPanel(
-                     title = tags$span("E-space", class = "text-tab-title"),
-                     value = "predict_espace_plot_tab",
-                     uiOutput("predict_espace_plot_top_options_ui"),
-                     plotOutput("predict_espace_plot"),
-                     br(),
-                     uiOutput("predict_espace_plot_bottom_options_ui")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("G-space", class = "text-tab-title"),
-                     value = "predict_gspace_plot_tab",
-                     uiOutput("predict_gspace_plot_top_options_ui"),
-                     plotOutput("predict_gspace_plot"),
-                     br(),
-                     uiOutput("predict_gspace_plot_bottom_options_ui")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Combined", class = "text-tab-title"),
-                     value = "predict_combined_plot_tab",
-                     uiOutput("predict_combined_plot_top_options_ui"),
-                     plotOutput("predict_combined_plot"),
-                     br(),
-                     uiOutput("predict_combined_plot_bottom_options_ui")
-                   )
+                            fluidRow(
+                              column(width = 12,
+                                     uiOutput("predict_next_step_ui")
+                              )
+                            )
+                        )
                  ),
 
-                 br(),
+                 column(width = 7,
 
-                 uiOutput("predict_plot_settings_ui")
-          )
+                        tabBox(
+                          id    = "predict_plot_tabs",
+                          width = 12,
+
+                          tabPanel(
+                            title = tags$span("E-space", class = "text-tab-title"),
+                            value = "predict_espace_plot_tab",
+                            uiOutput("predict_espace_plot_top_options_ui"),
+                            plotOutput("predict_espace_plot"),
+                            br(),
+                            uiOutput("predict_espace_plot_bottom_options_ui")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("G-space", class = "text-tab-title"),
+                            value = "predict_gspace_plot_tab",
+                            uiOutput("predict_gspace_plot_top_options_ui"),
+                            plotOutput("predict_gspace_plot"),
+                            br(),
+                            uiOutput("predict_gspace_plot_bottom_options_ui")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("Combined", class = "text-tab-title"),
+                            value = "predict_combined_plot_tab",
+                            uiOutput("predict_combined_plot_top_options_ui"),
+                            plotOutput("predict_combined_plot"),
+                            br(),
+                            uiOutput("predict_combined_plot_bottom_options_ui")
+                          )
+                        ),
+
+                        br(),
+
+                        uiOutput("predict_plot_settings_ui")
+                 )
         )
       ),
 
       tabItem(
         tabName = "bias_tab",
         fluidRow(class = "row-tight",
-          column(width = 5,
-                 box(title = tagList(tags$span("Bias", class = "text-tab-title")),
-                     width = 12,
-                     p(instructions$bias, class = "text-instruction"),
-                     fluidRow(column(width = 12,
-                                     uiOutput("bias_skip_ui"))),
-                     br(), br(),
-                     fluidRow(uiOutput("bias_upload_ui")),
-                     fluidRow(uiOutput("bias_prepare_ui")),
-                     fluidRow(uiOutput("bias_apply_ui")),
-                     fluidRow(uiOutput("bias_ellipsoid_library_ui")),
-                     fluidRow(
-                       column(width = 12,
-                              uiOutput("bias_next_step_ui")
-                       )
-                     )
-                 )
-          ),
-
-          column(width = 7,
-
-                 tabBox(
-                   id = "bias_plot_tabs",
-                   width = 12,
-
-                   tabPanel(
-                     title = tags$span("Bias Layers",
-                                       class = "text-tab-title"),
-                     value = "bias_input_layers_plot_tab",
-                     plotOutput("bias_layers_plot")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Bias Composite",
-                                       class = "text-tab-title"),
-                     value = "bias_composite_plot_tab",
-                     plotOutput("bias_composite_plot")
-                   ),
-
-                   tabPanel(
-                     title = tags$span("Pred and Biased G-space",
-                                       class = "text-tab-title"),
-                     value = "bias_gspace_plot_tab",
-                     uiOutput("bias_gspace_plot_layer_select_ui"),
-                     plotOutput("bias_gspace_plot"),
-                     uiOutput("bias_gspace_plot_bottom_options_ui")
-
-                   )
-
+                 column(width = 5,
+                        box(title = tagList(tags$span("Bias", class = "text-tab-title")),
+                            width = 12,
+                            p(instructions$bias, class = "text-instruction"),
+                            fluidRow(column(width = 12,
+                                            uiOutput("bias_skip_ui"))),
+                            br(), br(),
+                            fluidRow(uiOutput("bias_upload_ui")),
+                            fluidRow(uiOutput("bias_prepare_ui")),
+                            fluidRow(uiOutput("bias_apply_ui")),
+                            fluidRow(uiOutput("bias_ellipsoid_library_ui")),
+                            fluidRow(
+                              column(width = 12,
+                                     uiOutput("bias_next_step_ui")
+                              )
+                            )
+                        )
                  ),
 
-                 br(),
+                 column(width = 7,
 
-                 uiOutput("bias_plot_settings_ui")
-          )
+                        tabBox(
+                          id = "bias_plot_tabs",
+                          width = 12,
+
+                          tabPanel(
+                            title = tags$span("Bias Layers",
+                                              class = "text-tab-title"),
+                            value = "bias_input_layers_plot_tab",
+                            plotOutput("bias_layers_plot")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("Bias Composite",
+                                              class = "text-tab-title"),
+                            value = "bias_composite_plot_tab",
+                            plotOutput("bias_composite_plot")
+                          ),
+
+                          tabPanel(
+                            title = tags$span("Pred and Biased G-space",
+                                              class = "text-tab-title"),
+                            value = "bias_gspace_plot_tab",
+                            uiOutput("bias_gspace_plot_layer_select_ui"),
+                            plotOutput("bias_gspace_plot"),
+                            uiOutput("bias_gspace_plot_bottom_options_ui")
+
+                          )
+
+                        ),
+
+                        br(),
+
+                        uiOutput("bias_plot_settings_ui")
+                 )
         )
       ),
 
       tabItem(
         tabName = "generate_tab",
         fluidRow(class = "row-tight",
-          column(width = 5,
-                 fluidRow(
-                   uiOutput("generate_controls_ui")
+                 column(width = 5,
+                        fluidRow(
+                          uiOutput("generate_controls_ui")
+                        ),
+
+                        fluidRow(
+                          uiOutput("generate_ellipsoid_library_ui"),
+                          uiOutput("generate_occurrence_summary_ui")
+                        )
                  ),
 
-                 fluidRow(
-                   uiOutput("generate_ellipsoid_library_ui"),
-                   uiOutput("generate_occurrence_summary_ui")
-                  )
-          ),
+                 column(width = 7,
+                        tabBox(
+                          id = "generate_plot_tabs",
+                          width = 12,
 
-          column(width = 7,
-                 tabBox(
-                   id = "generate_plot_tabs",
-                   width = 12,
+                          tabPanel(
+                            title = tags$span("E-space", class = "text-tab-title"),
+                            value = "generate_espace_plot_tab",
+                            uiOutput("generate_espace_plot_top_options_ui"),
+                            plotOutput("generate_espace_plot"),
+                            br(),
+                            uiOutput("generate_espace_plot_bottom_options_ui")
+                          ),
 
-                   tabPanel(
-                     title = tags$span("E-space", class = "text-tab-title"),
-                     value = "generate_espace_plot_tab",
-                     uiOutput("generate_espace_plot_top_options_ui"),
-                     plotOutput("generate_espace_plot"),
-                     br(),
-                     uiOutput("generate_espace_plot_bottom_options_ui")
-                   ),
+                          tabPanel(
+                            title = tags$span("G-space", class = "text-tab-title"),
+                            value = "generate_gspace_plot_tab",
+                            uiOutput("generate_gspace_plot_top_options_ui"),
+                            plotOutput("generate_gspace_plot"),
+                            uiOutput("generate_gspace_plot_bottom_options_ui")
+                          ),
 
-                   tabPanel(
-                     title = tags$span("G-space", class = "text-tab-title"),
-                     value = "generate_gspace_plot_tab",
-                     uiOutput("generate_gspace_plot_top_options_ui"),
-                     plotOutput("generate_gspace_plot"),
-                     uiOutput("generate_gspace_plot_bottom_options_ui")
-                   ),
+                          tabPanel(
+                            title = tags$span("Combined", class = "text-tab-title"),
+                            value = "generate_combined_plot_tab",
+                            uiOutput("generate_combined_plot_top_options_ui"),
+                            plotOutput("generate_combined_plot"),
+                            br(),
+                            uiOutput("generate_combined_plot_bottom_options_ui")
+                          )
 
-                   tabPanel(
-                     title = tags$span("Combined", class = "text-tab-title"),
-                     value = "generate_combined_plot_tab",
-                     uiOutput("generate_combined_plot_top_options_ui"),
-                     plotOutput("generate_combined_plot"),
-                     br(),
-                     uiOutput("generate_combined_plot_bottom_options_ui")
-                   )
+                        ),
 
-                 ),
+                        uiOutput("generate_ellipsoid_info_ui"),
+                        uiOutput("generate_plot_settings_ui")
 
-                 uiOutput("generate_ellipsoid_info_ui"),
-                 uiOutput("generate_plot_settings_ui")
-
-          )
+                 )
         )
       )
     )

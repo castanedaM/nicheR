@@ -2,7 +2,7 @@
 # Description: E-space, G-space, and combined plots for the predict tab.
 #              Mirrors build_tab_plot.R, with no range lines and with
 #              overlays driven by the stored predictions.
-# Date last updated: 08/05/2026
+# Date last updated: 09/29/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -96,8 +96,8 @@ predict_draw_espace_panel <- function(v1, v2, s, layer = NULL, title = NULL){
       # Binary suitability is the same regardless of which layer is shown
       base_lyr <- if("suitability_trunc" %in% names(vals_df)){
         "suitability_trunc"
-      # } else if("suitability" %in% names(vals_df)){
-      #   "suitability"
+        # } else if("suitability" %in% names(vals_df)){
+        #   "suitability"
       } else {
         NULL
       }
@@ -119,7 +119,13 @@ predict_draw_espace_panel <- function(v1, v2, s, layer = NULL, title = NULL){
       keep <- !is.na(v)
 
       if(any(keep)){
-        cols <- pred_colors(v[keep], s$palette, rng = s$layer_rng)
+        # Each layer is colored on its own range. Using the range of the
+        # layer picked for the pairs view broke 2D and combined panels: a
+        # Mahalanobis panel cut to a 0 to 1 suitability range lost every
+        # point above 1. In pairs every panel shows the same layer, so this
+        # is the same range the shared legend uses.
+        cols <- pred_colors(v[keep], s$palette,
+                            rng = pred_layer_range(vals_df, lyr))
         points(bg[[v1]][keep], bg[[v2]][keep],
                col = cols,
                pch = s$suitable_pch,
@@ -387,8 +393,11 @@ observeEvent(input$predict_ellipsoid_selected, {
   set_working_ellipsoid(ell, mode = "view")
 })
 
-# The reverse direction: clicking view in the library moves the selector,
-# and the layer checkboxes follow whatever that ellipsoid already predicted.
+# The reverse direction: clicking view in the library, or loading an
+# ellipsoid anywhere, moves the selector, and the layer checkboxes follow
+# what was requested for its prediction. This is the only place that syncs
+# them. Layer names cannot be used: predict() adds suitability even when it
+# was not requested, and the names are mixed case (Mahalanobis).
 observeEvent(ell_slot(), {
 
   ell <- session_data$current_ellipsoid
@@ -401,16 +410,16 @@ observeEvent(ell_slot(), {
                       selected = ell$ell_id)
   }
 
-  lyrs <- predict_pred_layers()
+  pred <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
 
-  updateCheckboxInput(session, "predict_suitability",
-                      value = "suitability" %in% lyrs)
-  updateCheckboxInput(session, "predict_suitability_trunc",
-                      value = "suitability_trunc" %in% lyrs)
-  updateCheckboxInput(session, "predict_mahalanobis",
-                      value = "mahalanobis" %in% lyrs)
-  updateCheckboxInput(session, "predict_mahalanobis_trunc",
-                      value = "mahalanobis_trunc" %in% lyrs)
+  # Nothing predicted, so the checkboxes keep whatever the user set
+  if(is.null(pred)) return()
+
+  flags <- session_data$prediction_settings[[ell$ell_id]]$layers_requested
+  if(is.null(flags)) flags <- pred_layer_flags(pred)
+
+  predict_layer_state(list(values = flags,
+                           stamp = predict_layer_state()$stamp + 1L))
 
 }, ignoreInit = TRUE)
 
@@ -706,8 +715,8 @@ output$predict_gspace_plot_bottom_options_ui <- renderUI({
 
   fluidRow(class = "ell-row",
            column(width = 12,
-           tags$span(ell$ell_name, class = "text-center",
-                     style = "font-size: 12px; color: #888; font-weight: 400;"))
+                  tags$span(ell$ell_name, class = "text-center",
+                            style = "font-size: 12px; color: #888; font-weight: 400;"))
   )
 
 })

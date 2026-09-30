@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 08/03/2026
+# Date last updated: 09/29/2026
 
 # Start session button in about
 observeEvent(input$about_start_session_btn, {
@@ -286,8 +286,10 @@ observeEvent(input$build_confirm_variables_btn, {
 
 observeEvent(input$build_edit_variables_link, {
 
-  # Nothing built yet, so there is nothing to lose
-  if(length(session_data$ellipsoid_list) == 0){
+  # Nothing built yet, so there is nothing to lose. An unsaved working
+  # ellipsoid counts as something built, it is not in the library yet.
+  if(length(session_data$ellipsoid_list) == 0 &&
+     is.null(session_data$current_ellipsoid)){
     session_data$vars <- NULL
 
     # Ranges
@@ -305,10 +307,9 @@ observeEvent(input$build_edit_variables_link, {
     p(instructions$build_edit_variables_tooltip, class = "text-instruction"),
     footer = tagList(
       modalButton("Cancel"),
-      div(class = "action-btn-row",
-          actionButton("build_confirm_edit_variables_btn",
-                       "Yes, edit variables",
-                       class = "btn-warning"))
+      actionButton("build_confirm_edit_variables_btn",
+                   "Yes, edit variables",
+                   class = "btn-warning")
     ),
     easyClose = FALSE
   ))
@@ -320,7 +321,7 @@ observeEvent(input$build_confirm_edit_variables_btn, {
   session_data$vars <- NULL
 
   session_data$session_range <- NULL
-  session_data$range_df <- NULL
+  session_data$df_range <- NULL
 
   session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
@@ -348,7 +349,7 @@ observeEvent(input$build_data_input_type_choice, {
   session_data$vars <- NULL
 
   session_data$session_range <- NULL
-  session_data$range_df <- NULL
+  session_data$df_range <- NULL
 
   session_data$ellipsoid_list <-list()
   session_data$current_ellipsoid <- NULL
@@ -363,7 +364,7 @@ observeEvent(input$build_data_input_type_choice, {
   session_data$sampling_mask <- NULL
   session_data$ellipsoid_occurrence_list <- list()
 
-  updateRadioButtons(session, "range_method_choice", selected = character(0))
+  updateRadioButtons(session, "build_range_method_choice", selected = character(0))
 
 }, ignoreInit = TRUE)
 
@@ -418,9 +419,9 @@ output$build_data_input_type_ui <- renderUI({
                          column(
                            width = 12,
                            div(class = "action-btn-row",
-                           actionButton(inputId = "build_data_upload_btn",
-                                        label = "Upload",
-                                        class = "btn-continue"))
+                               actionButton(inputId = "build_data_upload_btn",
+                                            label = "Upload",
+                                            class = "btn-continue"))
                          )
                        )
            ))
@@ -456,9 +457,9 @@ output$build_data_input_type_ui <- renderUI({
                          column(
                            width = 12,
                            div(class = "action-btn-row",
-                           actionButton(inputId = "build_continue_virtual_btn",
-                                        label = "Continue",
-                                        class = "btn-continue"))
+                               actionButton(inputId = "build_continue_virtual_btn",
+                                            label = "Continue",
+                                            class = "btn-continue"))
                          )
                        )
            ))
@@ -476,8 +477,8 @@ output$build_data_input_type_ui <- renderUI({
                      width = 12,
                      div(class = "action-btn-row",
                          actionButton(inputId = "build_continue_example_btn",
-                                  label = "Continue",
-                                  class = "btn-continue"))
+                                      label = "Continue",
+                                      class = "btn-continue"))
                    )
                  )
              )
@@ -517,11 +518,17 @@ output$build_variable_selector_ui <- renderUI({
   if(!is.null(session_data$vars)){
     return(
       box(title = tags$span("Variables", class = "text-section-header"),
+          id = "build_vars_box",
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
           p(paste("Selected variables:", paste(session_data$vars, collapse = ", ")),
             class = "text-instruction"),
+          # Always shown. Showing it only when the library has entries would
+          # make this box redraw on every ellipsoid change, and a redraw
+          # collapses it again right after Create new ellipsoid opens it.
+          p("New ellipsoids use these variables. Changing them clears the library.",
+            class = "text-muted-small"),
           fluidRow(
             column(12,
                    actionLink("build_edit_variables_link",
@@ -549,6 +556,7 @@ output$build_variable_selector_ui <- renderUI({
 
     return(
       box(title = tags$span("Define Variables", class = "text-section-header"),
+          id = "build_vars_box",
           width = 12,
           p(instructions$build_virtual_variables, class = "text-instruction"),
           fluidRow(
@@ -564,10 +572,10 @@ output$build_variable_selector_ui <- renderUI({
           fluidRow(
             column(12,
                    div(class = "action-btn-row",
-                   actionButton("build_confirm_variables_btn",
-                                "Confirm",
-                                class = "btn-continue")))
-            )
+                       actionButton("build_confirm_variables_btn",
+                                    "Confirm",
+                                    class = "btn-continue")))
+          )
       )
     )
   }
@@ -602,6 +610,7 @@ output$build_variable_selector_ui <- renderUI({
   })
 
   box(title = tags$span("Select Variables", class = "text-section-header"),
+      id = "build_vars_box",
       width = 12,
       p(instructions$build_variable_settings, class = "text-instruction"),
       var_slots,
@@ -611,7 +620,6 @@ output$build_variable_selector_ui <- renderUI({
                    actionButton("build_confirm_variables_btn",
                                 "Confirm",
                                 class = "btn-continue")))
-        )
+      )
   )
 })
-

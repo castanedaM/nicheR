@@ -11,7 +11,7 @@ random_ellipses(object, background, n = 10, smallest_proportion = 0.1,
 \arguments{
 \item{object}{A nicheR_ellipsoid object used as a reference ellipse
 (the biggest to be generated), and containing at least
-\code{covariance_matrix} and \code{cl}.}
+\code{cov_matrix} and \code{cl}.}
 
 \item{background}{Matrix or Dataframe. The 2D point cloud (coordinates)
 used to select random centroids.}

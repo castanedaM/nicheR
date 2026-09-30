@@ -13,7 +13,7 @@ map_to_pal(vals, pal_len)
 }
 \value{
 Integer vector of the same length as \code{vals}, with values in
-  \code{[1, pal_len]}.
+\code{[1, pal_len]}.
 }
 \description{
 Rescales a numeric vector linearly from its observed range onto integer

@@ -118,7 +118,7 @@ pred_all <- predict(ell,
                     suitability_truncated = TRUE)
 colnames(pred_all)
 
-# Raster input: returns a list of single-layer SpatRasters, one per output
+# Raster input: returns a SpatRasters with as many layers as requested outputs
 pred_rast <- predict(ell,
                      newdata = ma_bios[[ell$var_names]],
                      include_suitability = TRUE,

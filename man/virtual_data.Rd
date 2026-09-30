@@ -12,7 +12,7 @@ virtual_data(object, n = 100, truncate = FALSE, effect = "direct", seed = 1)
 
 \item{n}{Integer. The number of virtual points to generate. Default = 100.}
 
-\item{truncate}{Logical. If \code{TRUE} (default), points are constrained
+\item{truncate}{Logical. If \code{TRUE}, points are constrained
 within the confidence limit (\code{cl}) defined in the object.}
 
 \item{effect}{Character. The distribution pattern of points.

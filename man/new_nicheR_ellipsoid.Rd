@@ -23,6 +23,8 @@ new_nicheR_ellipsoid(
 )
 }
 \arguments{
+\item{ranges}{user specified ranges}
+
 \item{dimensions}{The number of variables/dimensions.}
 
 \item{var_names}{Names of the original variables.}
@@ -48,6 +50,8 @@ new_nicheR_ellipsoid(
 \item{volume}{Calculated hyper-volume.}
 
 \item{cov_limits}{Axis-aligned limits.}
+
+\item{cov_limits_remaining}{remaining available limits for axis.}
 }
 \value{
 An object of class \code{nicheR_ellipsoid} with the fields described above.

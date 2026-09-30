@@ -4,7 +4,7 @@
 # points from a prediction surface, biased or unbiased, for one or more
 # saved ellipsoids.
 
-# Date Last Updated: 08/06/2026
+# Date Last Updated: 09/29/2026
 
 
 # OCCURRENCE SET VISIBILITY -----------------------------------------------
@@ -426,10 +426,16 @@ output$generate_surface_ui <- renderUI({
 
   ids <- if(!is.null(sel) && !identical(sel, "all")) sel else names(pred_list)
 
+  versions <- session_data$ellipsoid_list
+
+  # Only prediction layers are surfaces. predict() runs with keep_data = TRUE,
+  # so the stored raster also carries the environmental variables, and those
+  # are not something to sample from. pred_layer_names() is shared with the
+  # Predict tab's download, so both tabs agree on what a layer is.
   layer_names <- function(lst){
     unique(unlist(lapply(ids, function(id){
       r <- lst[[id]]
-      if(inherits(r, "SpatRaster")) names(r) else character(0)
+      if(inherits(r, "SpatRaster")) pred_layer_names(r, versions[[id]]) else character(0)
     })))
   }
 
@@ -1080,13 +1086,25 @@ output$generate_ellipsoid_library_ui <- renderUI({
   )
 })
 
-# View, read-only
+# View, read-only. Also points the ellipsoid selector at it, as the Predict
+# tab does, when it has a prediction to sample from.
 observeEvent(input$generate_ell_view, {
 
-  ell <- session_data$ellipsoid_list[[input$generate_ell_view]]
+  id <- input$generate_ell_view
+  ell <- session_data$ellipsoid_list[[id]]
   req(ell)
 
   set_working_ellipsoid(ell, mode = "view")
+
+  selectable <- if(identical(session_data$input_mode, "virtual")){
+    names(session_data$ellipsoid_list)
+  } else {
+    names(session_data$ellipsoid_prediction_list)
+  }
+
+  if(id %in% selectable){
+    updateSelectInput(session, "generate_ellipsoid_selected", selected = id)
+  }
 
   showNotification(paste0("Viewing ", ell$ell_name, "."),
                    type = "message", duration = 3)
@@ -1133,6 +1151,7 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
 
   session_data$ellipsoid_list[[id]] <- NULL
   session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
   session_data$ellipsoid_occurrence_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL

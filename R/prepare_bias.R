@@ -94,6 +94,7 @@ prepare_bias <- function(bias_surface,
                          include_composite = TRUE,
                          include_processed_layers = FALSE,
                          mask_na = FALSE,
+                         floor = NULL,
                          verbose = TRUE){
 
   gc()
@@ -341,6 +342,13 @@ prepare_bias <- function(bias_surface,
     out_rast$processed_layers <- directional_bias_stack
     out_rast$combination_formula <- paste(formula_entries, collapse = " * ")
   }
+
+  # Adjust to floor
+  if(!is.null(floor)) {
+    out_rast$composite_surface <- terra::clamp(out_rast$composite_surface,
+                                               lower = floor)
+  }
+
 
   # 5. Build result --------------------------------------------------------
 

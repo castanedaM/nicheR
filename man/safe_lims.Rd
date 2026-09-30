@@ -15,7 +15,7 @@ same column structure as \code{pts_xy}.}
 }
 \value{
 A named list with elements \code{xlim} and \code{ylim}, each a
-  numeric vector of length 2.
+ numeric vector of length 2.
 }
 \description{
 Returns x and y ranges that span both a matrix of data points and a

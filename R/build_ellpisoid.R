@@ -8,7 +8,7 @@
 #' matrix.
 #'
 #' @details
-#' \code{range} must be a 2-row \code{matrix} or \code{data.frame} with variables
+#' \code{ranges} must be a 2-row \code{matrix} or \code{data.frame} with variables
 #' in columns. Rows represent lower and upper bounds for each variable (row order
 #' may be min/max or max/min). The centroid is computed as:
 #' \deqn{\mu_i = (m_i + M_i)/2.}
@@ -22,10 +22,10 @@
 #' The ellipsoid contour is defined using a chi-square cutoff
 #' \eqn{c^2 = \chi^2_{n}(\mathrm{cl})}, where \eqn{n} is the number of variables.
 #'
-#' @usage build_ellipsoid(range, cl = 0.99,
+#' @usage build_ellipsoid(ranges, cl = 0.99,
 #'                        verbose = TRUE)
 #'
-#' @param range A 2-row \code{matrix} or \code{data.frame} of bounds, with variables
+#' @param ranges A 2-row \code{matrix} or \code{data.frame} of bounds, with variables
 #'   as columns. Rows may be ordered as min/max or max/min. Column names are required
 #'   and used as variable names.
 #' @param cl Numeric confidence level in (0, 1). Used to compute the chi-square
@@ -43,52 +43,52 @@
 #' # Two-dimensional ellipsoid from environmental ranges
 #' range_df <- data.frame(bio_1  = c(22, 28),
 #'                        bio_12 = c(1000, 3500))
-#' ell2d <- build_ellipsoid(range = range_df)
+#' ell2d <- build_ellipsoid(ranges = range_df)
 #' ell2d
 #'
 #' # Three-dimensional ellipsoid
 #' range_3d <- data.frame(bio_1  = c(22, 28),
 #'                        bio_12 = c(1000, 3500),
 #'                        bio_15 = c(50, 70))
-#' ell3d <- build_ellipsoid(range = range_3d)
+#' ell3d <- build_ellipsoid(ranges = range_3d)
 #' ell3d
 #'
 #' @export
-build_ellipsoid <- function(range,
-                            cl = 0.99,
+build_ellipsoid <- function(ranges,
+                            cl = 0.95,
                             verbose = TRUE){
 
   verbose_message(verbose, "Starting: building ellipsoidal niche from ranges...\n")
 
   # Input checks -------------------------------------------------------------
 
-  if(!(is.data.frame(range) || is.matrix(range))){
-    stop("range must be a data.frame or matrix.")
+  if(!(is.data.frame(ranges) || is.matrix(ranges))){
+    stop("ranges must be a data.frame or matrix.")
   }
 
-  range <- as.matrix(range)
+  ranges <- as.matrix(ranges)
 
-  if(is.null(colnames(range))){
-    stop("range must have column names (variable names).")
+  if(is.null(colnames(ranges))){
+    stop("ranges must have column names (variable names).")
   }
 
-  var_names <- colnames(range)
+  var_names <- colnames(ranges)
 
-  if(nrow(range) != 2L){
-    stop("range must have exactly 2 rows (min/max) and variables as columns.")
+  if(nrow(ranges) != 2L){
+    stop("ranges must have exactly 2 rows (min/max) and variables as columns.")
   }
 
   if(!is.numeric(cl) || length(cl) != 1L || !is.finite(cl) || cl <= 0 || cl >= 1){
     stop("cl must be a single finite number strictly between 0 and 1.")
   }
 
-  # Range parse --------------------------------------------------------------
+  # ranges parse --------------------------------------------------------------
 
-  r1 <- as.numeric(range[1, ])
-  r2 <- as.numeric(range[2, ])
+  r1 <- as.numeric(ranges[1, ])
+  r2 <- as.numeric(ranges[2, ])
 
   if(any(!is.finite(r1)) || any(!is.finite(r2))){
-    stop("range contains non-finite values.")
+    stop("ranges contains non-finite values.")
   }
 
   if(all(r1 < r2)){
@@ -98,7 +98,7 @@ build_ellipsoid <- function(range,
     mins <- r2
     maxs <- r1
   }else{
-    stop("Each variable must have max > min. Please check range formatting.")
+    stop("Each variable must have max > min. Please check ranges formatting.")
   }
 
   # Center and marginal SDs --------------------------------------------------
@@ -129,7 +129,7 @@ build_ellipsoid <- function(range,
   out <- ellipsoid_calculator(cov_matrix = cov_matrix,
                               centroid = mu_vec, cl = cl,
                               verbose = FALSE)
-  out$ranges <- range
+  out$ranges <- ranges
 
   verbose_message(verbose, "Done: created ellipsoidal niche.\n")
 

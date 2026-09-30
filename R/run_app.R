@@ -13,7 +13,7 @@
 #' The app runs in the current R session and blocks the console until it is
 #' closed.
 #'
-#' @usage run_app( )
+#' @usage run_gui( )
 #'
 #' @returns Invisibly returns `NULL`. Called for its side effect of running
 #' the application.
@@ -28,11 +28,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' run_app()
+#' run_gui()
 #' }
 #'
 #' @export
-run_app <- function( ){
+run_gui <- function( ){
+
+  requireNamespace("shiny")
 
   app_dir <- system.file("shiny", package = "nicheR")
 

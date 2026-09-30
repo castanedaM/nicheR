@@ -11,7 +11,7 @@
 #' @param object A \code{nicheR_ellipsoid} object containing at least
 #'   \code{centroid} and \code{cov_matrix}.
 #' @param n Integer. The number of virtual points to generate. Default = 100.
-#' @param truncate Logical. If \code{TRUE} (default), points are constrained
+#' @param truncate Logical. If \code{TRUE}, points are constrained
 #'   within the confidence limit (\code{cl}) defined in the object.
 #' @param effect Character. The distribution pattern of points.
 #'   \code{"direct"} (default) creates a concentration near the centroid.
@@ -28,7 +28,7 @@
 #' uses eigen-decomposition to transform standard normal variables into the
 #' coordinate system defined by the ellipsoid's covariance structure.
 #'
-#' When \code{truncate = TRUE}, the function generates candidate points
+  #' When \code{truncate = TRUE}, the function generates candidate points
 #' uniformly distributed within a bounding box (hyper-cube) defined by the
 #' ellipsoid's \code{axes_coordinates}. Points falling outside the ellipsoid
 #' (where Mahalanobis distance \eqn{Md >} \code{chi2_cutoff}) are removed.
