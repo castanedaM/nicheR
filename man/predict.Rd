@@ -97,7 +97,7 @@ For tabular inputs, coordinate columns (e.g., \code{x}, \code{y},
 \examples{
 range_df <- data.frame(bio_1 = c(22, 28),
                        bio_12 = c(1000, 3500))
-ell <- build_ellipsoid(range = range_df)
+ell <- build_ellipsoid(ranges = range_df)
 
 \donttest{
 ma_bios <- terra::rast(

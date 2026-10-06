@@ -7,7 +7,7 @@
 prepare_bias(bias_surface, effect_direction = c("direct", "inverse"),
                     template_layer = NULL, include_composite = TRUE,
                     include_processed_layers = FALSE, mask_na = FALSE,
-                    verbose = TRUE)
+                    floor = NULL, verbose = TRUE)
 }
 \arguments{
 \item{bias_surface}{A \code{SpatRaster} (single or multi-layer) or a list
@@ -31,10 +31,15 @@ standardized individual layers (after directional transformation) in the
 output. Default is \code{FALSE}.}
 
 \item{mask_na}{Logical. Controls how \code{NA} values are handled when
-combining layers. If \code{TRUE}, uses the intersection of layer extents —
+combining layers. If \code{TRUE}, uses the intersection of layer extents:
 any pixel with an \code{NA} in any layer becomes \code{NA} in the
 composite. If \code{FALSE} (default), uses the union of extents and
 ignores \code{NA}s where other layers have valid values.}
+
+\item{floor}{Optional numeric. Lowest value allowed in the composite bias
+surface. Cells below it are raised to it, so no cell is left with a
+weight of zero. If \code{NULL} (default), the composite is left as
+computed. Only used when \code{include_composite = TRUE}.}
 
 \item{verbose}{Logical. If \code{TRUE} (default), prints progress messages.}
 }
@@ -43,7 +48,7 @@ A named list with some or all of the following elements depending on the
 \code{include_composite} and \code{include_processed_layers} arguments:
 \itemize{
   \item \code{composite_surface}: A \code{SpatRaster} with the combined
-  bias surface, named \code{"standarized_composite_bias_surface"}.
+  bias surface, named \code{"standardized_composite_bias_surface"}.
   \item \code{processed_layers}: A multi-layer \code{SpatRaster} with the
   standardized and direction-transformed individual layers.
   \item \code{combination_formula}: A character string showing the formula
@@ -52,7 +57,7 @@ A named list with some or all of the following elements depending on the
 }
 \description{
 Standardizes and combines one or more bias layers into a composite bias
-surface for use in biased occurrence sampling. Each layer is min-max
+surface for use in biased sampling. Each layer is min-max
 normalized to \code{[0, 1]} and assigned a directional effect
 (\code{"direct"} or \code{"inverse"}) before being multiplied together
 into a single composite surface.
@@ -98,5 +103,5 @@ terra::plot(bias_two$composite_surface)
 \seealso{
 \code{\link{apply_bias}} to apply the prepared bias surface to a
   suitability prediction, \code{\link{sample_biased_data}} to sample
-  occurrences from the resulting bias-weighted surface.
+  records from the resulting bias-weighted surface.
 }
