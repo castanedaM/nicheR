@@ -15,7 +15,7 @@
 # click history, so a chained script stops reproducing the session as soon as a
 # parent is edited after being copied. Lineage appears in the prose instead.
 
-# Date last updated: 08/13/2026
+# Date last updated: 10/06/2026
 
 
 # FORMATTING --------------------------------------------------------------
@@ -92,11 +92,11 @@ report_and <- function(x){
 
 #' Object names for the emitted script
 #'
-#' Ellipsoid names are user supplied, so they need sanitising, and two
+#' Ellipsoid names are user supplied, so they need sanitizing, and two
 #' ellipsoids may share a name.
 #'
 #' @param nms Character vector of display names.
-#' @param prefix Fallback prefix when a name sanitises to nothing.
+#' @param prefix Fallback prefix when a name sanitizes to nothing.
 #'
 #' @returns A character vector of unique syntactic names.
 #'
@@ -574,7 +574,7 @@ report_centroid_prose <- function(ell){
   paste0("The centroid sits ", ref_txt, " shifted in ", report_and(parts),
          ". Translating the centroid changes only where the niche sits, so ",
          "the ellipsoid keeps whatever shape and orientation it had before ",
-         "the move. It describes the same set of tolerances centred on ",
+         "the move. It describes the same set of tolerances centered on ",
          "different values of ", report_and(moved), ".")
 }
 
@@ -617,7 +617,7 @@ report_ell_prose <- function(ell, parent_obj = NULL){
 
 #' Paragraph describing the library as a whole
 #'
-#' Generalisations live here and not in the code, because a description that is
+#' Generalizations live here and not in the code, because a description that is
 #' slightly loose is still true while a loop that is slightly wrong produces a
 #' script that does not reproduce the session.
 #'
@@ -966,7 +966,7 @@ report_predict_prose <- function(ells, preds, n_group){
     if(spatial) "across the study area" else "onto the background records",
     ". For every ", if(spatial) "cell" else "record",
     ", the environmental values are compared against the ellipsoid to give a ",
-    "measure of how close those conditions sit to the centre of the niche.",
+    "measure of how close those conditions sit to the center of the niche.",
     if(n_group > 1){
       paste0(" Not every niche was projected the same way, so the calls below ",
              "are grouped by the arguments they share.")
@@ -979,13 +979,13 @@ report_predict_prose <- function(ells, preds, n_group){
   })))
 
   meanings <- c(
-    "Mahalanobis" = paste0("**Mahalanobis** is the distance from the centre ",
+    "Mahalanobis" = paste0("**Mahalanobis** is the distance from the center ",
                            "of the niche, measured in units that account for ",
                            "the spread and correlation of the variables. ",
                            "Larger values are further from the conditions the ",
                            "niche describes."),
     "suitability" = paste0("**suitability** rescales that distance to run ",
-                           "from 1 at the centre toward 0 further out. It is ",
+                           "from 1 at the center toward 0 further out. It is ",
                            "continuous everywhere, so conditions outside the ",
                            "niche boundary still receive a small non-zero ",
                            "value."),
@@ -998,7 +998,7 @@ report_predict_prose <- function(ells, preds, n_group){
                                  "set to zero. This is the layer with a hard ",
                                  "edge, and the one to use when the question ",
                                  "is whether conditions fall inside the niche ",
-                                 "rather than how close to its centre they sit."))
+                                 "rather than how close to its center they sit."))
 
   c(out, "",
     "The outputs produced were:", "",
@@ -2223,19 +2223,19 @@ report_occ_weight_prose <- function(row){
     if(identical(row$sampling, "centroid")){
       paste0("Weights were proportional to `", row$layer, "`, so cells with ",
              "higher values were more likely to be drawn and the records ",
-             "concentrate where conditions sit closest to the centre of the ",
+             "concentrate where conditions sit closest to the center of the ",
              "niche.")
     } else {
       paste0("Weights were proportional to 1 minus `", row$layer, "`, so cells ",
              "with lower values were more likely to be drawn and the records ",
              "concentrate near the boundary of the niche rather than its ",
-             "centre.")
+             "center.")
     }
   } else {
     if(identical(row$sampling, "centroid")){
       paste0("Weights were inversely proportional to `", row$layer,
              "`, a distance, so the smallest distances were the most likely to ",
-             "be drawn and the records concentrate near the centre of the ",
+             "be drawn and the records concentrate near the center of the ",
              "niche.")
     } else {
       paste0("Weights were proportional to `", row$layer, "`, a distance, so ",

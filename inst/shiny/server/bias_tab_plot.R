@@ -4,7 +4,7 @@
 # composite surface, and a side-by-side comparison of an unbiased
 # prediction against every biased version of that layer.
 
-# Date Last Updated: 08/05/2026
+# Date Last Updated: 10/06/2026
 
 
 # Settings ----------------------------------------------------------------
@@ -119,7 +119,11 @@ output$bias_gspace_plot_layer_select_ui <- renderUI({
   pred_result <- session_data$ellipsoid_prediction_list[[ell$ell_id]]
   req(inherits(pred_result, "SpatRaster"))
 
-  layer_choices <- names(pred_result)
+  # Only what predict() added. The stored prediction is made with
+  # keep_data = TRUE, so names(pred_result) also holds the environmental
+  # variables, and those are not prediction layers to compare.
+  layer_choices <- report_pred_layer_names(pred_result, ell)
+  req(length(layer_choices) > 0)
 
   # Keep the current layer across re-renders when the new ellipsoid also
   # has it, so switching versions does not reset the comparison

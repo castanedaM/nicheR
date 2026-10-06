@@ -4,7 +4,7 @@
 # points from a prediction surface, biased or unbiased, for one or more
 # saved ellipsoids.
 
-# Date Last Updated: 09/29/2026
+# Date Last Updated: 10/06/2026
 
 
 # OCCURRENCE SET VISIBILITY -----------------------------------------------
@@ -167,25 +167,9 @@ output$generate_controls_ui <- renderUI({
                             step = 1))
       ),
 
-      fluidRow(
-        column(width = 12,
-               tags$div(class = "tooltip-label-row",
-                        tags$span("Sampling strategy", class = "text-widget-title"),
-                        tags$span(icon("circle-info"),
-                                  title = instructions$generate_sampling_tooltip,
-                                  class = "tooltip-icon")),
-               radioButtons("generate_sampling",
-                            label = NULL,
-                            choiceNames = list(
-                              tags$span("Centroid", class = "text-widget-inner"),
-                              tags$span("Edge", class = "text-widget-inner"),
-                              tags$span("Random", class = "text-widget-inner")
-                            ),
-                            choiceValues = c("centroid", "edge", "random"),
-                            selected = "centroid",
-                            inline = TRUE))
-      ),
-
+      # Surfaces come first. The sampling strategy is drawn with them, in
+      # generate_surface_ui, so it sits under the unbiased surfaces it
+      # applies to.
       fluidRow(
         column(width = 12,
                tags$div(class = "tooltip-label-row",
@@ -196,8 +180,8 @@ output$generate_controls_ui <- renderUI({
                uiOutput("generate_surface_ui"))
       ),
 
-      uiOutput("generate_method_msg_ui"),
-
+      # Shared by both kinds of surface: sample_data() and
+      # sample_biased_data() both take strict. One setting per run.
       fluidRow(
         column(width = 12,
                tags$div(class = "tooltip-label-row",
@@ -440,37 +424,126 @@ output$generate_surface_ui <- renderUI({
   }
 
   unbiased_lyrs <- layer_names(pred_list)
-  bias_lyrs <- layer_names(bias_list)
 
-  all_layers <- unique(c(unbiased_lyrs, bias_lyrs))
-  req(length(all_layers) > 0)
+  # Biased layers made from an environmental variable are left out. "All
+  # prediction layers" on the Bias tab used to bias the variables kept in the
+  # prediction too, and a session saved before that was fixed still has them.
+  bias_lyrs <- unique(unlist(lapply(ids, function(id){
+    r <- bias_list[[id]]
+    if(!inherits(r, "SpatRaster")) return(character(0))
+    nms <- pred_layer_names(r, versions[[id]])
+    src <- sub("_biased_(direct|inverse)$", "", nms)
+    nms[!src %in% c("x", "y", versions[[id]]$var_names)]
+  })))
 
-  keep <- if(!is.null(input$generate_surface) &&
-             any(input$generate_surface %in% all_layers)){
-    intersect(input$generate_surface, all_layers)
+  bias_lyrs <- setdiff(bias_lyrs, unbiased_lyrs)
+
+  req(length(c(unbiased_lyrs, bias_lyrs)) > 0)
+
+  has_bias <- length(bias_lyrs) > 0
+
+  # Current ticks are read with isolate(), so ticking a box does not redraw
+  # the whole block. It is redrawn only when the ellipsoid or the available
+  # layers change, and the ticks that still apply are kept.
+  cur_unbiased <- isolate(input$generate_surface)
+  cur_biased <- isolate(input$generate_surface_biased)
+  cur_sampling <- isolate(input$generate_sampling)
+
+  keep_biased <- intersect(cur_biased, bias_lyrs)
+
+  # Falls back to a default only when nothing is ticked on either side, so
+  # a biased-only selection is not given an unbiased surface on redraw
+  keep_unbiased <- if(any(cur_unbiased %in% unbiased_lyrs)){
+    intersect(cur_unbiased, unbiased_lyrs)
+  } else if(length(keep_biased) > 0){
+    character(0)
   } else if("suitability_trunc" %in% unbiased_lyrs){
     "suitability_trunc"
-  } else if(length(unbiased_lyrs) > 0){
-    unbiased_lyrs[1]
   } else {
-    all_layers[1]
+    unbiased_lyrs[1]
   }
 
-  checkboxGroupInput("generate_surface",
-                     label = NULL,
-                     choiceNames = lapply(all_layers, function(nm){
-                       is_biased <- nm %in% bias_lyrs && !nm %in% unbiased_lyrs
-                       tags$span(nm,
-                                 style = if(is_biased) "color: #c47c16;" else "",
-                                 class = "text-widget-inner")
-                     }),
-                     choiceValues = all_layers,
-                     selected = keep,
-                     inline = TRUE)
+  keep_sampling <- if(is.null(cur_sampling)) "centroid" else cur_sampling
+
+  note_style <- "font-size: 10px; color: #aaa; margin: 4px 0 8px;"
+
+  surface_boxes <- function(id, layers, selected, inline, col = ""){
+
+    if(length(layers) == 0){
+      return(tags$p("None available.", style = note_style))
+    }
+
+    checkboxGroupInput(id,
+                       label = NULL,
+                       choiceNames = lapply(layers, function(nm){
+                         tags$span(nm, style = col, class = "text-widget-inner")
+                       }),
+                       choiceValues = layers,
+                       selected = selected,
+                       inline = inline)
+  }
+
+  # Applies to the unbiased surfaces only. Checkboxes, so several strategies
+  # can be run with the same number of points and seed.
+  sampling_block <- tagList(
+    tags$div(class = "tooltip-label-row",
+             tags$span("Sampling strategy", class = "text-widget-title"),
+             tags$span(icon("circle-info"),
+                       title = instructions$generate_sampling_tooltip,
+                       class = "tooltip-icon")),
+    checkboxGroupInput("generate_sampling",
+                       label = NULL,
+                       choiceNames = list(
+                         tags$span("Centroid", class = "text-widget-inner"),
+                         tags$span("Edge", class = "text-widget-inner"),
+                         tags$span("Random", class = "text-widget-inner")
+                       ),
+                       choiceValues = c("centroid", "edge", "random"),
+                       selected = keep_sampling,
+                       inline = TRUE),
+    uiOutput("generate_method_msg_ui")
+  )
+
+  # No biased layer: one column, as before
+  if(!has_bias){
+    return(tagList(
+      surface_boxes("generate_surface", unbiased_lyrs, keep_unbiased, inline = TRUE),
+      sampling_block
+    ))
+  }
+
+  # Biased layers get their own column, split off by a vertical line. The
+  # sampling strategy stays on the unbiased side, so it does not read as if
+  # a biased surface were sampled toward the centroid or the edge.
+  fluidRow(
+    column(width = 6,
+           tags$span("Unbiased", class = "text-widget-title"),
+           surface_boxes("generate_surface", unbiased_lyrs, keep_unbiased,
+                         inline = FALSE),
+           sampling_block),
+    column(width = 6,
+           style = "border-left: 1px solid #ddd;",
+           tags$span("Biased", class = "text-widget-title",
+                     style = "color: #c47c16;"),
+           surface_boxes("generate_surface_biased", bias_lyrs, keep_biased,
+                         inline = FALSE, col = "color: #c47c16;"),
+           uiOutput("generate_method_biased_msg_ui"))
+  )
 })
 
-# Mirrors how generate_occ_for_ell picks a method, so the user sees what
-# will happen before pressing Generate
+# Shown only while a biased surface is ticked, the same way the unbiased
+# message comes and goes
+output$generate_method_biased_msg_ui <- renderUI({
+
+  req(length(input$generate_surface_biased) > 0)
+
+  tags$p(icon("circle-info"), " ",
+         paste0("Method detected: ", occ_sampling_biased, "."),
+         style = "font-size: 10px; color: #aaa; margin: 4px 0 8px;")
+})
+
+# Mirrors how generate_occ_for_ell picks a method for the unbiased surfaces,
+# so the user sees what will happen before pressing Generate
 output$generate_method_msg_ui <- renderUI({
 
   req(input$generate_surface)
@@ -526,9 +599,14 @@ observeEvent(input$generate_run_btn, {
     }
 
     # Same signature for every ellipsoid, which is correct: sets are keyed
-    # within an ellipsoid, so two ellipsoids sharing parameters share a key
+    # within an ellipsoid, so two ellipsoids sharing parameters share a key.
+    # Sampling is the effect in the words the raster sets use, so the summary
+    # and the downloads read the same in both modes. Effect keeps the value
+    # that was passed to virtual_data().
     attrs <- list(mode = "virtual", layer = "virtual", n_occ = n,
-                  seed = seed, sampling = NA, strict = NA, mask = "none",
+                  seed = seed,
+                  sampling = unname(virtual_sampling_labels[effect]),
+                  strict = NA, mask = "none",
                   truncate = truncate, effect = effect)
 
     key <- occ_set_signature(attrs)
@@ -588,13 +666,6 @@ observeEvent(input$generate_run_btn, {
 
   req(input$generate_ellipsoid_selected)
   req(input$generate_n_occ)
-  req(input$generate_sampling)
-
-  if(is.null(input$generate_surface) || length(input$generate_surface) == 0){
-    showNotification(instructions$generate_no_surface,
-                     type = "warning", duration = 5)
-    return()
-  }
 
   pred_list <- session_data$ellipsoid_prediction_list
   bias_list <- session_data$ellipsoid_prediction_list_biased
@@ -605,12 +676,52 @@ observeEvent(input$generate_run_btn, {
     input$generate_ellipsoid_selected
   }
 
-  target_layers <- input$generate_surface
-  n_occ <- as.integer(input$generate_n_occ)
-  sampling <- input$generate_sampling
+  # Biased layers that exist for the selected ellipsoids. The biased
+  # checkboxes are only drawn when there is a biased layer, and Shiny keeps
+  # the last value of an input that is no longer drawn, so the ticks are
+  # checked against what is there now.
+  bias_available <- unique(unlist(lapply(selected_ids, function(id){
+    r <- bias_list[[id]]
+    if(inherits(r, "SpatRaster")) names(r) else character(0)
+  })))
+
+  unbiased_layers <- input$generate_surface
+  biased_layers <- intersect(input$generate_surface_biased, bias_available)
+
+  if(length(unbiased_layers) == 0 && length(biased_layers) == 0){
+    showNotification(instructions$generate_no_surface,
+                     type = "warning", duration = 5)
+    return()
+  }
+
+  # The strategy only matters when an unbiased surface is ticked
+  sampling_set <- input$generate_sampling
+
+  if(length(unbiased_layers) > 0 && length(sampling_set) == 0){
+    showNotification("Select at least one sampling strategy for the unbiased surfaces.",
+                     type = "warning", duration = 5)
+    return()
+  }
 
   # Default to TRUE rather than NULL if the radio has not reported yet
   strict <- !identical(input$generate_strict, "FALSE")
+
+  n_occ <- as.integer(input$generate_n_occ)
+
+  # One run per sampling strategy for the unbiased surfaces, plus one for
+  # the biased surfaces, which have no strategy since the surface values are
+  # the weights. Strict applies to all of them.
+  runs <- list()
+
+  if(length(unbiased_layers) > 0){
+    for(samp in sampling_set){
+      runs[[length(runs) + 1]] <- list(layers = unbiased_layers, sampling = samp)
+    }
+  }
+
+  if(length(biased_layers) > 0){
+    runs[[length(runs) + 1]] <- list(layers = biased_layers, sampling = NA)
+  }
 
   seed <- if(!is.null(input$generate_seed) && is.finite(input$generate_seed)){
     as.integer(input$generate_seed)
@@ -647,65 +758,65 @@ observeEvent(input$generate_run_btn, {
   # ellipsoid does not discard occurrences that already succeeded
   for(id in selected_ids){
 
-    res <- generate_occ_for_ell(ell_id = id,
-                                pred_list = pred_list,
-                                biased_list = bias_list,
-                                layers = target_layers,
-                                n_occ = n_occ,
-                                sampling = sampling,
-                                strict = strict,
-                                sampling_mask = sampling_mask,
-                                seed = seed)
+    for(run in runs){
 
-    # which layer names for this ellipsoid came from the biased prediction
-    biased_layers <- if(!is.null(bias_list[[id]])){
-      names(bias_list[[id]])
-    } else {
-      character(0)
-    }
+      res <- generate_occ_for_ell(ell_id = id,
+                                  pred_list = pred_list,
+                                  biased_list = bias_list,
+                                  layers = run$layers,
+                                  n_occ = n_occ,
+                                  sampling = run$sampling,
+                                  strict = strict,
+                                  sampling_mask = sampling_mask,
+                                  seed = seed)
 
-    n_attempted <- n_attempted + length(target_layers)
+      n_attempted <- n_attempted + length(run$layers)
 
-    for(layer in names(res)){
+      for(layer in names(res)){
 
-      df <- res[[layer]]
-      if(is.null(df) || nrow(df) == 0) next
+        df <- res[[layer]]
+        if(is.null(df) || nrow(df) == 0) next
 
-      biased <- layer %in% biased_layers
+        # Set by generate_occ_for_ell, which knows which function drew it
+        biased <- isTRUE(attr(df, "biased", exact = TRUE))
 
-      # Metadata travels with the set so the summary can report how it was
-      # made, and so the source raster can still be found from the layer
-      attrs <- list(layer = layer,
-                    n_occ = n_occ,
-                    seed = seed,
-                    sampling = if(biased) NA else sampling,
-                    strict = strict,
-                    mask = mask_name,
-                    mode = "raster",
-                    truncate = NA,
-                    effect = NA)
+        # Metadata travels with the set so the summary can report how it was
+        # made, and so the source raster can still be found from the layer.
+        # Biased layers have no sampling strategy, since the surface values
+        # are the weights, so they are labeled as bias weighted instead.
+        attrs <- list(layer = layer,
+                      n_occ = n_occ,
+                      seed = seed,
+                      sampling = if(biased) occ_sampling_biased else run$sampling,
+                      strict = strict,
+                      mask = mask_name,
+                      mode = "raster",
+                      truncate = NA,
+                      effect = NA)
 
-      for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
+        for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
 
-      attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
+        attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
-      key <- occ_set_signature(attrs)
+        key <- occ_set_signature(attrs)
 
-      if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
-        session_data$ellipsoid_occurrence_list[[id]] <- list()
+        if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
+          session_data$ellipsoid_occurrence_list[[id]] <- list()
+        }
+
+        session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
+
+        # New sets are shown by default, up to the panel limit
+        vis <- occ_visible()
+        vis_key <- occ_vis_key(id, key)
+        same_ell <- grep(paste0("^", id, "::"), vis, value = TRUE)
+
+        if(!vis_key %in% vis && length(same_ell) < OCC_MAX_VISIBLE){
+          occ_visible(c(vis, vis_key))
+        }
+
+        n_success <- n_success + 1L
       }
-
-      session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
-      # New sets are shown by default, up to the panel limit
-      vis <- occ_visible()
-      vis_key <- occ_vis_key(id, key)
-      same_ell <- grep(paste0("^", id, "::"), vis, value = TRUE)
-
-      if(!vis_key %in% vis && length(same_ell) < OCC_MAX_VISIBLE){
-        occ_visible(c(vis, vis_key))
-      }
-
-      n_success <- n_success + 1L
     }
   }
 
@@ -757,7 +868,7 @@ generate_occ_index <- reactive({
       n = nrow(df),
       seed = occ_meta(df, "seed"),
       n_occ = occ_meta(df, "n_occ"),
-      sampling = occ_meta(df, "sampling", ""),
+      sampling = occ_sampling(df),
       stringsAsFactors = FALSE
     )
   })
@@ -769,7 +880,9 @@ generate_occ_index <- reactive({
 })
 
 
-# One flattening function, used by all three download scopes
+# One flattening function, used by all three download scopes. The metadata
+# is read from the set itself, so the columns cannot differ between scopes.
+# idx_rows needs ell_id, ell_name, and set.
 generate_occ_table <- function(idx_rows){
 
   occ <- session_data$ellipsoid_occurrence_list
@@ -778,13 +891,28 @@ generate_occ_table <- function(idx_rows){
     r <- idx_rows[j, ]
     df <- occ[[r$ell_id]][[r$set]]
     if(is.null(df) || nrow(df) == 0) return(NULL)
-    data.frame(ell_id = r$ell_id,
-               ell_name = r$ell_name,
-               layer = r$layer,
-               seed = r$seed,
-               sampling = r$sampling,
-               df,
-               stringsAsFactors = FALSE)
+
+    out <- data.frame(ell_id = r$ell_id,
+                      ell_name = r$ell_name,
+                      layer = occ_meta(df, "layer", r$set),
+                      n_occ = occ_meta(df, "n_occ"),
+                      seed = occ_meta(df, "seed"),
+                      sampling = occ_sampling(df),
+                      strict = occ_meta(df, "strict"),
+                      truncate = occ_meta(df, "truncate"),
+                      df,
+                      stringsAsFactors = FALSE)
+
+    # Each mode keeps the column that applies to it. Raster sets have strict,
+    # and carry truncation in the layer name. Virtual sets have no layer name
+    # to carry truncation, and no strict.
+    if(identical(occ_meta(df, "mode"), "virtual")){
+      out$strict <- NULL
+    } else {
+      out$truncate <- NULL
+    }
+
+    out
   })
 
   do.call(rbind, parts)
@@ -841,22 +969,18 @@ output$generate_dl_all <- downloadHandler(
 
     versions <- session_data$ellipsoid_list
 
-    parts <- lapply(names(occ), function(id){
-      lapply(names(occ[[id]]), function(nm){
-        df <- occ[[id]][[nm]]
-        if(is.null(df) || nrow(df) == 0) return(NULL)
-        data.frame(ell_id = id,
-                   ell_name = if(!is.null(versions[[id]])) versions[[id]]$ell_name else id,
-                   layer = occ_meta(df, "layer", nm),
-                   n_occ = occ_meta(df, "n_occ"),
-                   seed = occ_meta(df, "seed"),
-                   sampling = occ_meta(df, "sampling", ""),
-                   df,
-                   stringsAsFactors = FALSE)
-      })
-    })
+    # Every set of every ellipsoid, flattened by the same function the other
+    # two downloads use
+    idx <- do.call(rbind, lapply(names(occ), function(id){
+      if(length(occ[[id]]) == 0) return(NULL)
+      data.frame(ell_id = id,
+                 ell_name = if(!is.null(versions[[id]])) versions[[id]]$ell_name else id,
+                 set = names(occ[[id]]),
+                 stringsAsFactors = FALSE)
+    }))
+    req(!is.null(idx))
 
-    out <- do.call(rbind, unlist(parts, recursive = FALSE))
+    out <- generate_occ_table(idx)
     req(!is.null(out))
 
     write.csv(out, file, row.names = FALSE)

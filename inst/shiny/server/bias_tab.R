@@ -4,7 +4,7 @@
 # rasters, prepares them into a composite surface, and applies that surface
 # to saved predictions. The whole tab is optional and can be skipped.
 
-# Date Last Updated: 08/05/2026
+# Date Last Updated: 10/06/2026
 
 
 # SKIP AND CONTINUE -------------------------------------------------------
@@ -186,7 +186,8 @@ observeEvent(input$bias_confirm_edit_upload_btn, {
 output$bias_upload_ui <- renderUI({
 
   if(identical(session_data$input_mode, "virtual")){
-    return(p(instructions$bias_virtual_unavailable, class = "text-instruction"))
+    return(column(12,
+                  p(instructions$bias_virtual_unavailable, class = "text-instruction")))
   }
 
   # Bias is inherently geographic, so it needs a raster study area
@@ -209,7 +210,7 @@ output$bias_upload_ui <- renderUI({
           width = 12,
           collapsible = TRUE,
           collapsed = FALSE,
-          p(instructions$bias_no_prediction, class = "text-instruction"))
+          p(instructions$bias_needs_prediction, class = "text-instruction"))
     )
   }
 
@@ -507,15 +508,13 @@ output$bias_apply_ui <- renderUI({
           width = 12,
           collapsible = TRUE,
           collapsed = TRUE,
+          # The way back into the form is Add new bias layer, at the bottom of
+          # the ellipsoid library
           p(paste0(n_layers, " biased layer(s) across ",
                    length(session_data$ellipsoid_prediction_list_biased),
-                   " ellipsoid(s)."),
-            class = "text-instruction"),
-          fluidRow(
-            column(width = 12, class = "btn-spaced",
-                   actionLink("bias_edit_apply_link",
-                              label = tagList(icon("pen"), "Add or view bias layers")))
-          )
+                   " ellipsoid(s). To add more, use Add new bias layer in ",
+                   "the ellipsoid library."),
+            class = "text-instruction")
       )
     )
   }
@@ -615,8 +614,19 @@ output$bias_layer_selector_ui <- renderUI({
   )
 })
 
-observeEvent(input$bias_edit_apply_link, {
+# Add new bias layer, in the ellipsoid library. Reopens the Apply bias box as
+# the form and scrolls up to it, since the box sits above the library. The
+# short wait lets the box redraw before the page moves.
+observeEvent(input$bias_add_layer_btn, {
+
   bias_show_apply_form(TRUE)
+
+  shinyjs::runjs("
+    setTimeout(function(){
+      var box = document.getElementById('bias_apply_ui');
+      if(box) box.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }, 150);
+  ")
 })
 
 observeEvent(input$bias_cancel_apply_btn, {
@@ -663,9 +673,12 @@ observeEvent(input$bias_apply_btn, {
     }
 
     # Layers read per ellipsoid rather than from the first one, since
-    # versions can be predicted with different layer sets
+    # versions can be predicted with different layer sets. Only what predict()
+    # added counts: the stored prediction is made with keep_data = TRUE, so
+    # names(pred) also holds the environmental variables, and those are not
+    # something to bias.
     target_layers <- if(is_all_pred){
-      names(pred)
+      report_pred_layer_names(pred, session_data$ellipsoid_list[[id]])
     } else {
       input$bias_prediction_layer
     }
@@ -806,6 +819,24 @@ output$bias_ellipsoid_library_ui <- renderUI({
     )
   })
 
+  # Sits under the last ellipsoid, like Create new ellipsoid on the Build
+  # tab. Shown only once bias has been applied and the Apply bias box has
+  # collapsed, since until then that box is already open as the form.
+  has_applied <- length(session_data$ellipsoid_prediction_list_biased) > 0
+
+  add_layer_row <- if(has_applied && !is.null(session_data$prepared_bias) &&
+                      !isTRUE(bias_show_apply_form())){
+    tagList(
+      tags$hr(style = "margin: 8px 0;"),
+      fluidRow(
+        column(width = 12, class = "btn-spaced",
+               actionLink("bias_add_layer_btn",
+                          label = tagList(icon("plus"),
+                                          "Add new bias layer")))
+      )
+    )
+  }
+
   box(title = tags$span("Ellipsoid library", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
@@ -829,7 +860,9 @@ output$bias_ellipsoid_library_ui <- renderUI({
         )
       } else {
         p(instructions$bias_library_empty, class = "text-muted-small")
-      }
+      },
+
+      add_layer_row
   )
 })
 

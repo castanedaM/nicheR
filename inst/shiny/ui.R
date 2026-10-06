@@ -1,6 +1,6 @@
 # Title: UI for shiny nicheR
 # Description: The UI of the app
-# Last Updated: 08/20/2026
+# Last Updated: 10/06/2026
 
 dashboardPage(
   dashboardHeader(
@@ -210,7 +210,7 @@ dashboardPage(
         fluidRow(
           column(width = 12,
                  p(class = "text-about",
-                   "This app allows for some basic visualization. For more specialised and customised visualization, see the ",
+                   "This app allows for some basic visualization. For more specialized and customized visualization, see the ",
                    tags$a(href   = "https://castanedam.github.io/nicheR/articles/plotting_vignette.html",
                           target = "_blank",
                           icon("brush"), " visualization vignette"),
@@ -284,7 +284,7 @@ dashboardPage(
                             value = "build_data_tab",
                             fluidRow(
                               column(width = 12,
-                                     p(instructions$data_input_type, class = "text-instruction"),
+                                     p(instructions$build_data_input_type, class = "text-instruction"),
                                      radioButtons("build_data_input_type_choice",
                                                   label = tags$span("Select input type:",
                                                                     class = "text-widget-title"),

@@ -5,7 +5,7 @@
 #              prefixed with the tab they belong to, matching the input and
 #              output naming convention used in the server scripts.
 # Dependencies: depends on MAX_DIMS from global.R
-# Date last updated: 08/18/2026
+# Date last updated: 10/06/2026
 
 instructions <- list(
 
@@ -45,7 +45,7 @@ generation toward areas with specific detection effort."),
     "Examples: urbanization, distance to water, road density, collector coverage, any detection proxy"
   ),
 
-  about_generate = HTML("Generate occurences or sample virtual data from the fitted niche,
+  about_generate = HTML("Generate occurrences or sample virtual data from the fitted niche,
 optionally weighted by the bias layer."),
 
   about_generate_points = c(
@@ -112,7 +112,7 @@ current selection, the ellipsoid, and any covariance adjustments.",
   # BUILD TAB: RANGES ------------------------------------------------------
 
   build_range_intro = HTML("Ranges set the minimum and maximum value of each
-variable, which together define the extent of the ellipsoid. Start by specifiyng
+variable, which together define the extent of the ellipsoid. Start by specifying
 the confidence level the statistical metric that defines the limits of the ellipsoid"),
 
   build_range_choice = HTML("Choose one of the three methods below.
@@ -186,7 +186,7 @@ slider to reset that pair back to zero. Click 'Set Covariances' when ready."),
 
   build_covariance_reset_tooltip = "Reset this pair's covariance back to zero.",
 
-  build_cov_set = "Covariances have been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to zero or to those values of their root",
+  build_cov_set = "Covariances have been set for this ellipsoid. If you have not saved this ellipsoid editing it will reset them back to zero or to those values of their root",
 
 
   # BUILD TAB: CENTROID ----------------------------------------------------
@@ -196,7 +196,7 @@ without changing its shape or size. Each slider shifts the centroid along one
 variable, and the ellipsoid follows. Use Reset all to return to the centroid
 this version started from. Click 'Set centroid' when ready."),
 
-  build_centroid_set = "Centroid has been set for this ellipsoid. If you have not saved this elliposid editing it will reset them back to original values or those of their root",
+  build_centroid_set = "Centroid has been set for this ellipsoid. If you have not saved this ellipsoid editing it will reset them back to original values or those of their root",
 
   # BUILD TAB: LIBRARY -----------------------------------------------------
 
@@ -256,14 +256,14 @@ ellipsoid ids may need checking."),
     "Leave it blank or unchanged for no adjustment."
   ),
 
- predict_download = paste0(
+  predict_download = paste0(
     "Choose the layers to download and the format. ",
     "Only layers from the last prediction are listed. ",
     "To download a layer that isn't here, predict again with it selected."
   ),
 
   predict_adjust_trunc_tooltip = "Adjust the level of truncation within the
-current ellipsoid. This truncates the prediction inwards.",
+current ellipsoid. This truncates the prediction inward.",
 
   predict_library = HTML("Ellipsoids saved on the Build tab appear here.
 Select one to view its settings read-only, or delete it along with any
@@ -371,9 +371,9 @@ to the Build tab. To view the generated set of records press on view (eye)"),
   generate_delete_ell = "This will permanently remove the ellipsoid, its
 predictions, its biased predictions, and any occurrences generated from them.",
 
-  generate_sampling_tooltip = "Direct: higher probability near the niche centroid.
-  Inverse: higher probability near the niche edge.
-  Uniform: random uniform probability across all suitable cells.",
+  generate_sampling_tooltip = "Centroid: higher probability near the niche centroid.
+  Edge: higher probability near the niche edge.
+  Random: random uniform probability across all suitable cells.",
 
   generate_surface_tooltip = "Select one or more prediction layers to sample
 from. Orange layers have bias applied.",
@@ -389,11 +389,6 @@ occurrences. Change it to draw a different replicate.",
 
   generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
 data from, or 'All versions' to generate for every one.",
-
-  generate_summary = HTML("Every occurrence set you generate is listed here,
-grouped by ellipsoid. Sets accumulate: generating with a new seed adds a set
-rather than replacing one. Download individual sets, everything for one
-ellipsoid, or all sets at once."),
 
   generate_summary_empty = "No occurrence sets yet. Generate one to see it here.",
 
@@ -414,11 +409,11 @@ and no geography, so the points are environmental values only."),
 ellipsoid's confidence limit. When false, they follow the unbounded normal
 distribution and some will fall outside.",
 
-  generate_effect_tooltip = "Direct concentrates points near the centroid.
-Inverse pushes them toward the edges. Uniform spreads them evenly through
+  generate_effect_tooltip = "Centroid concentrates points near the centroid.
+Edge pushes them toward the edges. Random spreads them evenly through
 the ellipsoid volume.",
 
-  generate_effect_needs_truncate = "Inverse and uniform require truncation.",
+  generate_effect_needs_truncate = "Edge and Random require truncation.",
 
   # SHARED: PLOT SETTINGS --------------------------------------------------
 

@@ -1,6 +1,6 @@
 # Title: Plot logic
 # Description: Handle e-space, g-space, and combined plots
-# Date last updated: 08/04/2026
+# Date last updated: 10/06/2026
 
 # Functions -----------------------------------------------------------------
 
@@ -55,6 +55,23 @@ compute_lims <- function(v1, v2, s){
     if(!any(is.na(idx))){
       ell_pts <- ellipsoid_boundary_2d(s$ell, n_segments = 100, dim = idx)
       all_pts <- if(!is.null(range_pts)) rbind(pts_xy, range_pts) else pts_xy
+
+      # With no background (virtual mode) nothing holds the axes still, so
+      # the limits were refit to the ellipsoid on every centroid step and the
+      # range lines slid across the plot even though their values never
+      # changed. A fixed frame stands in for the background: the ranges
+      # widened by the ellipsoid's half-width on each side, which is how far
+      # the boundary reaches when the centroid sits on a range line. The
+      # half-width does not change when the ellipsoid is moved or rotated, so
+      # the frame stays put. The limits still grow if the ellipsoid leaves it.
+      if(is.null(bg) && !is.null(range_pts)){
+        half_w <- c(diff(range(ell_pts[, 1])), diff(range(ell_pts[, 2]))) / 2
+        frame <- range_pts
+        frame[[v1]] <- frame[[v1]] + c(-half_w[1], half_w[1])
+        frame[[v2]] <- frame[[v2]] + c(-half_w[2], half_w[2])
+        all_pts <- rbind(all_pts, frame)
+      }
+
       lims <- safe_lims(all_pts, ell_pts)
       return(c(lims, list(asp = NA)))
     }
@@ -191,27 +208,25 @@ build_draw_gspace_all <- function(vars, s){
 # Returns a plain list so drawing functions are pure and testable.
 collect_plot_settings <- function(){
 
-  # Range lines. Follow the live inputs when there is no ellipsoid yet, or
-  # when the user has edited the ranges of an existing one, so edits preview
-  # before Rebuild commits them. Otherwise show the ranges the current
-  # ellipsoid was built from, which do not move with the centroid.
+  # Range lines. With an empty slot they follow the live inputs, so the
+  # ranges preview while they are typed. Once an ellipsoid is in the slot
+  # they show the ranges it was built from, which do not move with the
+  # centroid. The live inputs are not read then: the range panel is no
+  # longer drawn, Shiny keeps the last values typed into it, and those can
+  # belong to a different ellipsoid than the one in the slot.
   cur_ell <- session_data$current_ellipsoid
 
-  live_ranges <- tryCatch(
-    withCallingHandlers(
-      {
-        rp <- range_preview()
-        if(is.null(rp)) NULL else list(mins = rp$mins, maxs = rp$maxs)
-      },
-      shiny.silent.error = function(e) invokeRestart("muffleWarning")
-    ),
-    error = function(e) NULL
-  )
-
   ranges <- if(is.null(cur_ell)){
-    live_ranges
-  } else if(!is.null(live_ranges)){
-    live_ranges
+    tryCatch(
+      withCallingHandlers(
+        {
+          rp <- range_preview()
+          if(is.null(rp)) NULL else list(mins = rp$mins, maxs = rp$maxs)
+        },
+        shiny.silent.error = function(e) invokeRestart("muffleWarning")
+      ),
+      error = function(e) NULL
+    )
   } else if(!is.null(cur_ell$range_inputs)){
     list(mins = cur_ell$range_inputs$min,
          maxs = cur_ell$range_inputs$max)
@@ -532,7 +547,7 @@ output$build_gspace_plot <- renderPlot({
   vars <- plot_vars()
   req(vars)
 
-  is_virtual <- identical(session_data$input_mode, "virtual_mode")
+  is_virtual <- identical(session_data$input_mode, "virtual")
   if(is_virtual || is.null(session_data$bg_raster)){
     plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
          xlab = "", ylab = "", main = "G-space")
@@ -641,9 +656,9 @@ output$build_gspace_plot_bottom_options_ui <- renderUI({
   req(ell)
 
   fluidRow(class = "ell-row",
-    column(width = 12,
-           tags$span(ell$ell_name, class = "text-center",
-                     style = "font-size: 12px; color: #888; font-weight: 400;"))
+           column(width = 12,
+                  tags$span(ell$ell_name, class = "text-center",
+                            style = "font-size: 12px; color: #888; font-weight: 400;"))
   )
 
 })
@@ -652,7 +667,7 @@ output$build_gspace_plot_bottom_options_ui <- renderUI({
 # Combined
 output$build_combined_plot <- renderPlot({
 
-  is_virtual <- identical(session_data$input_mode, "virtual_mode")
+  is_virtual <- identical(session_data$input_mode, "virtual")
   if(is_virtual || is.null(session_data$bg_raster)){
     plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
          xlab = "", ylab = "", main = "Combined")
@@ -1341,6 +1356,3 @@ observeEvent(input$build_export_done, {
   showNotification("Figure exported successfully.",
                    type = "message", duration = 4)
 })
-
-
-

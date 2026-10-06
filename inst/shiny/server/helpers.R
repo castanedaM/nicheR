@@ -5,7 +5,7 @@
 # `session_data` from the enclosing environment and only work because this
 # file is sourced with local = TRUE from server.R; those are marked below.
 
-# Date last updated: 08/06/2026
+# Date last updated: 10/06/2026
 
 
 #' Pairwise covariances as a flat named vector
@@ -325,6 +325,53 @@ occ_meta <- function(df, field, default = NA){
 }
 
 
+#' Sampling label for sets drawn from a biased surface
+#'
+#' The surface values are the weights, so no centroid or edge strategy
+#' applies. The direction used when the bias was applied is already part of
+#' the layer name, so it is not repeated here.
+#'
+#' @noRd
+occ_sampling_biased <- "bias weighted"
+
+#' Sampling labels for the virtual_data() effects
+#'
+#' Virtual sets keep the effect passed to virtual_data(). Their sampling
+#' value uses the same words as the raster sets, so both modes read alike in
+#' the summary and in the downloads.
+#'
+#' @noRd
+virtual_sampling_labels <- c(direct = "centroid",
+                             inverse = "edge",
+                             uniform = "random")
+
+#' Sampling label for an occurrence set
+#'
+#' Returns the stored value when there is one. Sets generated before biased
+#' and virtual sets recorded a sampling value fall back to the "biased"
+#' attribute or the virtual effect, so older sessions still read correctly.
+#'
+#' @param df An occurrence set data frame.
+#'
+#' @returns A single character label, or NA when nothing is recorded.
+#'
+#' @noRd
+occ_sampling <- function(df){
+
+  val <- occ_meta(df, "sampling")
+  if(!is.na(val)) return(as.character(val))
+
+  if(isTRUE(attr(df, "biased", exact = TRUE))) return(occ_sampling_biased)
+
+  effect <- as.character(occ_meta(df, "effect"))
+  if(effect %in% names(virtual_sampling_labels)){
+    return(unname(virtual_sampling_labels[effect]))
+  }
+
+  NA_character_
+}
+
+
 #' Canonical key for an occurrence set
 #'
 #' Never shown to the user, only used for identity. Any parameter change
@@ -349,6 +396,10 @@ occ_set_signature <- function(attrs){
 #' sets present, so a run differing only by seed reads
 #' "suitability_trunc, seed 123" rather than repeating shared parameters.
 #'
+#' Virtual sets also always show sampling and truncation. Their layer is
+#' just "virtual", so unlike a raster layer name it says nothing about how
+#' the points were drawn.
+#'
 #' @param occ_list Named list of occurrence set data frames.
 #'
 #' @returns A named character vector: names are labels, values are keys.
@@ -359,19 +410,32 @@ occ_set_labels <- function(occ_list){
   if(length(occ_list) == 0) return(character(0))
 
   meta <- lapply(occ_list, function(df){
-    setNames(lapply(occ_set_fields,
-                    function(f) as.character(occ_meta(df, f, "NA"))),
-             occ_set_fields)
+    m <- setNames(lapply(occ_set_fields,
+                         function(f) as.character(occ_meta(df, f, "NA"))),
+                  occ_set_fields)
+
+    # Same label the downloads use, including the fallback for older sets
+    samp <- occ_sampling(df)
+    m$sampling <- if(is.na(samp)) "NA" else samp
+    m
   })
 
   varies <- vapply(occ_set_fields, function(f){
     length(unique(vapply(meta, function(m) m[[f]], character(1)))) > 1
   }, logical(1))
 
-  show <- unique(c("layer", occ_set_fields[varies]))
+  # Effect is left out because sampling already says the same thing
+  show <- setdiff(unique(c("layer", occ_set_fields[varies])), "effect")
 
   labs <- vapply(meta, function(m){
-    parts <- vapply(show, function(f){
+
+    show_set <- if(identical(m$mode, "virtual")){
+      unique(c("layer", "sampling", "truncate", show))
+    } else {
+      show
+    }
+
+    parts <- vapply(show_set, function(f){
       v <- m[[f]]
       switch(f,
              "layer" = v,
@@ -380,6 +444,13 @@ occ_set_labels <- function(occ_list){
              "sampling" = v,
              "strict" = if(identical(v, "TRUE")) "strict" else "not strict",
              "mask" = if(identical(v, "none")) "no mask" else paste0("mask: ", v),
+             "truncate" = if(identical(v, "TRUE")){
+               "truncated"
+             } else if(identical(v, "FALSE")){
+               "not truncated"
+             } else {
+               v
+             },
              v)
     }, character(1))
     paste(parts, collapse = ", ")
@@ -594,9 +665,9 @@ update_axis_selectors <- function(x_id, y_id, vars){
 #'
 #' @param name Palette name, as listed by hcl.pals().
 #' @param reverse Logical, reverse the ramp.
-#' @param n Number of colours.
+#' @param n Number of colors.
 #'
-#' @returns A character vector of colours.
+#' @returns A character vector of colors.
 #'
 #' @noRd
 pred_palette <- function(name = "viridis", reverse = FALSE, n = 100){
@@ -605,14 +676,14 @@ pred_palette <- function(name = "viridis", reverse = FALSE, n = 100){
   if(isTRUE(reverse)) rev(cols) else cols
 }
 
-#' Map numeric values onto palette colours
+#' Map numeric values onto palette colors
 #'
 #' @param vals Numeric vector.
-#' @param pal Character vector of colours.
+#' @param pal Character vector of colors.
 #' @param rng Optional range to scale against, so several panels can share
 #'   one scale. Defaults to the range of `vals`.
 #'
-#' @returns A character vector of colours the same length as `vals`.
+#' @returns A character vector of colors the same length as `vals`.
 #'
 #' @noRd
 pred_colors <- function(vals, pal, rng = NULL){
@@ -639,12 +710,12 @@ pred_layer_range <- function(vals_df, layer){
   rng
 }
 
-#' Draw a shared colour bar in its own panel
+#' Draw a shared color bar in its own panel
 #'
 #' Called after a plot grid so every panel shares one legend.
 #'
 #' @param rng Length-two numeric range the bar spans.
-#' @param pal Character vector of colours.
+#' @param pal Character vector of colors.
 #' @param label Optional title above the bar.
 #'
 #' @returns Invisibly NULL. Called for the plotting side effect.
