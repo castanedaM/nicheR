@@ -20,7 +20,7 @@ objects back into the R environment.
 # Build and save an ellipsoid first
 range_df <- data.frame(bio_1  = c(15, 25),
                        bio_12 = c(500, 1500))
-ell <- build_ellipsoid(range = range_df)
+ell <- build_ellipsoid(ranges = range_df)
 
 tmp <- tempfile(fileext = ".rds")
 save_nicheR(ell, file = tmp)

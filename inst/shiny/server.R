@@ -1,6 +1,6 @@
 # Title: Server for shiny nicheR
 # Description: The server of the app
-# Lats Updated: 08/04/2026
+# Last Updated: 10/06/2026
 
 
 function(input, output, session){
@@ -10,6 +10,7 @@ function(input, output, session){
     # Input
     input_mode = NULL,
     file_type = NULL,
+    data_source = NULL,
 
     bg_raster = NULL,
     bg_df = NULL,
@@ -38,7 +39,7 @@ function(input, output, session){
 
     # Generate
     sampling_mask = NULL,
-    ellipsoid_occurrence_list = list()
+    ellipsoid_records_list = list()
 
   )
 

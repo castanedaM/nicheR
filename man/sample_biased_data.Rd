@@ -2,14 +2,14 @@
 % Please edit documentation in R/sample_biased_data.R
 \name{sample_biased_data}
 \alias{sample_biased_data}
-\title{Sample occurrence data from a bias-weighted prediction surface}
+\title{Sample records from a bias-weighted prediction surface}
 \usage{
-sample_biased_data(n_occ, prediction, prediction_layer = NULL,
+sample_biased_data(n, prediction, prediction_layer = NULL,
                           sampling_mask = NULL, seed = 1, verbose = TRUE,
                           strict = NULL)
 }
 \arguments{
-\item{n_occ}{Integer. Number of occurrence points to sample.}
+\item{n}{Integer. Number of records to sample.}
 
 \item{prediction}{A \code{SpatRaster} or data frame containing the
 bias-weighted prediction surface to sample from.}
@@ -32,17 +32,17 @@ auto-detected from the layer name and the proportion of zeros and
 \code{NA}s in the prediction values.}
 }
 \value{
-A data frame of sampled occurrence points with the same columns as the
+A data frame of sampled records with the same columns as the
 input \code{prediction} (minus the internal \code{pred} column). If
 \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 and \code{y} coordinate columns.
 }
 \description{
-Samples \code{n_occ} virtual occurrence points using the bias-weighted
+Samples \code{n} virtual records using the bias-weighted
 prediction values directly as sampling probabilities. Unlike
-\code{sample_data()}, there is no sampling strategy argument — the
+\code{sample_data()}, there is no sampling strategy argument. The
 prediction layer values themselves define where points are drawn from,
-making this function suited for simulating realistically biased occurrence
+making this function suited for simulating realistically biased
 records.
 }
 \details{
@@ -61,12 +61,12 @@ Auto-detection of \code{strict} follows the same logic as
 biased_pred <- terra::rast(system.file("extdata/applied_bias_rast.tif",
                                      package = "nicheR"))
 
-# Sample points form bias surface (not probability surface)
-occ_biased <- sample_biased_data(n_occ = 100,
+# Sample points from bias surface (not probability surface)
+rec_biased <- sample_biased_data(n = 100,
                                  prediction = biased_pred,
                                  prediction_layer = "suitability_biased_direct")
 
-head(occ_biased)
+head(rec_biased)
 
 }
 \seealso{

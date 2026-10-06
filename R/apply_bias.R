@@ -62,7 +62,7 @@
 #' }
 #'
 #' @seealso \code{\link{prepare_bias}} to build the composite bias surface,
-#'   \code{\link{sample_biased_data}} to sample occurrences from the output.
+#'   \code{\link{sample_biased_data}} to sample records from the output.
 #'
 #' @importFrom terra compareGeom resample crop mask global nlyr
 #'

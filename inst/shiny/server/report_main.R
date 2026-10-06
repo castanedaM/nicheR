@@ -1,14 +1,14 @@
 # Title: Session report
 
 # Description: Assembles a single Rmd holding a methods narrative and the
-# nicheR code that reproduces the session, renders it, and delivers both files
-# as a zip. The Rmd is the source of truth and the HTML is what you get by
-# knitting it, so the two cannot describe different analyses.
+# nicheR code that reproduces the session, and delivers that file as the
+# download. The app does not run the script. Knitting the file is what runs
+# it, so the download is quick and no uploaded file has to be kept.
 
 # The Rmd is generated whole, YAML included, so there is no template file to
 # keep in sync with the generator.
 
-# Date last updated: 08/12/2026
+# Date last updated: 10/06/2026
 
 
 # ASSEMBLY ----------------------------------------------------------------
@@ -57,12 +57,85 @@ report_preamble <- function(){
         "their own call. Results stay in lists, so later steps can pull out the",
         "piece belonging to each niche by name.", "")
     },
-    if(!report_can_eval()){
-      c("This session used uploaded files, so the code chunks are shown but",
-        "not run. Set `data_dir` in the first chunk to the folder holding",
-        "those files and the script will run as written.", "")
-    },
-    "")
+    report_files_block())
+}
+
+#' Uploaded files the script reads, and the folder they are read from
+#'
+#' The browser sends only the name of an uploaded file, never its folder, so
+#' the script declares the folder once as data_dir and reads every file from
+#' it by name. The chunk stops with the names of any file it cannot find,
+#' which is clearer than the first failed read further down.
+#'
+#' Reads session_data from the enclosing server environment.
+#'
+#' @returns A character vector of Rmd lines, empty when the session read no
+#'   uploaded files.
+#'
+#' @noRd
+report_files_block <- function(){
+
+  mode <- session_data$input_mode
+
+  # Background data, unless it is the example data or there is none
+  from_file <- !isTRUE(mode %in% c("example", "virtual"))
+  data_files <- if(from_file) as.character(session_data$data_source)
+
+  # Bias layers, read only when a surface was prepared from uploaded ones
+  bias_upload <- !identical(mode, "virtual") &&
+    !is.null(session_data$prepared_bias) &&
+    !identical(session_data$bias_source, "example")
+  bias_files <- if(bias_upload) as.character(session_data$bias_source)
+
+  # Sampling masks, recorded on each record set
+  occ <- session_data$ellipsoid_records_list
+  mask_files <- unlist(lapply(occ, function(sets){
+    vapply(sets, function(df) as.character(occ_meta(df, "mask", "none")),
+           character(1))
+  }))
+  mask_files <- mask_files[!is.na(mask_files) & mask_files != "none"]
+
+  files <- unique(c(data_files, bias_files, mask_files))
+
+  if(!from_file && !bias_upload && length(files) == 0) return(character(0))
+
+  # One name read by two steps. Fine when it is the same file, but two
+  # different files cannot sit in one folder under one name.
+  shared <- unique(c(intersect(data_files, bias_files),
+                     intersect(data_files, mask_files),
+                     intersect(bias_files, mask_files)))
+
+  code <- c("# Folder holding the files uploaded to the app. Use forward slashes,",
+            "# as in \"C:/Users/me/my_data\"",
+            "data_dir <- \".\"")
+
+  if(length(files) > 0){
+    code <- c(code,
+              "",
+              "# Stop here, with the names, if a file is not in that folder",
+              paste0("data_files <- ", report_chr(files)),
+              "not_found <- data_files[!file.exists(file.path(data_dir, data_files))]",
+              "if(length(not_found) > 0){",
+              "  stop(\"Not found in data_dir: \", paste(not_found, collapse = \", \"))",
+              "}")
+  }
+
+  if(length(shared) > 0){
+    code <- c(code,
+              "",
+              paste0("# ", paste(shared, collapse = ", "),
+                     if(length(shared) == 1) " is" else " are",
+                     " read by more than one step below."),
+              "# If those were different files that share a name, rename one and",
+              "# change its name where it is read.")
+  }
+
+  c("## Uploaded files", "",
+    "This session used files uploaded to the app. The app records the name of",
+    "each file but cannot see the folder it came from, so set `data_dir` below",
+    "to the folder holding them. Left as `\".\"`, the script looks in the",
+    "folder this file is saved in when it is knitted.", "",
+    report_chunk(code, label = "files"))
 }
 
 #' Assemble the full report
@@ -81,71 +154,22 @@ report_rmd <- function(){
           report_generate_section(),
           report_citation(),
           "## Session information", "",
-          "The versions below are those used when this report was generated.",
+          "The versions below are those in use when this file is knitted.",
           "",
-          report_chunk("sessionInfo()", label = "session-info", eval = TRUE)),
+          report_chunk("sessionInfo()", label = "session-info")),
         collapse = "\n")
 }
 
 
 # DOWNLOAD ----------------------------------------------------------------
 
-# Has to zip to have both files in one folder
+# The script is the whole download. Nothing is run here, so the handler only
+# writes the file.
 output$create_report <- downloadHandler(
   filename = function(){
-    paste0("nicheR_report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".zip")
+    paste0("nicheR_report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".Rmd")
   },
-  contentType = "application/zip",
   content = function(file){
-    if(!requireNamespace("rmarkdown", quietly = TRUE)){
-      showNotification(instructions$report_needs_rmarkdown,
-                       type = "error", duration = 6)
-      return()
-    }
-    withProgress(message = "Building report", value = 0, {
-      # render() writes intermediates beside its input, so it gets a directory
-      # of its own rather than the shared tempdir
-      dir <- file.path(tempdir(), paste0("nicheR_report_",
-                                         format(Sys.time(), "%H%M%S")))
-      dir.create(dir, recursive = TRUE, showWarnings = FALSE)
-      on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-      rmd <- file.path(dir, "nicheR_report.Rmd")
-      incProgress(0.2, detail = "writing script")
-      writeLines(report_rmd(), rmd)
-      incProgress(0.3, detail = "rendering")
-      html <- tryCatch(
-        rmarkdown::render(rmd,
-                          output_file = "nicheR_report.html",
-                          envir = new.env(parent = globalenv()),
-                          quiet = TRUE),
-        error = function(e){
-          showNotification(paste("The report script could not be rendered:",
-                                 e$message,
-                                 "The script itself is still included."),
-                           type = "warning", duration = 8)
-          NULL
-        }
-      )
-      incProgress(0.3, detail = "packaging")
-      # zip() stores whatever path it is given, so it runs from inside the
-      # directory to keep the archive flat
-      old <- setwd(dir)
-      on.exit(setwd(old), add = TRUE)
-      keep <- c("nicheR_report.Rmd",
-                if(!is.null(html)) "nicheR_report.html")
-      ok <- tryCatch({
-        utils::zip(zipfile = normalizePath(file, mustWork = FALSE),
-                   files = keep, flags = "-q")
-        TRUE
-      }, error = function(e) FALSE)
-      # Without a zip binary there is no archive to deliver, so the script is
-      # sent on its own rather than failing silently
-      if(!ok || !file.exists(file)){
-        showNotification(instructions$report_no_zip,
-                         type = "warning", duration = 8)
-        file.copy("nicheR_report.Rmd", file, overwrite = TRUE)
-      }
-      incProgress(0.2)
-    })
+    writeLines(report_rmd(), file)
   }
 )

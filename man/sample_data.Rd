@@ -2,15 +2,15 @@
 % Please edit documentation in R/sample_data.R
 \name{sample_data}
 \alias{sample_data}
-\title{Sample occurrence data from a prediction surface}
+\title{Sample records from a prediction surface}
 \usage{
-sample_data(n_occ, prediction, prediction_layer = NULL,
+sample_data(n, prediction, prediction_layer = NULL,
                    sampling = "centroid", method = "suitability",
                    sampling_mask = NULL, seed = 1, strict = NULL,
                    verbose = TRUE)
 }
 \arguments{
-\item{n_occ}{Integer. Number of occurrence points to sample.}
+\item{n}{Integer. Number of records to sample.}
 
 \item{prediction}{A \code{SpatRaster} or data frame containing the
 prediction surface to sample from.}
@@ -42,13 +42,13 @@ the proportion of zeros and \code{NA}s in the prediction values.}
 \item{verbose}{Logical. If \code{TRUE} (default), prints progress messages.}
 }
 \value{
-A data frame of sampled occurrence points with the same columns as the
+A data frame of sampled records with the same columns as the
 input \code{prediction} (minus the internal \code{pred} column). If
 \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 and \code{y} coordinate columns.
 }
 \description{
-Samples \code{n_occ} virtual occurrence points from a suitability or
+Samples \code{n} virtual records from a suitability or
 Mahalanobis distance prediction surface. Supports centroid, edge, and
 random sampling strategies, and accepts both raster (\code{SpatRaster})
 and data frame inputs.
@@ -58,15 +58,15 @@ The \code{sampling} and \code{method} arguments interact to define the
 probability weights used when drawing points:
 \itemize{
   \item \code{sampling = "centroid"}, \code{method = "suitability"}:
-  weights proportional to suitability — higher near the niche center.
+  weights proportional to suitability, higher near the niche center.
   \item \code{sampling = "edge"}, \code{method = "suitability"}:
-  weights proportional to \eqn{1 - \text{suitability}} — higher near the
+  weights proportional to \eqn{1 - \text{suitability}}, higher near the
   niche boundary.
   \item \code{sampling = "centroid"}, \code{method = "mahalanobis"}:
-  weights inversely proportional to Mahalanobis distance — higher near
+  weights inversely proportional to Mahalanobis distance, higher near
   the centroid.
   \item \code{sampling = "edge"}, \code{method = "mahalanobis"}:
-  weights proportional to Mahalanobis distance — higher near the boundary.
+  weights proportional to Mahalanobis distance, higher near the boundary.
   \item \code{sampling = "random"}: equal weights regardless of method.
 }
 
@@ -79,16 +79,16 @@ pred_df <- utils::read.csv(system.file("extdata/predictions_virt.csv",
                                      package = "nicheR"))
 
 # Centroid strategy: samples cluster near the niche center
-occ_centroid <- sample_data(n_occ = 100,
+rec_centroid <- sample_data(n = 100,
                             prediction = pred_df,
                             prediction_layer = "suitability_trunc",
                             sampling = "centroid",
                             method = "suitability",
                             strict = TRUE)
-head(occ_centroid)
+head(rec_centroid)
 
 # Edge strategy: samples spread toward the niche boundary
-occ_edge <- sample_data(n_occ = 100,
+rec_edge <- sample_data(n = 100,
                         prediction = pred_df,
                         prediction_layer = "suitability_trunc",
                         sampling = "edge",
@@ -96,7 +96,7 @@ occ_edge <- sample_data(n_occ = 100,
                         strict = TRUE)
 
 # Random strategy: samples distributed uniformly across suitable area
-occ_random <- sample_data(n_occ = 100,
+rec_random <- sample_data(n = 100,
                           prediction = pred_df,
                           prediction_layer = "suitability_trunc",
                           sampling = "random")

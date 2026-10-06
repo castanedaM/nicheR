@@ -2,8 +2,8 @@
 
 # Description: Turns the current session into an Rmd holding a methods
 # narrative and the nicheR code that reproduces it. The generated document
-# uses real code chunks, so one file is both the runnable script the user
-# takes away and the source knitted to produce the HTML report.
+# uses real code chunks, so the file the user takes away is a runnable script
+# and knitting it gives the HTML report. The app itself never runs it.
 
 # Layout: shared primitives first, then one block per workflow step. Each step
 # keeps its inspection helpers, code emitters, prose, and section assembly
@@ -147,41 +147,84 @@ report_call <- function(obj, fn, args){
 #'
 #' @param lines Character vector of code lines.
 #' @param label Chunk label, unique within the document.
-#' @param eval Logical, whether the chunk runs when the report is knitted.
 #'
 #' @returns A character vector including the chunk delimiters.
 #'
 #' @noRd
-report_chunk <- function(lines, label, eval = TRUE){
-  c(paste0("```{r ", label, ", eval = ", eval, "}"), lines, "```", "")
+report_chunk <- function(lines, label){
+  c(paste0("```{r ", label, "}"), lines, "```", "")
 }
 
 
 # SESSION DATA ------------------------------------------------------------
 
-#' Whether the emitted script can run at report time
+#' How the background data came into the session
 #'
-#' Sessions built on uploaded files refer to a folder only the user can point
-#' at, so their chunks are emitted unevaluated. Example and virtual sessions
-#' are self contained and are evaluated, which checks that the script runs.
+#' "raster" for raster files, "table" for a table with no usable grid, and
+#' "table_grid" for a table whose coordinates fell on a regular grid, which
+#' the app turned into a raster. file_type decides it when it is set. It is
+#' not saved with a session, so after a reload the file name and the data
+#' decide instead.
+#'
 #' Reads session_data from the enclosing server environment.
-#'
-#' @returns A single logical.
-#'
-#' @noRd
-report_can_eval <- function(){
-  isTRUE(session_data$input_mode %in% c("example", "virtual"))
-}
-
-
-#' Name the emitted script gives the background data
 #'
 #' @returns A single string.
 #'
 #' @noRd
-report_data_object <- function(){
-  if(identical(session_data$file_type, "df") &&
-     is.null(session_data$bg_raster)) "bg" else "bios"
+report_data_kind <- function(){
+
+  ft <- session_data$file_type
+  src <- session_data$data_source
+  has_rast <- !is.null(session_data$bg_raster)
+
+  is_table <- if(!is.null(ft)){
+    identical(ft, "df")
+  } else if(length(src) == 1 && grepl("\\.csv$", src, ignore.case = TRUE)){
+    TRUE
+  } else {
+    !has_rast && !is.null(session_data$bg_df)
+  }
+
+  if(!is_table) return("raster")
+  if(has_rast) "table_grid" else "table"
+}
+
+
+#' Code that reads uploaded raster files
+#'
+#' A .tif goes straight to terra::rast(), which also stacks several files.
+#' An .rds upload holds a raster object, so it is read with readRDS() first,
+#' the way the app reads it.
+#'
+#' @param obj Name to give the raster.
+#' @param files Character vector of file names.
+#'
+#' @returns A character vector of code lines.
+#'
+#' @noRd
+report_rast_read_code <- function(obj, files){
+
+  if(!any(grepl("\\.rds$", files, ignore.case = TRUE))){
+
+    if(length(files) == 1){
+      return(paste0(obj, " <- terra::rast(file.path(data_dir, \"", files, "\"))"))
+    }
+
+    return(c(paste0(obj, " <- terra::rast(file.path(data_dir,"),
+             paste0(strrep(" ", nchar(obj) + 26), report_chr(files), "))")))
+  }
+
+  c(paste0(obj, "_files <- file.path(data_dir, ", report_chr(files), ")"),
+    "",
+    "# An .rds file holds a raster object, so it is read before terra::rast()",
+    paste0(obj, " <- lapply(", obj, "_files, function(f){"),
+    "  if(grepl(\"\\\\.rds$\", f, ignore.case = TRUE)){",
+    "    terra::rast(readRDS(f))",
+    "  } else {",
+    "    terra::rast(f)",
+    "  }",
+    "})",
+    paste0(obj, " <- do.call(c, ", obj, ")"))
 }
 
 
@@ -205,11 +248,9 @@ report_ell_objects <- function(){
 
 #' Code that reloads the environmental data
 #'
-#' Uploaded files cannot be located from the app. The browser sends only a file
-#' name and Shiny's copy of the upload is deleted when the session ends, so the
-#' emitted script declares the folder as a variable for the user to set rather
-#' than writing a path that will not exist. Reads session_data from the
-#' enclosing server environment.
+#' Uploaded files are read by name from data_dir, the folder the script
+#' declares once in its first chunk (see report_files_block() in
+#' report_main.R). Reads session_data from the enclosing server environment.
 #'
 #' @returns A character vector of code lines.
 #'
@@ -231,34 +272,45 @@ report_data_code <- function(){
              paste0("bios <- terra::subset(bios, ", report_chr(vars), ")")))
   }
 
+  kind <- report_data_kind()
+
+  # Sessions saved before file names were recorded fall back to a placeholder
   src <- session_data$data_source
+  head <- character(0)
   if(is.null(src) || length(src) == 0){
-    src <- if(identical(session_data$file_type, "df")){
-      "your_data.csv"
-    } else {
-      "your_layers.tif"
-    }
+    src <- if(identical(kind, "raster")) "your_layers.tif" else "your_data.csv"
+    head <- "# The file name was not saved with this session, so put it here"
   }
 
-  head <- c("# Set this to the folder holding the files you uploaded to the app",
-            "data_dir <- \".\"",
-            "")
-
-  if(identical(session_data$file_type, "df")){
+  if(identical(kind, "raster")){
     return(c(head,
-             paste0("bg <- read.csv(file.path(data_dir, \"", src[1], "\"))"),
+             report_rast_read_code("bios", src),
+             paste0("bios <- terra::subset(bios, ", report_chr(vars), ")")))
+  }
+
+  # A table is a .csv, or a data frame saved as .rds
+  read <- if(grepl("\\.rds$", src[1], ignore.case = TRUE)){
+    paste0("bg <- readRDS(file.path(data_dir, \"", src[1], "\"))")
+  } else {
+    paste0("bg <- read.csv(file.path(data_dir, \"", src[1], "\"))")
+  }
+
+  if(identical(kind, "table")){
+    return(c(head, read,
              paste0("bg <- bg[, ", report_chr(vars), "]")))
   }
 
-  load <- if(length(src) == 1){
-    paste0("bios <- terra::rast(file.path(data_dir, \"", src, "\"))")
-  } else {
-    c("bios <- terra::rast(file.path(data_dir,",
-      paste0("                            ", report_chr(src), "))"))
-  }
+  # The coordinates fell on a regular grid, so the app turned the table into
+  # a raster, with the coordinate columns first as terra::rast() expects
+  nms <- colnames(session_data$bg_df)
+  x_col <- nms[grepl(X_COL_PATTERN, nms, ignore.case = TRUE)][1]
+  y_col <- nms[grepl(Y_COL_PATTERN, nms, ignore.case = TRUE)][1]
 
-  c(head, load,
-    paste0("bios <- terra::subset(bios, ", report_chr(vars), ")"))
+  c(head, read,
+    "",
+    "# The coordinates fall on a regular grid, so the table becomes a raster",
+    paste0("bios <- terra::rast(bg[, ", report_chr(c(x_col, y_col, vars)),
+           "], type = \"xyz\")"))
 }
 
 
@@ -377,11 +429,17 @@ report_range_code <- function(ell, obj){
   emax <- unlist(ri$expand_max[vars])
 
   if(identical(ri$method, "stats")){
+
+    # The confidence level the ranges were computed with, which is its own
+    # input on the Build tab and not the ellipsoid cutoff. Ellipsoids stored
+    # before it was recorded fall back to the ellipsoid's level.
+    range_cl <- if(!is.null(ri$cl)) ri$cl else ell$cl
+
     return(list(pre = character(0),
                 code = report_call(obj, "ranges_from_stats",
                                    list(mean = report_vec(unlist(ri$mean[vars])),
                                         sd = report_vec(unlist(ri$sd[vars])),
-                                        cl = report_num(ell$cl),
+                                        cl = report_num(range_cl),
                                         expand_min = report_vec(emin),
                                         expand_max = report_vec(emax)))))
   }
@@ -392,11 +450,11 @@ report_range_code <- function(ell, obj){
                                   report_num(maxs), ")"),
                            report_name(vars)))
 
-  # The occurrence table behind a data derived range is not carried out of the
+  # The uploaded table behind a data derived range is not carried out of the
   # app, so the resolved bounds are given directly and the method is recorded
   # in a comment instead
   pre <- if(identical(ri$method, "df")){
-    c("# Ranges derived in the app from an uploaded occurrence table with",
+    c("# Ranges derived in the app from an uploaded data table with",
       paste0("# ranges_from_data(), expanding by ",
              report_and(paste0(vars, " ", report_num(emin), "/",
                                report_num(emax), "%")), "."),
@@ -431,7 +489,7 @@ report_ell_code <- function(ell, obj, range_obj, parent_obj = NULL){
     paste0("# ", ell$ell_name, ", copied from ", parent_obj)
   },
   report_call(obj, "build_ellipsoid",
-              list(range = range_obj, cl = report_num(ell$cl))))
+              list(ranges = range_obj, cl = report_num(ell$cl), verbose = FALSE)))
 
   cov <- report_cov_pairs(ell)
   if(nrow(cov) > 0){
@@ -478,7 +536,7 @@ report_range_prose <- function(ell){
                                   "reported as a distribution rather than one observed ",
                                   "directly"),
                  "df" = paste0("Its bounds were derived from the observed spread of an ",
-                               "occurrence table and then expanded, so they describe the ",
+                               "uploaded data table and then expanded, so they describe the ",
                                "recorded conditions plus a margin"),
                  "Its bounds were set")
 
@@ -699,15 +757,14 @@ report_build_section <- function(){
   }
 
   obj <- report_ell_objects()
-  ev <- report_can_eval()
 
   # Ranges are deduplicated on the code they produce, so two ellipsoids share a
   # range object exactly when rebuilding them would emit the same lines
-  drafts <- lapply(ells, report_range_code, obj = "range")
+  drafts <- lapply(ells, report_range_code, obj = "ranges")
   keys <- vapply(drafts, function(d) paste(c(d$pre, d$code), collapse = "\n"),
                  character(1))
   uniq <- unique(keys)
-  range_obj <- paste0("range_", seq_along(uniq))
+  range_obj <- paste0("ranges_", seq_along(uniq))
   range_of <- range_obj[match(keys, uniq)]
 
   range_lines <- unlist(lapply(seq_along(uniq), function(i){
@@ -722,18 +779,18 @@ report_build_section <- function(){
     c(paste0("### ", ells[[i]]$ell_name), "",
       report_ell_prose(ells[[i]], p_obj),
       report_chunk(report_ell_code(ells[[i]], obj[[i]], range_of[i], p_obj),
-                   label = paste0("build-", i), eval = ev))
+                   label = paste0("build-", i)))
   }))
 
   c("## Building ellipsoidal niches", "",
     report_build_prose(ells, length(uniq)),
-    report_chunk(report_data_code(), label = "build-data", eval = ev),
+    report_chunk(report_data_code(), label = "build-data"),
     paste0("The ", length(uniq), " set", if(length(uniq) == 1) "" else "s",
            " of environmental ranges below ",
            if(length(uniq) == 1) "is" else "are",
            " shared by the niches that follow."),
     "",
-    report_chunk(range_lines, label = "build-ranges", eval = ev),
+    report_chunk(range_lines, label = "build-ranges"),
     blocks)
 }
 
@@ -932,12 +989,16 @@ report_pred_groups <- function(){
 #'
 #' @noRd
 report_pred_code <- function(objs, args, out){
+
+  # The name report_data_code() gave the background data
+  newdata <- if(identical(report_data_kind(), "table")) "bg" else "bios"
+
   c(paste0(out, "_ellipsoids <- list(",
            paste0(objs, " = ", objs, collapse = ", "), ")"),
     "",
     paste0(out, " <- lapply(", out, "_ellipsoids, function(e){"),
     "  predict(e,",
-    paste0("          newdata = ", report_data_object(), ","),
+    paste0("          newdata = ", newdata, ","),
     paste0("          ", names(args), " = ", unlist(args), ","),
     "          verbose = FALSE)",
     "})")
@@ -1184,7 +1245,7 @@ report_predict_section <- function(){
 
     c(open,
       report_chunk(report_pred_code(objs[sel], args[[sel[1]]], out),
-                   label = paste0("predict-", g), eval = report_can_eval()),
+                   label = paste0("predict-", g)),
       how,
       detail)
   }))
@@ -1196,24 +1257,6 @@ report_predict_section <- function(){
 
 
 # BIAS, INSPECTION --------------------------------------------------------
-
-#' Whether the Bias chunks can run at report time
-#'
-#' Evaluability has to be monotonic down the document. A chunk emitted with
-#' eval = FALSE leaves its objects undefined, so any later chunk that runs and
-#' references them fails the render outright rather than being skipped. Bias is
-#' therefore evaluable only when Build and Predict were, and only when the bias
-#' raster came from the bundled example rather than an upload.
-#'
-#' Reads session_data from the enclosing server environment.
-#'
-#' @returns A single logical.
-#'
-#' @noRd
-report_bias_can_eval <- function(){
-  report_can_eval() && identical(session_data$bias_source, "example")
-}
-
 
 #' Layers and effect directions behind a prepared bias surface
 #'
@@ -1459,28 +1502,14 @@ report_bias_data_code <- function(){
              "  system.file(\"extdata/ma_biases.tif\", package = \"nicheR\"))"))
   }
 
+  # Sessions saved before file names were recorded fall back to a placeholder
+  head <- character(0)
   if(is.null(src) || length(src) == 0){
     src <- "your_bias_layers.tif"
+    head <- "# The file name was not saved with this session, so put it here"
   }
 
-  # Build declares data_dir for every mode that reads uploaded files, so
-  # repeating it there would overwrite a folder the user had already set
-  head <- if(session_data$input_mode %in% c("example", "virtual")){
-    c("# Set this to the folder holding the bias files you uploaded to the app",
-      "data_dir <- \".\"",
-      "")
-  } else {
-    character(0)
-  }
-
-  load <- if(length(src) == 1){
-    paste0("bias_rast <- terra::rast(file.path(data_dir, \"", src, "\"))")
-  } else {
-    c("bias_rast <- terra::rast(file.path(data_dir,",
-      paste0("                                   ", report_chr(src), "))"))
-  }
-
-  c(head, load)
+  c(head, report_rast_read_code("bias_rast", src))
 }
 
 
@@ -1594,7 +1623,7 @@ report_bias_prose <- function(n_ell, n_group){
     "reserves, so the places a species is recorded are the places that are ",
     "both suitable and sampled. This step builds a surface representing that ",
     "second component and combines it with the predictions, so that ",
-    "occurrences drawn later carry the same uneven effort a real dataset ",
+    "records drawn later carry the same uneven effort a real dataset ",
     "would.")
 
   if(n_ell > 0){
@@ -1786,14 +1815,13 @@ report_bias_section <- function(){
     return(character(0))
   }
 
-  ev <- report_bias_can_eval()
   grp <- report_bias_groups()
 
   head <- c("## Introducing sampling bias", "",
             report_bias_prose(nrow(grp), length(unique(grp$group))),
             report_chunk(c(report_bias_data_code(), "",
                            report_bias_prepare_code(prepared)),
-                         label = "bias-prepare", eval = ev),
+                         label = "bias-prepare"),
             report_bias_prepare_prose(prepared))
 
   if(nrow(grp) == 0){
@@ -1839,7 +1867,7 @@ report_bias_section <- function(){
     c(open,
       report_chunk(report_bias_apply_code(objs[ids], ap,
                                           grp$pred_obj[sel[1]], out),
-                   label = paste0("bias-apply-", g), eval = ev),
+                   label = paste0("bias-apply-", g)),
       detail)
   }))
 
@@ -1865,7 +1893,7 @@ report_occ_method <- function(layer){
 }
 
 
-#' Whether an occurrence set was drawn from a biased surface
+#' Whether a record set was drawn from a biased surface
 #'
 #' generate_occ_for_ell() records this on the set as a "biased" attribute, and
 #' that is read first because it is what the app itself decided. Membership in
@@ -1877,7 +1905,7 @@ report_occ_method <- function(layer){
 #'
 #' @param id The ell_id.
 #' @param layer The layer the set was drawn from.
-#' @param df The occurrence set itself.
+#' @param df The record set itself.
 #'
 #' @returns A single logical.
 #'
@@ -1921,36 +1949,7 @@ report_occ_source_obj <- function(id, biased, mode){
 }
 
 
-#' Whether the chunk sampling one set can run at report time
-#'
-#' A sampling mask is an uploaded file, so a set that used one cannot be
-#' reproduced without the user pointing at it and its chunk is emitted
-#' unevaluated even when everything upstream ran. Evaluability stays monotonic:
-#' a set drawn from a biased surface inherits the Bias answer, since its chunk
-#' references an object that chunk created.
-#'
-#' @param biased Whether the set came from a biased surface.
-#' @param mask The recorded mask file name, or "none".
-#' @param mode The recorded mode.
-#'
-#' @returns A single logical.
-#'
-#' @noRd
-report_occ_can_eval <- function(biased, mask, mode){
-
-  up <- if(identical(mode, "virtual")){
-    report_can_eval()
-  } else if(isTRUE(biased)){
-    report_bias_can_eval()
-  } else {
-    report_can_eval()
-  }
-
-  isTRUE(up) && identical(as.character(mask), "none")
-}
-
-
-#' Every occurrence set in the session, flattened
+#' Every record set in the session, flattened
 #'
 #' The parameters travel with each set as attributes, so this step has better
 #' provenance than any other: nothing is inferred from the result. Sets whose
@@ -1972,7 +1971,7 @@ report_occ_sets <- function(){
                       effect = character(0), biased = logical(0),
                       source_obj = character(0), stringsAsFactors = FALSE)
 
-  occ <- session_data$ellipsoid_occurrence_list
+  occ <- session_data$ellipsoid_records_list
   if(length(occ) == 0) return(empty)
 
   rows <- lapply(names(occ), function(id){
@@ -2021,7 +2020,7 @@ report_occ_sets <- function(){
 }
 
 
-#' Occurrence sets grouped by the call that produced them
+#' Record sets grouped by the call that produced them
 #'
 #' occ_set_signature() already keys a set on every parameter that defines it
 #' and does not include the ellipsoid, so two sets sharing a key were made in
@@ -2058,11 +2057,8 @@ report_occ_groups <- function(){
 
 #' Code that reloads a sampling mask
 #'
-#' The mask is an uploaded file and cannot be located from the app, so the
-#' script names it and leaves the folder for the user to set. data_dir is
-#' declared here only when no earlier chunk declared it.
-#'
-#' Reads session_data from the enclosing server environment.
+#' The mask is an uploaded file, read by name from data_dir like every other
+#' upload.
 #'
 #' @param mask The recorded mask file name.
 #'
@@ -2075,20 +2071,11 @@ report_occ_mask_code <- function(mask){
     return(character(0))
   }
 
-  head <- if(session_data$input_mode %in% c("example", "virtual")){
-    c("# Set this to the folder holding the mask you uploaded to the app",
-      "data_dir <- \".\"")
-  } else {
-    character(0)
-  }
-
-  c(head,
-    paste0("sampling_mask <- terra::rast(file.path(data_dir, \"", mask, "\"))"),
-    "")
+  c(report_rast_read_code("sampling_mask", as.character(mask)), "")
 }
 
 
-#' Code that samples one group of occurrence sets
+#' Code that samples one group of record sets
 #'
 #' Three samplers, chosen the way the app chooses them. Biased surfaces go to
 #' sample_biased_data(), which takes no strategy and no method because the
@@ -2135,7 +2122,7 @@ report_occ_code <- function(objs, row, out){
   }
 
   args <- if(isTRUE(row$biased)){
-    c(n_occ = report_num(row$n_occ),
+    c(n = report_num(row$n_occ),
       prediction = paste0(row$source_obj, "[[nm]]"),
       prediction_layer = paste0("\"", row$layer, "\""),
       if(!is.null(mask_arg)) c(sampling_mask = mask_arg),
@@ -2143,7 +2130,7 @@ report_occ_code <- function(objs, row, out){
       strict = strict_arg,
       verbose = "FALSE")
   } else {
-    c(n_occ = report_num(row$n_occ),
+    c(n = report_num(row$n_occ),
       prediction = paste0(row$source_obj, "[[nm]]"),
       prediction_layer = paste0("\"", row$layer, "\""),
       sampling = paste0("\"", row$sampling, "\""),
@@ -2263,15 +2250,15 @@ report_generate_prose <- function(sets){
   out <- paste0(
     "A niche says which conditions are tolerable and a prediction says where ",
     "they occur. Neither is a dataset. This step draws point records from ",
-    "what came before, so the result is an occurrence table whose origin is ",
+    "what came before, so the result is a table of records whose origin is ",
     "known: the niche it came from, the rule that selected the points, and ",
     "the seed that makes the selection repeatable. That is what makes these ",
     "records useful as a benchmark, since anything fitted to them can be ",
     "compared against the niche that produced them.")
 
   out <- c(out, "",
-           paste0(n_set, " occurrence set", if(n_set == 1) "" else "s",
-                  " were drawn across ", n_ell, " niche",
+           paste0(n_set, " record set", if(n_set == 1) " was" else "s were",
+                  " drawn across ", n_ell, " niche",
                   if(n_ell == 1) "" else "s",
                   if(n_group > 1){
                     paste0(", in ", n_group,
@@ -2292,7 +2279,7 @@ report_generate_prose <- function(sets){
 }
 
 
-#' Paragraphs describing one group of occurrence sets
+#' Paragraphs describing one group of record sets
 #'
 #' Members of a group differ only in which niche they came from, so they are
 #' listed rather than given a heading each. What varies between them is the
@@ -2320,7 +2307,7 @@ report_occ_group_prose <- function(row, members, objs, out){
       paste0(" from `", row$layer, "`, using a random seed of ",
              report_num(row$seed), ".")
     },
-    " The seed is what makes this repeatable: running the code below returns ",
+    " The seed is what makes this repeatable: running the code above returns ",
     "the same points rather than a fresh draw.")
 
   weights <- report_occ_weight_prose(row)
@@ -2409,11 +2396,11 @@ report_generate_section <- function(){
     members <- sets[sets$group == g, , drop = FALSE]
     row <- members[1, , drop = FALSE]
     objs <- objs_all[members$id]
-    out <- if(multi) paste0("occurrences_", g) else "occurrences"
+    out <- if(multi) paste0("records_", g) else "records"
 
     open <- if(multi){
       c("***", "",
-        paste0("### Occurrence set ", g), "")
+        paste0("### Record set ", g), "")
     } else {
       character(0)
     }
@@ -2421,12 +2408,11 @@ report_generate_section <- function(){
     c(open,
       report_chunk(c(report_occ_mask_code(row$mask),
                      report_occ_code(objs, row, out)),
-                   label = paste0("generate-", g),
-                   eval = report_occ_can_eval(row$biased, row$mask, row$mode)),
+                   label = paste0("generate-", g)),
       report_occ_group_prose(row, members, objs, out))
   }))
 
-  c("## Generating occurrence records", "",
+  c("## Generating records", "",
     report_generate_prose(sets),
     blocks)
 }

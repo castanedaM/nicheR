@@ -18,7 +18,7 @@ dashboardPage(
       downloadButton("create_report",
                      label = "Report",
                      icon = icon("file-lines"), class = "btn-primary",
-                     title = "Save current session as an Rmarkdown with rendered HTML.")
+                     title = "Save current session as an R Markdown script (.Rmd)")
     )
   ),
 
@@ -95,7 +95,7 @@ dashboardPage(
                           target = "_blank", rel = "noopener", "making predictions"), ", ",
                    tags$a(href = "https://castanedam.github.io/nicheR/articles/bias.html",
                           target = "_blank", rel = "noopener", "sampling bias"), ", and ",
-                   tags$a(href = "https://castanedam.github.io/nicheR/articles/generating_occurrence.html",
+                   tags$a(href = "https://castanedam.github.io/nicheR/articles/generating_data.html",
                           target = "_blank", rel = "noopener", "generating data"), ".")
           )
         ),
@@ -197,7 +197,7 @@ dashboardPage(
                        })
                      ),
 
-                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/generating_occurrence.html",
+                     tags$a(href   = "https://castanedam.github.io/nicheR/articles/generating_data.html",
                             target = "_blank",
                             icon("book"), " Generate vignette")
                  )
@@ -529,7 +529,7 @@ dashboardPage(
 
                         fluidRow(
                           uiOutput("generate_ellipsoid_library_ui"),
-                          uiOutput("generate_occurrence_summary_ui")
+                          uiOutput("generate_records_summary_ui")
                         )
                  ),
 

@@ -38,7 +38,7 @@ knitr::opts_chunk$set(
 -   [Step 4: Generate](#step-4-generate)
     -   [Sampling from a prediction](#sampling-from-a-prediction)
     -   [Sampling in virtual mode](#sampling-in-virtual-mode)
-    -   [Occurrence sets](#occurrence-sets)
+    -   [Record sets](#record-sets)
 -   [Working with several ellipsoids](#working-with-several-ellipsoids)
 -   [The session report](#the-session-report)
     -   [What the report contains depends on your path](#what-the-report-contains-depends-on-your-path)
@@ -78,8 +78,8 @@ run_gui()
 | Build, covariance and centroid | `update_ellipsoid_covariance()`, `update_ellipsoid_centroid()` | [Building ellipsoids](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) |
 | Predict | `predict()` | [Predictions](predict.html) |
 | Bias | `prepare_bias()`, `apply_bias()` | [Sampling bias data](bias.html) |
-| Generate, from a surface | `sample_data()`, `sample_biased_data()` | [Sampling occurrence data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html) |
-| Generate, virtual mode | `virtual_data()` | [Sampling occurrence data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html) |
+| Generate, from a surface | `sample_data()`, `sample_biased_data()` | [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html) |
+| Generate, virtual mode | `virtual_data()` | [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html) |
 | Every plot tab | `plot_ellipsoid()`, `plot_ellipsoid_pairs()`, `add_ellipsoid()`, `add_data()` | [Visualization](https://castanedam.github.io/nicheR/articles/plotting_vignette.html) |
 
 Two things the app does not do are multi-species communities
@@ -106,7 +106,8 @@ Two buttons sit in the header and are available from every page:
 
 - **Save** writes your current progress to an `.rds` file. You can reload it
   later from the Previous session input option.
-- **Report** writes an HTML and `.rmd`  summary of the current session.
+- **Report** writes an `.Rmd` script that describes and reproduces the
+  current session.
 
 Click **START** at the bottom of the About page to move to step 1.
 
@@ -117,7 +118,9 @@ Click **START** at the bottom of the About page to move to step 1.
 ## Providing data
 
 The Build page opens on the **Inputs** tab. Start by choosing one of four ways
-to supply your environmental data.
+to supply your environmental data. Switching to a different input type later
+starts the session over. Once you have confirmed variables or built an
+ellipsoid, the app asks before doing so.
 
 <!-- SCREENSHOT: Inputs tab, input type radio buttons -->
 <img src='figures/shiny_app_figures/Slide2.png' 
@@ -133,7 +136,7 @@ other is hidden, and **Clear files** brings both back.
 A raster always supports both environmental space and geographic space. A CSV
 supports geographic space only if it carries coordinate columns that fall on a
 regular grid, in which case the app converts it to a raster for you. Coordinate
-columns are recognised by name (`x`, `lon`, `longitude`, `easting` paired with
+columns are recognized by name (`x`, `lon`, `longitude`, `easting` paired with
 `y`, `lat`, `latitude`, `northing`) and are excluded from the variables you can
 model. If no coordinates are present, or the points are scattered rather than
 gridded, the app warns you and continues in environmental space only.
@@ -150,7 +153,7 @@ every saved ellipsoid, and their lineage.
 
 **Virtual mode.** Work entirely in environmental space with no geographic
 coordinates. You name the variables and define their ranges directly. Use this
-when you are simulating a niche rather than modelling a real study area.
+when you are simulating a niche rather than modeling a real study area.
 Virtual mode skips steps 2 and 3 and takes you straight to Generate, since
 there is nothing to project onto and nothing to bias.
 
@@ -167,15 +170,16 @@ bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
 
 ## Selecting variables
 
-Up to six variables can be used at once. Each row has a checkbox and a
+Between two and six variables can be used at once. Each row has a checkbox and a
 dropdown: uncheck a row to exclude that variable, and use the dropdown to
 change which layer occupies that slot. A variable already chosen in one active
 slot is removed from the other dropdowns, so you cannot select the same layer
 twice. The plot beside the controls updates as you choose, before you confirm
 anything.
 
-In virtual mode you instead choose how many dimensions you want and type a name
-for each. Blank names default to `var1`, `var2`, and so on.
+In virtual mode you instead choose how many dimensions you want, from two to
+six, and type a name for each. Blank names default to `var1`, `var2`, and so on. Names can use
+letters, numbers, and underscores, and must start with a letter.
 
 <!-- SCREENSHOT: variable selectors with three slots, one unchecked -->
 <img src='figures/shiny_app_figures/Slide3.png' 
@@ -193,31 +197,33 @@ clears the ellipsoid, the ranges, and everything downstream.
 Ranges define the extent of the ellipsoid along each variable. `build_ellipsoid()`
 turns a two-row data frame of minima and maxima into a centroid, a covariance
 matrix, semi-axis lengths, and a niche volume. The three methods below are three
-ways of filling in that data frame. You can switch methods and change values at
-any time, then rebuild.
+ways of filling in that data frame. You can switch methods and change values
+freely until you build the ellipsoid. After that the ranges are fixed, and a
+different set of ranges means a new ellipsoid.
 
 **Manual** lets you type a minimum and maximum for each variable. Defaults come
 from the first and third quartiles of your background data.
 
-**From Data** takes a CSV of occurrence records, or any table with one column
+**From Data** takes a CSV of records for your species, or any table with one column
 per selected variable, and uses the observed minimum and maximum of each.
 Column names must match your selected variables exactly. Once matched, the
 observed bounds appear along with **Expand min** and **Expand max** fields that
-widen the range outward by a percentage. Negative values shrink it. This is
+widen the ranges outward by a percentage. Negative values shrink them. This is
 `ranges_from_data()`.
 
 **From Stats** builds ranges from a mean and standard deviation per variable,
 combined with a confidence level. Defaults are derived from your background
 data, but you can replace them with published values for your species. This is
 `ranges_from_stats()`, and it is the option to use when you know a species'
-tolerances but have no occurrence records, which is the usual situation for
+tolerances but have no records for it, which is the usual situation for
 rare species.
 
 > The choice between these methods, and what the confidence level does to the
 > resulting ellipsoid, is discussed in the
 > [Building ellipsoids](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) vignette.
 
-<!-- SCREENSHOT: From Stats panel with three variables -->
+<!-- SCREENSHOT (retake): From Stats panel with three variables, showing the
+Ellipsoid confidence level box above the range methods -->
 <img src='figures/shiny_app_figures/Slide5.png' 
 align='center' 
 height='100%' 
@@ -225,14 +231,25 @@ width='100%'/>
 
 The range lines on the plot follow whatever you type, so you can preview a
 range before committing to it. Once an ellipsoid exists, the lines show the
-ranges it was built from and hold there until you press **Rebuild**, even if
-you move the centroid. Editing the range fields again makes the lines follow
-your edits until you either rebuild or switch away.
+ranges it was built from and stay there, even if you move the centroid. In
+virtual mode there is no background data to anchor the plot, so the plot keeps
+a fixed frame around those ranges and the lines hold still while the ellipsoid
+moves.
 
 **Reset to defaults** restores the starting values for the current method.
 **Initialize Ellipsoid** builds the ellipsoid and unlocks the Covariance and
-Centroid sections. Once one exists, that button reads **Rebuild Ellipsoid**.
+Centroid sections. From then on the Ranges box shows the ranges as a read-only
+table. To use different ranges, click **Create new ellipsoid** at the bottom of
+the [ellipsoid library](#the-ellipsoid-library).
 
+The Ranges box also holds the **Ellipsoid confidence level**, which sets where
+the boundary of the ellipsoid falls. A higher value draws a larger ellipsoid
+around the same centroid. It stays editable after the ellipsoid is built and
+applies right away. This is a different number from the confidence level in
+From Stats, which only sets how wide the ranges are.
+
+<!-- SCREENSHOT (retake): Ranges box after Initialize Ellipsoid, showing the
+read-only range table -->
 <img src='figures/shiny_app_figures/Slide6.png' 
 align='center' 
 height='100%' 
@@ -270,12 +287,12 @@ Click **Set Covariances** when you are satisfied. The section collapses, and
 
 The centroid mover shifts the ellipsoid through environmental space without
 changing its shape, size, or orientation. Use it to ask what happens if a
-species occupies the same breadth of conditions centred somewhere else. This is
+species occupies the same breadth of conditions centered somewhere else. This is
 `update_ellipsoid_centroid()`.
 
 **Reset all** returns the centroid to where this ellipsoid started. For a copy,
 that is the centroid of the ellipsoid it was copied from. For an ellipsoid built
-from its own ranges, it is the centre of those ranges.
+from its own ranges, it is the center of those ranges.
 
 <!-- SCREENSHOT: centroid sliders with one shifted -->
 <img src='figures/shiny_app_figures/Slide8.png' 
@@ -289,36 +306,49 @@ The library lists every version you have saved. The highlighted row at the top
 is the **working** ellipsoid, the one the plots and every later tab use. Its
 label shows whether you are editing or viewing it.
 
-<!-- SCREENSHOT: ellipsoid library with three saved versions -->
+<!-- SCREENSHOT (retake): ellipsoid library with three saved versions, showing
+the five row actions and Create new ellipsoid at the bottom -->
 <img src='figures/shiny_app_figures/Slide9.png' 
 align='center' 
 height='100%' 
 width='100%'/>
 
-Each saved row has four actions:
+Each saved row has five actions:
 
 - **View** loads the version read-only. Ranges, covariances, and the centroid
   are shown but locked, so you can inspect a version without changing it.
-  **Return to editing** unlocks it.
-- **Edit** loads the version with everything editable, including its ranges.
-  Saving afterwards updates that version in place.
+  The **Edit** button on the working row unlocks it.
+- **Edit** loads the version with its covariances, centroid, and confidence
+  level editable. The ranges stay as they were built. **Update** then
+  overwrites that version in place. If the version already has predictions,
+  biased layers, or record sets, the app asks first: those were made from
+  the previous shape, so updating removes them.
 - **Add** creates a new unsaved copy, carrying over the covariance, centroid,
   and ranges of the version you copied from.
+- **Export** saves the version to an `.rds` file with `save_nicheR()`, which
+  you can read back in the console with `read_nicheR()`.
 - **Delete** removes the version and everything derived from it.
 
-**Save ellipsoid** stores the working version under a name of your choice, then
-offers to start a new one or finish. If the working version is already in the
-library the button reads **Update ellipsoid** and overwrites it.
+**Save** stores the working version under a name of your choice. If the working
+version is already in the library the button reads **Update** and overwrites
+it.
+
+**Create new ellipsoid**, at the bottom of the library, empties the working
+slot and takes you back to the variables and the range methods, so you can
+build another ellipsoid from different ranges. Saved versions stay in the
+library. If the working version has changes you have not saved, the app asks
+before discarding them. **Continue** asks the same question before moving to
+the next step.
 
 ### Lineage
 
 The **Details** column records where each ellipsoid came from. A copy shows
 the name of its parent; an ellipsoid built directly from ranges shows **root**.
 
-Lineage is broken deliberately when the geometry changes. If you load a version,
-edit its ranges, and rebuild, it becomes a root, because the new ranges describe
-a different ellipsoid than the one it was copied from. Changing only the
-covariance or the centroid keeps the lineage intact.
+Lineage follows the ranges. An ellipsoid built from its own ranges is always a
+root, because new ranges describe a different ellipsoid. A copy keeps the
+ranges of its parent, and changing its covariance or centroid keeps the lineage
+intact.
 
 Deleting a parent does not delete its copies. They are kept and become roots
 themselves, and the app tells you how many will be affected before you confirm.
@@ -346,7 +376,7 @@ height='100%'
 width='100%'/>
 
 Every plot has an **Advanced Plot Settings** panel below it controlling point
-shapes, sizes, and colours, and an **Export figure** button that writes PNG,
+shapes, sizes, and colors, and an **Export figure** button that writes PNG,
 PDF, or SVG at a size you specify. The default is a 166 x 166 mm full-page
 publication figure.
 
@@ -369,7 +399,7 @@ Click **Continue** to move to Prediction.
 Prediction projects a saved ellipsoid onto your background data to produce
 suitability surfaces.
 
-<!-- SCREENSHOT: -->
+<!-- SCREENSHOT (retake): Predict controls, with the truncation box open -->
 <img src='figures/shiny_app_figures/Slide12.png' 
 align='center' 
 height='100%' 
@@ -391,6 +421,9 @@ version also loads it into the working slot, so the plots switch to show it.
 At least one must be selected. When you switch between saved ellipsoids the
 checkboxes update to show which layers that version has already predicted.
 
+Each run replaces the previous prediction for that ellipsoid. It does not add
+to it, so to keep several layers, select all of them and predict once.
+
 The difference between the truncated and untruncated forms matters more than it
 looks, because it decides what step 4 can sample from. A truncated layer has a
 hard niche boundary; an untruncated one does not.
@@ -400,14 +433,22 @@ hard niche boundary; an untruncated one does not.
 
 **Advanced prediction settings** holds a truncation level that overrides the
 ellipsoid's own confidence level, letting you truncate the prediction inward
-without rebuilding.
+without rebuilding. The box starts at the confidence level of the ellipsoid you
+selected, and leaving it unchanged or blank means no adjustment. With **All
+versions** selected it starts empty, since each ellipsoid has its own level.
 
 Predictions are stored per ellipsoid, so predicting one version never discards
 another's results. Re-predicting a version clears any biased surfaces and
-occurrences derived from the old prediction, since those would otherwise be
+records derived from the old prediction, since those would otherwise be
 stale.
 
-<!-- SCREENSHOT: -->
+Once a version is predicted, the download icon on its row in the library saves
+the prediction. You choose which layers to include, whether to add the
+environmental variables, and the format: a raster (`.tif`) or a table (`.csv`)
+with the `x` and `y` coordinates. Only layers from the last prediction are
+listed.
+
+<!-- SCREENSHOT (retake): Predict library with the download icon -->
 <img src='figures/shiny_app_figures/Slide13.png' 
 align='center' 
 height='100%' 
@@ -416,9 +457,9 @@ width='100%'/>
 ## The Predict plots
 
 **E-space** works like the Build tab, with an added overlay selector once a
-prediction exists. Choose a layer to colour the background points by its values,
+prediction exists. Choose a layer to color the background points by its values,
 or **Binary suitability** to highlight only the suitable points. The **2D** view
-ignores the selector and gives one panel per predicted layer. The colouring is
+ignores the selector and gives one panel per predicted layer. The coloring is
 `add_data()`.
 
 **G-space** shows one map per predicted layer, or a single suitable-area map
@@ -450,20 +491,21 @@ The library on this tab is view-only. Editing happens on the Build tab.
 
 # Step 3: Bias (optional)
 
-Sampling bias weights occurrence generation toward areas with more detection
+Sampling bias weights data generation toward areas with more detection
 effort. It describes where people looked, not where the species can live, and
 the two are kept separate throughout. This whole step is optional: **Skip bias**
-at the top moves straight to Generate, and occurrences will be sampled from the
+at the top moves straight to Generate, and records will be sampled from the
 unbiased prediction.
 
-<!-- SCREENSHOT: -->
+<!-- SCREENSHOT (retake): Bias controls, with Add new bias layer and the download
+icon in the library -->
 <img src='figures/shiny_app_figures/Slide16.png' 
 align='center' 
 height='100%' 
 width='100%'/>
 
 **Upload** one or more rasters representing sampling effort: road density,
-distance to water, urbanisation, collector coverage, anything that stands in for
+distance to water, urbanization, collector coverage, anything that stands in for
 detection probability. With the example dataset, an **Example bias** button loads
 the bundled layers.
 
@@ -476,14 +518,27 @@ those valid in every layer (intersection). The formula used is shown once
 prepared.
 
 **Apply** weights a prediction by the composite surface. Choose which ellipsoid
-and which prediction layer, and whether the effect is direct or inverse.
-Combinations that already exist are skipped, so you can keep adding without
-losing what is applied. Note that once bias has been applied the result is no
-longer a probability, which is why step 4 samples biased layers with a different
-function.
+and which prediction layer, and whether the effect is direct or inverse. **All
+prediction layers** applies the bias to every layer `predict()` produced for
+that ellipsoid. Combinations that already exist are skipped, so you can keep
+adding without losing what is applied. Note that once bias has been applied the
+result is no longer a probability, which is why step 4 samples biased layers
+with a different function.
 
-Re-preparing the surface clears everything applied from the old one, since those
-results no longer match.
+After the first application the Apply box collapses to a summary. To bias
+another layer or another ellipsoid, click **Add new bias layer** at the bottom
+of the ellipsoid library, which reopens the box. **Done** closes it again.
+
+Re-preparing the surface clears everything applied from the old one, along with
+any record sets generated from those biased layers, since those results no
+longer match.
+
+Once bias is prepared, the download icon on each row of the library saves the
+bias layers. You choose among the composite surface, the individual prepared
+layers, and the biased predictions for that ellipsoid, and the format: a raster
+(`.tif`) or a table (`.csv`) with the `x` and `y` coordinates. The composite and
+the prepared layers are the same for every ellipsoid. If they sit on a different
+grid than the biased predictions, the two groups are downloaded separately.
 
 > The [Sampling bias data](https://castanedam.github.io/nicheR/articles/bias.html) vignette covers how directions interact,
 > what the composite formula does, and how to choose layers that represent
@@ -494,7 +549,8 @@ results no longer match.
 **Bias layers** shows each raw layer beside its processed version once prepared.
 **Composite** shows the combined surface. **Prediction comparison** shows the
 unbiased prediction beside every biased version of that layer, so the effect of
-the bias is visible directly. Applying bias jumps you to that tab automatically.
+the bias is visible directly. Pick the prediction layer to compare from the
+dropdown above the maps. Applying bias jumps you to that tab automatically.
 
 <!-- SCREENSHOT: -->
 <img src='figures/shiny_app_figures/Slide17.png' 
@@ -506,7 +562,7 @@ width='100%'/>
 
 # Step 4: Generate
 
-The final step draws virtual occurrence points. Which controls you see depends
+The final step draws virtual records. Which controls you see depends
 on how you started, because the app calls a different function in each case.
 
 | How you started | Function used | Points carry |
@@ -515,7 +571,7 @@ on how you started, because the app calls a different function in each case.
 | Prediction with bias applied | `sample_biased_data()` | coordinates |
 | Virtual mode | `virtual_data()` | environmental values only |
 
-<!-- SCREENSHOT: -->
+<!-- SCREENSHOT (retake): Generate controls, with the unbiased and biased surface columns -->
 <img src='figures/shiny_app_figures/Slide18.png' 
 align='center' 
 height='100%' 
@@ -525,34 +581,45 @@ width='100%'/>
 
 ## Sampling from a prediction
 
-**Number of records** sets how many points to draw.
+**Number of points** sets how many points to draw, and **Random seed** makes
+the draw reproducible. The same seed with the same settings reproduces the same
+records; change it to draw a different replicate.
 
-**Sampling strategy** controls where they fall within the niche. *Centroid*
-weights toward the niche centre, *edge* toward the boundary, and *random*
-samples evenly across all suitable cells. The centroid and edge options are what
-let you simulate species that are common at their optimum versus those detected
-mostly at their margins.
+**Surface** lists every available prediction layer as a checkbox. You can select
+several at once and get one record set per layer. If bias has been applied,
+the list splits into two columns separated by a line, with the unbiased layers
+on the left and the biased layers, in orange, on the right. Selecting a layer
+from each side is how you compare what bias did to your sample.
 
-**Prediction surface** lists every available layer as a checkbox. Layers with
-bias applied appear in orange. You can select several at once and get one
-occurrence set per layer, which is how you compare what bias did to your sample.
-The app reports which weighting method it will use for each, `suitability` or
-`mahalanobis`, inferred from the layer name.
+**Sampling strategy** sits under the unbiased layers, because it only applies to
+them. It controls where the points fall within the niche. *Centroid* weights
+toward the niche center, *edge* toward the boundary, and *random* samples evenly
+across all suitable cells. The centroid and edge options are what let you
+simulate species that are common at their optimum versus those detected mostly
+at their margins. The strategies are checkboxes, so you can select more than one
+and get a set for each, all with the same number of points and the same seed.
+The app reports which weighting method it will use, `suitability` or
+`mahalanobis`, inferred from the layer names.
 
 Biased layers are sampled with `sample_biased_data()`, which takes no sampling
 strategy and no method. The weights are already in the surface, so a strategy
-argument would double-count them. This is why the strategy you chose above does
-not apply to the orange layers.
+argument would double-count them. This is why no strategy is offered on the
+biased side. When you select a biased layer the app reports its method as bias
+weighted, and that is how those sets are labeled afterwards.
 
 **Strict filtering** removes NA and zero-valued cells before sampling.
 Recommended for truncated layers, where zero means "outside the niche" rather
-than "very low suitability".
+than "very low suitability". It applies to unbiased and biased layers alike.
 
 **Advanced settings** holds an optional sampling mask, restricting generation to
-a specific area, and the random seed. The same seed with the same settings
-reproduces the same occurrences; change it to draw a different replicate.
+a specific area.
 
-> The [Sampling occurrence data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html) vignette covers the
+In a session built on a table with no usable grid, the prediction is a table
+too, and the points are rows drawn from it. They carry the environmental
+values, plus the coordinate columns if the table has them. A sampling mask needs
+a raster, so it is not offered there.
+
+> The [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html) vignette covers the
 > strategies and weighting methods in full, including what strict mode does when
 > a surface has no zeros.
 
@@ -569,31 +636,40 @@ confidence boundary. With truncation off, the tails of the distribution extend
 past it.
 
 **Point distribution** chooses how density varies inside the ellipsoid.
-*Direct* concentrates points near the centroid, *inverse* concentrates them near
-the boundary, and *uniform* spreads them evenly through the volume. Inverse and
-uniform both require truncation, so they only appear when truncation is on.
+*Centroid* concentrates points near the centroid, *edge* concentrates them near
+the boundary, and *random* spreads them evenly through the volume. These are the
+`direct`, `inverse`, and `uniform` effects of `virtual_data()`. Edge and random
+both require truncation, so they only appear when truncation is on.
 
 The result is a table of environmental values with no coordinates. Environmental
 space plots work as usual; geographic plots are unavailable, and the app tells
 you so rather than drawing an empty map.
 
-## Occurrence sets
+## Record sets
 
-Each run produces one set per layer, and sets accumulate rather than replace.
-Changing any parameter, the seed included, gives you a new set alongside the old
-one, so a sample-size or seed series builds up in one place.
+Each run produces one set per layer and sampling strategy, and sets accumulate
+rather than replace. Changing any parameter, the seed included, gives you a new
+set alongside the old one, so a sample-size or seed series builds up in one
+place.
 
-The **Occurrence sets** panel lists them with an eye icon each. Toggling the eye
+The **Record sets** panel lists them with an eye icon each. Toggling the eye
 controls which sets the plots draw, up to four at a time per ellipsoid. In the
-pairs view all visible sets are overlaid and colour-coded with a shared legend;
+pairs view all visible sets are overlaid and color-coded with a shared legend;
 in the 2D and combined views each set gets its own panel.
 
-Occurrences are stored per ellipsoid, and the library shows how many each has
-produced. You can download one set, every set for the working ellipsoid, or
-everything. The full download is a single CSV with `ell_id`, `ell_name`, and
-`layer` columns identifying each set.
+Each set is labeled with its layer, plus whichever settings differ between the
+sets you have, so a series that differs only by seed reads as the layer and the
+seed. Sets drawn from a biased layer are labeled bias weighted. Virtual sets
+always show the sampling and whether they were truncated, since they have no
+layer name to carry that.
 
-<!-- SCREENSHOT: -->
+Records are stored per ellipsoid, and the library shows how many each has
+produced. You can download one set, every set for the working ellipsoid, or
+everything. Every download is a CSV whose first columns identify the set:
+`ell_id`, `ell_name`, `layer`, `n`, `seed`, and `sampling`, followed by
+`strict` for sets drawn from a surface or `truncate` for virtual sets.
+
+<!-- SCREENSHOT (retake): Record sets panel with the new set labels -->
 <img src='figures/shiny_app_figures/Slide19.png' 
 align='center' 
 height='100%' 
@@ -606,10 +682,10 @@ width='100%'/>
 The library, lineage, and per-ellipsoid storage exist so you can carry more than
 one hypothesis through the whole workflow at once.
 
-A typical use: build an ellipsoid from published tolerances, copy it, widen the
-ranges on the copy to represent uncertainty in those tolerances, and copy again
-with a rotated covariance to represent correlated variables. Predict all three
-in one pass, apply the same bias surface to all three, and generate occurrences
+A typical use: build an ellipsoid from published tolerances, build a second one
+from wider ranges to represent uncertainty in those tolerances, and copy the
+first with a rotated covariance to represent correlated variables. Predict all three
+in one pass, apply the same bias surface to all three, and generate records
 from each. The **Details** column keeps track of which came from which, and
 every plot tab lets you switch between them without losing anything.
 
@@ -627,10 +703,11 @@ them for you and scale past the handful the library is designed for. See the
 # The session report
 
 The **Report** button in the header writes a summary of the session as it
-stands. It produces a self-contained HTML document and the `.Rmd` source it was
-rendered from. The HTML is the record; the `.Rmd` is the more useful of the two,
-because it holds the `nicheR` calls with your parameters filled in, so it works
+stands. It downloads a single `.Rmd` file, which describes what you did and
+holds the `nicheR` calls with your parameters filled in, so it works
 as a starting script rather than only as a description of what you clicked.
+The app does not run the script for you. Knit the file, or run its chunks from
+the console, to get the HTML with the results and figures.
 
 The report follows the same four steps as the app. Each section lists the
 parameters you used, the objects that resulted, and the code that would produce
@@ -651,7 +728,7 @@ width='100%'/>
 Sections appear only when the objects they describe exist. Skipping bias, or
 working without geography, does not leave an empty heading in the report; the
 section is simply not written. The same rule applies within a section, so a
-Generate section built from three occurrence sets documents three, not a
+Generate section built from three record sets documents three, not a
 placeholder for every option you did not use.
 
 | How you started | Sections written |
@@ -673,22 +750,27 @@ no Bias section. This matches what the app itself allows.
 
 **Bias** is reported per composite surface. The layers you uploaded, their
 assigned directions, the NA handling rule, and the resulting formula are all
-recorded, and the Generate section cross-references which occurrence sets came
+recorded, and the Generate section cross-references which record sets came
 from a biased layer and which did not.
 
 ## File paths
 
 The report records the name of every file you uploaded, but not a working path
-to it. Uploaded files are copied to a temporary location that does not survive
-the session, so a path pointing there would be broken by the time you read the
-report. Where a path would normally appear, the report names the file and notes
-that the location is unavailable.
+to it. A browser sends only the name of a file, never the folder it came from,
+so the script cannot know where your copy lives. It reads each file by name from
+a folder called `data_dir`, which is declared once near the top of the script.
+Set it to the folder holding your files and the script runs as written. If you
+save the `.Rmd` in that same folder, you can knit it without changing anything.
 
-The practical consequence is that the `.Rmd` will not run as it stands if your
-session used uploaded files. Point the reading calls at your own copies of those
-files and the rest of the script runs unchanged. A session built on the example
-data has no such problem, since those layers ship with the package and the
-report writes a `system.file()` call for them.
+That first chunk also checks that every file is there, and stops with the names
+of any it can't find. If one file name is read in more than one step, for
+example as background data and as a bias layer, the script says so in a
+comment, because two different files can't share a name in one folder.
+
+The app does not keep copies of your uploads, so a report from a reloaded
+session is the same as one from the session that made it. A session built
+on the example data needs no folder at all, since those layers ship with the
+package and the report writes a `system.file()` call for them.
 
 Saving the session with the **Save** button is the reliable way to preserve
 state. The report preserves the reasoning; the `.rds` preserves the objects.
@@ -700,6 +782,6 @@ state. The report preserves the reasoning; the `.rds` preserves the objects.
 - Theory and construction: [Building ellipsoids](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html)
 - Projection outputs: [Predictions](https://castanedam.github.io/nicheR/articles/predict.html)
 - Effort surfaces: [Sampling bias data](https://castanedam.github.io/nicheR/articles/bias.html)
-- Sampling strategies: [Sampling occurrence data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html)
+- Sampling strategies: [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html)
 - Many species at once: [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html)
 - Figures: [Visualization](https://castanedam.github.io/nicheR/articles/plotting_vignette.html)

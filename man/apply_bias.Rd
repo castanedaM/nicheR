@@ -99,5 +99,5 @@ biased_inv$combination_formula
 }
 \seealso{
 \code{\link{prepare_bias}} to build the composite bias surface,
-  \code{\link{sample_biased_data}} to sample occurrences from the output.
+  \code{\link{sample_biased_data}} to sample records from the output.
 }

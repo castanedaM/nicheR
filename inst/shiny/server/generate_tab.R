@@ -1,15 +1,15 @@
 # Title: Generate Tab server
 
-# Description: Server for the generate tab. Samples virtual occurrence
-# points from a prediction surface, biased or unbiased, for one or more
+# Description: Server for the generate tab. Samples virtual records
+# from a prediction surface, biased or unbiased, for one or more
 # saved ellipsoids.
 
 # Date Last Updated: 10/06/2026
 
 
-# OCCURRENCE SET VISIBILITY -----------------------------------------------
+# RECORD SET VISIBILITY ---------------------------------------------------
 
-# Occurrence sets currently drawn in the plots. Keys are prefixed with the
+# Record sets currently drawn in the plots. Keys are prefixed with the
 # ellipsoid id, since two ellipsoids can produce sets with identical
 # parameter signatures.
 occ_visible <- reactiveVal(character(0))
@@ -23,13 +23,13 @@ OCC_MAX_VISIBLE <- 4L
 
 # Sets the user has toggled visible for the current ellipsoid, in the order
 # they were toggled. Falls back to the first set so the plots are never
-# blank when occurrences exist.
+# blank when records exist.
 generate_visible_sets <- reactive({
 
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(character(0))
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(character(0))
 
   prefix <- paste0(ell$ell_id, "::")
@@ -86,7 +86,7 @@ generate_show_form <- reactiveVal(FALSE)
 # the raster and virtual branches cannot drift.
 generate_summary_box <- function(){
 
-  occ <- session_data$ellipsoid_occurrence_list
+  occ <- session_data$ellipsoid_records_list
 
   n_sets <- sum(vapply(occ, length, integer(1)))
   n_pts <- sum(vapply(occ, function(ell_res){
@@ -99,7 +99,7 @@ generate_summary_box <- function(){
       width = 12,
       collapsible = TRUE,
       collapsed = TRUE,
-      p(paste0(n_pts, " occurrence(s) across ", n_sets, " set(s) from ",
+      p(paste0(n_pts, " record(s) across ", n_sets, " set(s) from ",
                length(occ), " ellipsoid(s)."),
         class = "text-instruction"),
       fluidRow(
@@ -130,7 +130,7 @@ output$generate_controls_ui <- renderUI({
     )
   }
 
-  occ <- session_data$ellipsoid_occurrence_list
+  occ <- session_data$ellipsoid_records_list
   has_occ <- length(occ) > 0
 
   if(has_occ && !isTRUE(generate_show_form())){
@@ -199,25 +199,28 @@ output$generate_controls_ui <- renderUI({
                             inline = TRUE))
       ),
 
-      box(title = tagList(
-        tags$span("Advanced settings", class = "text-section-header"),
-        tags$span(icon("circle-info"),
-                  title = instructions$generate_advanced_tooltip,
-                  class = "tooltip-icon")),
-        width = 12,
-        collapsible = TRUE,
-        collapsed = TRUE,
+      # The mask is a raster, so the box is left out of a table session
+      if(!is.null(session_data$bg_raster)){
+        box(title = tagList(
+          tags$span("Advanced settings", class = "text-section-header"),
+          tags$span(icon("circle-info"),
+                    title = instructions$generate_advanced_tooltip,
+                    class = "tooltip-icon")),
+          width = 12,
+          collapsible = TRUE,
+          collapsed = TRUE,
 
-        fluidRow(
-          column(width = 6,
-                 fileInput("generate_mask_file",
-                           label = tags$span("Sampling mask (optional)",
-                                             class = "text-widget-title"),
-                           multiple = FALSE,
-                           accept = c(".tif", ".tiff", ".rds")))
-        ),
-        p(instructions$generate_mask, class = "text-instruction")
-      ),
+          fluidRow(
+            column(width = 6,
+                   fileInput("generate_mask_file",
+                             label = tags$span("Sampling mask (optional)",
+                                               class = "text-widget-title"),
+                             multiple = FALSE,
+                             accept = c(".tif", ".tiff", ".rds")))
+          ),
+          p(instructions$generate_mask, class = "text-instruction")
+        )
+      },
 
       fluidRow(
         column(width = 12,
@@ -288,7 +291,7 @@ generate_virtual_controls <- function(){
     )
   }
 
-  occ <- session_data$ellipsoid_occurrence_list
+  occ <- session_data$ellipsoid_records_list
   has_occ <- length(occ) > 0
 
   if(has_occ && !isTRUE(generate_show_form())){
@@ -416,10 +419,16 @@ output$generate_surface_ui <- renderUI({
   # so the stored raster also carries the environmental variables, and those
   # are not something to sample from. pred_layer_names() is shared with the
   # Predict tab's download, so both tabs agree on what a layer is.
+  # A table session stores each prediction as a data frame, and its columns
+  # are filtered the same way as the layers of a raster.
   layer_names <- function(lst){
     unique(unlist(lapply(ids, function(id){
       r <- lst[[id]]
-      if(inherits(r, "SpatRaster")) pred_layer_names(r, versions[[id]]) else character(0)
+      if(inherits(r, "SpatRaster") || is.data.frame(r)){
+        pred_layer_names(r, versions[[id]])
+      } else {
+        character(0)
+      }
     })))
   }
 
@@ -624,11 +633,11 @@ observeEvent(input$generate_run_btn, {
       for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
       attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
-      if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
-        session_data$ellipsoid_occurrence_list[[id]] <- list()
+      if(is.null(session_data$ellipsoid_records_list[[id]])){
+        session_data$ellipsoid_records_list[[id]] <- list()
       }
 
-      session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
+      session_data$ellipsoid_records_list[[id]][[key]] <- df
 
       # New sets are shown by default, up to the panel limit
       vis <- occ_visible()
@@ -729,7 +738,12 @@ observeEvent(input$generate_run_btn, {
     123L
   }
 
-  sampling_mask <- if(!is.null(input$generate_mask_file)){
+  # A mask is a raster, so it only applies when the session has one. In a
+  # table session the box is not drawn, but an input keeps its last value.
+  use_mask <- !is.null(input$generate_mask_file) &&
+    !is.null(session_data$bg_raster)
+
+  sampling_mask <- if(use_mask){
     ext <- tolower(tools::file_ext(input$generate_mask_file$name))
     tryCatch(
       load_raster_file(input$generate_mask_file$datapath, ext),
@@ -748,14 +762,14 @@ observeEvent(input$generate_run_btn, {
   n_success <- 0L
   n_attempted <- 0L
 
-  mask_name <- if(!is.null(input$generate_mask_file)){
+  mask_name <- if(use_mask){
     input$generate_mask_file$name
   } else {
     "none"
   }
 
   # Assigned per id rather than replacing the whole list, so one failed
-  # ellipsoid does not discard occurrences that already succeeded
+  # ellipsoid does not discard records that already succeeded
   for(id in selected_ids){
 
     for(run in runs){
@@ -768,7 +782,8 @@ observeEvent(input$generate_run_btn, {
                                   sampling = run$sampling,
                                   strict = strict,
                                   sampling_mask = sampling_mask,
-                                  seed = seed)
+                                  seed = seed,
+                                  var_names = session_data$ellipsoid_list[[id]]$var_names)
 
       n_attempted <- n_attempted + length(run$layers)
 
@@ -784,6 +799,8 @@ observeEvent(input$generate_run_btn, {
         # made, and so the source raster can still be found from the layer.
         # Biased layers have no sampling strategy, since the surface values
         # are the weights, so they are labeled as bias weighted instead.
+        # mode "raster" means drawn from a prediction surface, whether that
+        # surface is a raster or, in a table session, a data frame.
         attrs <- list(layer = layer,
                       n_occ = n_occ,
                       seed = seed,
@@ -800,11 +817,11 @@ observeEvent(input$generate_run_btn, {
 
         key <- occ_set_signature(attrs)
 
-        if(is.null(session_data$ellipsoid_occurrence_list[[id]])){
-          session_data$ellipsoid_occurrence_list[[id]] <- list()
+        if(is.null(session_data$ellipsoid_records_list[[id]])){
+          session_data$ellipsoid_records_list[[id]] <- list()
         }
 
-        session_data$ellipsoid_occurrence_list[[id]][[key]] <- df
+        session_data$ellipsoid_records_list[[id]][[key]] <- df
 
         # New sets are shown by default, up to the panel limit
         vis <- occ_visible()
@@ -830,7 +847,7 @@ observeEvent(input$generate_run_btn, {
 
   n_skipped <- n_attempted - n_success
 
-  msg <- paste0(n_success, " occurrence set(s) generated.")
+  msg <- paste0(n_success, " record set(s) generated.")
   if(n_skipped > 0L) msg <- paste0(msg, " ", n_skipped, " skipped.")
 
   showNotification(msg, type = "message", duration = 4)
@@ -840,16 +857,16 @@ observeEvent(input$generate_edit_link, {
   generate_show_form(TRUE)
 })
 
-# OCCURRENCE SETS ---------------------------------------------------------
+# RECORD SETS -------------------------------------------------------------
 
-# Flat index of every occurrence set, so the summary can render rows and
+# Flat index of every record set, so the summary can render rows and
 # the download handlers can be created against stable numeric ids.
 generate_occ_index <- reactive({
 
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(NULL)
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(NULL)
 
   lab_of <- generate_occ_label_map()
@@ -885,7 +902,7 @@ generate_occ_index <- reactive({
 # idx_rows needs ell_id, ell_name, and set.
 generate_occ_table <- function(idx_rows){
 
-  occ <- session_data$ellipsoid_occurrence_list
+  occ <- session_data$ellipsoid_records_list
 
   parts <- lapply(seq_len(nrow(idx_rows)), function(j){
     r <- idx_rows[j, ]
@@ -895,7 +912,7 @@ generate_occ_table <- function(idx_rows){
     out <- data.frame(ell_id = r$ell_id,
                       ell_name = r$ell_name,
                       layer = occ_meta(df, "layer", r$set),
-                      n_occ = occ_meta(df, "n_occ"),
+                      n = occ_meta(df, "n_occ"),
                       seed = occ_meta(df, "seed"),
                       sampling = occ_sampling(df),
                       strict = occ_meta(df, "strict"),
@@ -948,7 +965,7 @@ output$generate_dl_ell <- downloadHandler(
   filename = function(){
     idx <- generate_occ_index()
     nm <- gsub("[^A-Za-z0-9_-]", "_", idx$ell_name[1])
-    paste0(nm, "_occurrences.csv")
+    paste0(nm, "_records.csv")
   },
   content = function(file){
     idx <- generate_occ_index()
@@ -960,11 +977,11 @@ output$generate_dl_ell <- downloadHandler(
 output$generate_dl_all <- downloadHandler(
 
   filename = function(){
-    paste0("nicheR_occurrences_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+    paste0("nicheR_records_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
   },
   content = function(file){
 
-    occ <- session_data$ellipsoid_occurrence_list
+    occ <- session_data$ellipsoid_records_list
     req(length(occ) > 0)
 
     versions <- session_data$ellipsoid_list
@@ -997,12 +1014,12 @@ observeEvent(input$generate_delete_set, {
 
   r <- idx[i, ]
 
-  session_data$ellipsoid_occurrence_list[[r$ell_id]][[r$set]] <- NULL
+  session_data$ellipsoid_records_list[[r$ell_id]][[r$set]] <- NULL
 
   # Drop the ellipsoid entry entirely once its last set is gone, so the
   # library status returns to "not generated"
-  if(length(session_data$ellipsoid_occurrence_list[[r$ell_id]]) == 0){
-    session_data$ellipsoid_occurrence_list[[r$ell_id]] <- NULL
+  if(length(session_data$ellipsoid_records_list[[r$ell_id]]) == 0){
+    session_data$ellipsoid_records_list[[r$ell_id]] <- NULL
   }
 
   occ_visible(setdiff(occ_visible(), occ_vis_key(r$ell_id, r$set)))
@@ -1015,9 +1032,9 @@ observeEvent(input$generate_new_set_link, {
   generate_show_form(TRUE)
 })
 
-# OCCURRENCE SUMMARY ------------------------------------------------------
+# RECORD SUMMARY ----------------------------------------------------------
 
-output$generate_occurrence_summary_ui <- renderUI({
+output$generate_records_summary_ui <- renderUI({
 
   ell <- session_data$current_ellipsoid
 
@@ -1025,7 +1042,7 @@ output$generate_occurrence_summary_ui <- renderUI({
 
   if(is.null(idx)){
     return(
-      box(title = tags$span("Occurrence sets", class = "text-section-header"),
+      box(title = tags$span("Record sets", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = FALSE,
@@ -1074,7 +1091,7 @@ output$generate_occurrence_summary_ui <- renderUI({
     )
   })
 
-  box(title = tags$span(paste0("Occurrence sets: ", idx$ell_name[1]),
+  box(title = tags$span(paste0("Record sets: ", idx$ell_name[1]),
                         class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
@@ -1119,7 +1136,7 @@ output$generate_ellipsoid_library_ui <- renderUI({
 
   predicted <- names(session_data$ellipsoid_prediction_list)
   biased <- names(session_data$ellipsoid_prediction_list_biased)
-  generated <- names(session_data$ellipsoid_occurrence_list)
+  generated <- names(session_data$ellipsoid_records_list)
 
   # Working slot, the ellipsoid the plots on this tab use. Read-only here,
   # editing happens on the Build tab.
@@ -1145,7 +1162,7 @@ output$generate_ellipsoid_library_ui <- renderUI({
     ell <- versions[[id]]
 
     status <- if(id %in% generated){
-      list(txt = "occurrences generated", col = "#097a21")
+      list(txt = "records generated", col = "#097a21")
     } else if(id %in% biased){
       list(txt = "biased, not generated", col = "#aaa")
     } else if(id %in% predicted){
@@ -1277,22 +1294,14 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_occurrence_list[[id]] <- NULL
+  session_data$ellipsoid_records_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
-  # Copies of the deleted ellipsoid, captured before reparenting so the
-  # message reports only what this delete changed
-  orphaned <- names(session_data$ellipsoid_list)[
-    vapply(session_data$ellipsoid_list,
-           function(e) identical(e$parent_id, id), logical(1))]
-
+  # Copies of the deleted ellipsoid are kept and become roots
   session_data$ellipsoid_list <- lapply(session_data$ellipsoid_list, function(e){
     if(identical(e$parent_id, id)) e$parent_id <- NULL
     e
   })
-
-  dbg("DELETE ", id, "  reparented to root: ",
-      if(length(orphaned) == 0) "none" else paste(orphaned, collapse = ", "))
 
   cur <- session_data$current_ellipsoid
 

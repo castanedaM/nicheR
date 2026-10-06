@@ -9,7 +9,7 @@
 
 # Author: Mariana Castaneda-Guzman
 
-# Date last updated: 09/29/2026
+# Date last updated: 10/06/2026
 
 
 # DEBUG -------------------------------------------------------------------
@@ -32,15 +32,7 @@ centroid_steps <- reactiveVal(NULL)
 # Which ellipsoid the confidence level box currently on screen belongs to
 cl_owner <- reactiveVal(NULL)
 
-# Pairwise covariances as a flat named vector, in the same order as the
-# sliders.
-cov_upper <- function(ell){
-  if(is.null(ell)) return(NULL)
-  pairs <- t(combn(ell$var_names, 2))
-  setNames(sapply(seq_len(nrow(pairs)),
-                  function(i) ell$cov_matrix[pairs[i, 1], pairs[i, 2]]),
-           apply(pairs, 1, paste, collapse = "-"))
-}
+# cov_upper(), the pairwise covariances in slider order, lives in helpers.R
 
 # REACTIVE VALUES ---------------------------------------------------------
 
@@ -51,6 +43,10 @@ ell_mode <- reactiveVal("edit")
 # TRUE right after Create new ellipsoid, so Ranges and the library come back
 # collapsed and the user starts from the variables box
 panels_collapsed <- reactiveVal(FALSE)
+
+# Set by the session loader when it changes vars, so the observer that
+# empties the slot on a change of variables lets that one change through
+vars_reset_skip <- reactiveVal(FALSE)
 
 # Bumped whenever a different ellipsoid enters the working slot. The panels
 # below depend on this instead of current_ellipsoid, so editing a slider
@@ -123,15 +119,27 @@ output$build_range_method_choice_ui <- renderUI({
   # Read-only range table, shared by view mode and edit mode. Ranges are only
   # editable while the slot is empty, changing them later goes through
   # Create new ellipsoid in the library.
+  #
+  # The values are the ranges the ellipsoid was built from, the same ones the
+  # range lines on the plot show. ell$ranges is only the fallback, for an
+  # ellipsoid that carries no range_inputs: update_ellipsoid_centroid() shifts
+  # it with the centroid, so after a move it no longer says what the
+  # ellipsoid was built from.
+  built_range <- function(v, row){
+    val <- ell$range_inputs[[row]][[v]]
+    if(is.null(val)) val <- ell$ranges[row, v]
+    round(val, 2)
+  }
+
   range_rows <- if(is.null(ell)){
     NULL
   } else {
     lapply(ell$var_names, function(v){
       fluidRow(
         column(width = 4, tags$span(v, class = "text-widget-inner")),
-        column(width = 4, tags$span(round(ell$ranges["min", v], 2),
+        column(width = 4, tags$span(built_range(v, "min"),
                                     class = "text-widget-inner text-center")),
-        column(width = 4, tags$span(round(ell$ranges["max", v], 2),
+        column(width = 4, tags$span(built_range(v, "max"),
                                     class = "text-widget-inner text-center"))
       )
     })
@@ -407,7 +415,7 @@ output$build_range_method_ui <- renderUI({
            cl_row <- fluidRow(
              column(width = 5,
                     tags$div(class = "tooltip-label-row",
-                             tags$span("Range confidence level for range",
+                             tags$span("Confidence level for ranges",
                                        class = "text-widget-title text-center"),
                              tags$span(icon("circle-info"),
                                        title = instructions$build_cl_interval_tooltip,
@@ -754,6 +762,15 @@ observeEvent(input$build_confirm_new_ell_btn, {
 # current_ellipsoid to NULL directly, which left the covariance and centroid
 # panels showing the old ellipsoid, since they only redraw on ell_slot.
 observeEvent(session_data$vars, {
+
+  # Loading a session changes vars and then fills the slot itself, see
+  # save_load_session.R. This runs right after, and without the flag it
+  # would empty the slot that was just filled.
+  if(isTRUE(vars_reset_skip())){
+    vars_reset_skip(FALSE)
+    return()
+  }
+
   clear_working_ellipsoid()
   panels_collapsed(FALSE)
 }, ignoreNULL = FALSE, ignoreInit = TRUE)
@@ -837,7 +854,7 @@ observeEvent(input$build_init_ell_btn, {
   }
 
   new_ell <- tryCatch(
-    build_ellipsoid(range = range_df, cl = cl, verbose = FALSE),
+    build_ellipsoid(ranges = range_df, cl = cl, verbose = FALSE),
     error = function(e){
       showNotification(paste("Error building ellipsoid:", e$message),
                        type = "error", duration = 6)
@@ -1095,10 +1112,19 @@ observeEvent(input$build_confirm_ell_delete_btn, {
 
   removeModal()
 
+  # Everything keyed to this ellipsoid goes with it, the same list the
+  # Predict and Generate tabs clear
   session_data$ellipsoid_list[[id]] <- NULL
   session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
+  session_data$ellipsoid_records_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
+
+  # Its record sets also leave the list of sets shown in the plots
+  # (occ_visible is defined in generate_tab.R)
+  occ_visible(grep(paste0("^", id, "::"), occ_visible(),
+                   value = TRUE, invert = TRUE))
 
   # Copies of the deleted ellipsoid, captured before reparenting so the
   # message reports only what this delete changed
@@ -1201,16 +1227,93 @@ observeEvent(input$build_next_done_btn, {
   removeModal()
 })
 
-# Update, overwrites a version already in the library
+# TRUE when updating would leave results that describe the old geometry.
+# That takes both a change in the working ellipsoid's centroid, covariance or
+# level from its saved copy, and a prediction, biased layer or record set
+# made from that copy. Name and lineage are left out, they change nothing
+# downstream.
+ell_update_is_stale <- function(ell){
+
+  id <- ell$ell_id
+  saved <- session_data$ellipsoid_list[[id]]
+  if(is.null(saved)) return(FALSE)
+
+  changed <- !identical(saved$centroid, ell$centroid) ||
+    !identical(saved$cov_matrix, ell$cov_matrix) ||
+    !identical(saved$cl, ell$cl)
+
+  has_results <- !is.null(session_data$ellipsoid_prediction_list[[id]]) ||
+    !is.null(session_data$ellipsoid_prediction_list_biased[[id]]) ||
+    length(session_data$ellipsoid_records_list[[id]]) > 0
+
+  changed && has_results
+}
+
+# Overwrites the saved copy with the working ellipsoid. Predictions, biased
+# layers and record sets made from the old geometry are removed, since
+# they no longer describe this ellipsoid. Shared by Update and Save and
+# continue. Returns a sentence for the notification, empty when nothing was
+# removed.
+update_saved_ellipsoid <- function(ell){
+
+  id <- ell$ell_id
+  stale <- ell_update_is_stale(ell)
+
+  session_data$ellipsoid_list[[id]] <- ell
+
+  if(!stale) return("")
+
+  session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$prediction_settings[[id]] <- NULL
+  session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
+  session_data$ellipsoid_records_list[[id]] <- NULL
+
+  occ_visible(grep(paste0("^", id, "::"), occ_visible(),
+                   value = TRUE, invert = TRUE))
+
+  paste0(" Its predictions, biased layers, and record sets came from ",
+         "the previous version and were removed.")
+}
+
+# Update, overwrites a version already in the library. Asks first when that
+# would remove results made from the previous version.
 observeEvent(input$build_update_ell_btn, {
 
   ell <- session_data$current_ellipsoid
   req(ell)
 
-  session_data$ellipsoid_list[[ell$ell_id]] <- ell
+  if(ell_update_is_stale(ell)){
+    showModal(modalDialog(
+      title = paste0("Update ", ell$ell_name, "?"),
+      p(instructions$build_update_stale, class = "text-instruction"),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("build_confirm_update_ell_btn",
+                     "Yes, update",
+                     class = "btn-cancel")
+      ),
+      easyClose = FALSE
+    ))
+    return()
+  }
+
+  update_saved_ellipsoid(ell)
 
   showNotification(paste0(ell$ell_name, " updated."),
                    type = "message", duration = 4)
+})
+
+observeEvent(input$build_confirm_update_ell_btn, {
+
+  ell <- session_data$current_ellipsoid
+  req(ell)
+
+  removeModal()
+
+  note <- update_saved_ellipsoid(ell)
+
+  showNotification(paste0(ell$ell_name, " updated.", note),
+                   type = "message", duration = 6)
 })
 
 # Button and UI to move to the next step
@@ -1252,10 +1355,15 @@ observeEvent(input$build_next_step_btn, {
   # A saved ellipsoid is updated under its own name. An unsaved one needs a
   # name, so the modal asks for it the same way the Save modal does.
   body <- if(is_saved){
-    p(paste0(ell$ell_name, " has changes that were not updated. ",
-             "If you continue without saving, those changes are discarded and ",
-             "the last updated version is used."),
-      class = "text-instruction")
+    tagList(
+      p(paste0(ell$ell_name, " has changes that were not updated. ",
+               "If you continue without saving, those changes are discarded and ",
+               "the last updated version is used."),
+        class = "text-instruction"),
+      if(ell_update_is_stale(ell)){
+        p(instructions$build_update_stale, class = "text-muted-small")
+      }
+    )
   } else {
     tagList(
       p(paste0(ell$ell_name, " has not been saved. If you continue without ",
@@ -1323,14 +1431,13 @@ observeEvent(input$build_save_continue_btn, {
   req(ell)
 
   if(ell$ell_id %in% names(session_data$ellipsoid_list)){
-    session_data$ellipsoid_list[[ell$ell_id]] <- ell
-    msg <- paste0(ell$ell_name, " updated.")
+    msg <- paste0(ell$ell_name, " updated.", update_saved_ellipsoid(ell))
   } else {
     msg <- paste0(save_working_ellipsoid(input$build_continue_save_name), " saved.")
   }
 
   removeModal()
-  showNotification(msg, type = "message", duration = 3)
+  showNotification(msg, type = "message", duration = 5)
   go_to_next_tab()
 })
 

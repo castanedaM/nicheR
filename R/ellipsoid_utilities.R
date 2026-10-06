@@ -240,7 +240,7 @@ ellipsoid_volume <- function(n_dimensions, semi_axes_lengths) {
 #' co-occur with high values of the other. Negative covariance tilts it in the
 #' opposite direction.
 #'
-#' The updated covariance matrix must remain positive definite — if the
+#' The updated covariance matrix must remain positive definite. If the
 #' requested value would violate this, use \code{\link{covariance_limits}} to
 #' find the safe range before calling this function.
 #'

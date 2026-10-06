@@ -7,6 +7,38 @@
 # Date Last Updated: 10/06/2026
 
 
+# BIASED RECORDS ----------------------------------------------------------
+
+# Removes every record set that was drawn from a biased layer. Called
+# wherever the biased predictions are cleared, since those sets would
+# otherwise point at surfaces that no longer exist. Returns how many sets
+# were removed.
+drop_biased_records <- function(){
+
+  occ <- session_data$ellipsoid_records_list
+  if(length(occ) == 0) return(0L)
+
+  n_removed <- 0L
+
+  for(id in names(occ)){
+
+    is_biased <- vapply(occ[[id]], function(df){
+      isTRUE(attr(df, "biased", exact = TRUE))
+    }, logical(1))
+
+    n_removed <- n_removed + sum(is_biased)
+    occ[[id]] <- occ[[id]][!is_biased]
+  }
+
+  # An ellipsoid with no sets left goes back to "not generated"
+  occ <- occ[vapply(occ, length, integer(1)) > 0]
+
+  session_data$ellipsoid_records_list <- occ
+
+  n_removed
+}
+
+
 # SKIP AND CONTINUE -------------------------------------------------------
 
 # Sits above the inputs so a user redirected here from Predict can move on
@@ -123,9 +155,11 @@ observeEvent(input$bias_upload_btn, {
 
   session_data$bias_raster <- rast
   session_data$bias_source <- input$bias_raster_file$name
+
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
+  drop_biased_records()
 
   showNotification(paste0(terra::nlyr(rast), " bias layer(s) loaded successfully."),
                    type = "message", duration = 4)
@@ -149,6 +183,7 @@ observeEvent(input$bias_example_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
+  drop_biased_records()
 
   showNotification("Example bias raster loaded.", type = "message", duration = 4)
 })
@@ -177,10 +212,15 @@ observeEvent(input$bias_confirm_edit_upload_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
+  n_removed <- drop_biased_records()
   shinyjs::reset("bias_raster_file")
 
-  showNotification("Bias raster cleared. Upload a new file.",
-                   type = "message", duration = 3)
+  showNotification(paste0("Bias raster cleared. Upload a new file.",
+                          if(n_removed > 0){
+                            paste0(" ", n_removed, " record set(s) from ",
+                                   "biased layers were removed.")
+                          }),
+                   type = "message", duration = 4)
 })
 
 output$bias_upload_ui <- renderUI({
@@ -364,6 +404,7 @@ observeEvent(input$bias_prepare_btn, {
   session_data$bias_settings <- list(effect_direction = effect_direction,
                                      mask_na = mask_na)
   session_data$ellipsoid_prediction_list_biased <- list()
+  drop_biased_records()
 
   showNotification("Bias prepared successfully.", type = "message", duration = 4)
 })
@@ -390,9 +431,14 @@ observeEvent(input$bias_confirm_edit_prepare_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
+  n_removed <- drop_biased_records()
 
-  showNotification("Bias preparation cleared. Adjust settings and re-prepare.",
-                   type = "message", duration = 3)
+  showNotification(paste0("Bias preparation cleared. Adjust settings and re-prepare.",
+                          if(n_removed > 0){
+                            paste0(" ", n_removed, " record set(s) from ",
+                                   "biased layers were removed.")
+                          }),
+                   type = "message", duration = 4)
 })
 
 output$bias_prepare_ui <- renderUI({
@@ -777,6 +823,10 @@ output$bias_ellipsoid_library_ui <- renderUI({
     )
   }
 
+  # The composite and the prepared layers exist once bias is prepared, with
+  # or without anything applied, so that is what turns the download on
+  has_prepared <- !is.null(session_data$prepared_bias)
+
   rows <- lapply(ids, function(id){
 
     ell <- versions[[id]]
@@ -811,6 +861,17 @@ output$bias_ellipsoid_library_ui <- renderUI({
                     onclick = sprintf("Shiny.setInputValue('bias_ell_view', '%s', {priority: 'event'}); return false;", id),
                     title = paste0("View ", ell$ell_name, " (read-only)"),
                     icon("eye")),
+             # Nothing to download until bias has been prepared
+             if(has_prepared){
+               tags$a(href = "#",
+                      onclick = sprintf("Shiny.setInputValue('bias_ell_download', '%s', {priority: 'event'}); return false;", id),
+                      title = paste0("Download bias layers for ", ell$ell_name),
+                      icon("download"))
+             } else {
+               tags$span(icon("download"),
+                         title = "Prepare bias first",
+                         style = "color: #ddd; cursor: not-allowed;")
+             },
              tags$a(href = "#",
                     class = "ell-action-danger",
                     onclick = sprintf("Shiny.setInputValue('bias_ell_delete', '%s', {priority: 'event'}); return false;", id),
@@ -925,23 +986,16 @@ observeEvent(input$bias_confirm_ell_delete_btn, {
 
   session_data$ellipsoid_list[[id]] <- NULL
   session_data$ellipsoid_prediction_list[[id]] <- NULL
+  session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_occurrence_list[[id]] <- NULL
+  session_data$ellipsoid_records_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
-  # Copies of the deleted ellipsoid, captured before reparenting so the
-  # message reports only what this delete changed
-  orphaned <- names(session_data$ellipsoid_list)[
-    vapply(session_data$ellipsoid_list,
-           function(e) identical(e$parent_id, id), logical(1))]
-
+  # Copies of the deleted ellipsoid are kept and become roots
   session_data$ellipsoid_list <- lapply(session_data$ellipsoid_list, function(e){
     if(identical(e$parent_id, id)) e$parent_id <- NULL
     e
   })
-
-  dbg("DELETE ", id, "  reparented to root: ",
-      if(length(orphaned) == 0) "none" else paste(orphaned, collapse = ", "))
 
   cur <- session_data$current_ellipsoid
 
@@ -960,3 +1014,191 @@ observeEvent(input$bias_confirm_ell_delete_btn, {
   showNotification(paste0(nm, " deleted."),
                    type = "message", duration = 3)
 })
+
+
+# BIAS DOWNLOAD -----------------------------------------------------------
+
+# Which ellipsoid the download modal on screen belongs to. Kept out of
+# session_data so it is not written into a saved session.
+bias_dl_target <- reactiveVal(NULL)
+
+# The composite first, then each prepared layer, as one stack. These are the
+# same for every ellipsoid.
+bias_dl_surfaces <- function(){
+
+  pb <- session_data$prepared_bias
+  if(is.null(pb)) return(NULL)
+
+  comp <- pb$composite_surface
+  proc <- pb$processed_layers
+
+  if(!inherits(comp, "SpatRaster")) return(NULL)
+  if(!inherits(proc, "SpatRaster")) return(comp)
+
+  c(comp, proc)
+}
+
+# The results of Apply bias for one ellipsoid. Layers made from an
+# environmental variable are left out, a session saved before the Apply step
+# was fixed can still carry them.
+bias_dl_applied <- function(id){
+
+  r <- session_data$ellipsoid_prediction_list_biased[[id]]
+  ell <- session_data$ellipsoid_list[[id]]
+
+  if(!inherits(r, "SpatRaster") || is.null(ell)) return(NULL)
+
+  src <- sub("_biased_(direct|inverse)$", "", names(r))
+  keep <- names(r)[!src %in% c("x", "y", ell$var_names)]
+
+  if(length(keep) == 0) return(NULL)
+
+  r[[keep]]
+}
+
+# Whether the bias surfaces and the biased predictions sit on one grid.
+# Bias is prepared on its own grid and resampled to the prediction when it
+# is applied, so the two can differ, and then they cannot share a file.
+bias_dl_same_grid <- function(surfaces, applied){
+  if(is.null(surfaces) || is.null(applied)) return(TRUE)
+  isTRUE(terra::compareGeom(surfaces, applied, stopOnError = FALSE))
+}
+
+# What is ticked in the modal, checked against what exists now. The applied
+# checkboxes are not drawn for an ellipsoid with no biased layers, and Shiny
+# keeps the last value of an input that is no longer drawn.
+bias_dl_selection <- function(id){
+
+  surfaces <- bias_dl_surfaces()
+  applied <- bias_dl_applied(id)
+
+  surf_sel <- intersect(input$bias_dl_surfaces, names(surfaces))
+  app_sel <- intersect(input$bias_dl_applied, names(applied))
+
+  mixed <- length(surf_sel) > 0 && length(app_sel) > 0
+
+  list(surfaces = surfaces,
+       applied = applied,
+       surf_sel = surf_sel,
+       app_sel = app_sel,
+       ok = (length(surf_sel) + length(app_sel)) > 0 &&
+         (!mixed || bias_dl_same_grid(surfaces, applied)))
+}
+
+bias_export_name <- function(ell){
+  paste0(ell$ell_id, "_bias_", format(Sys.Date(), "%Y%m%d"))
+}
+
+observeEvent(input$bias_ell_download, {
+
+  id <- input$bias_ell_download
+  ell <- session_data$ellipsoid_list[[id]]
+  surfaces <- bias_dl_surfaces()
+  req(ell, surfaces)
+
+  bias_dl_target(id)
+
+  applied <- bias_dl_applied(id)
+  same_grid <- bias_dl_same_grid(surfaces, applied)
+
+  surf_names <- names(surfaces)
+
+  # The composite is always the first layer of the stack
+  surf_labels <- c(paste0("Composite (", surf_names[1], ")"), surf_names[-1])
+
+  # Everything is ticked when it can all go in one file, as in the prediction
+  # download. On different grids only the applied results start ticked.
+  surf_selected <- if(same_grid) surf_names else character(0)
+
+  showModal(modalDialog(
+    title = paste0("Download bias for ", ell$ell_name),
+    p(instructions$bias_download, class = "text-instruction"),
+
+    checkboxGroupInput("bias_dl_surfaces",
+                       label = tags$span("Composite and prepared layers",
+                                         class = "text-widget-title"),
+                       choiceNames = as.list(surf_labels),
+                       choiceValues = surf_names,
+                       selected = surf_selected),
+
+    if(!is.null(applied)){
+      checkboxGroupInput("bias_dl_applied",
+                         label = tags$span(paste0("Applied to ", ell$ell_name),
+                                           class = "text-widget-title"),
+                         choices = names(applied),
+                         selected = names(applied))
+    } else {
+      p("No bias has been applied to this ellipsoid yet.",
+        class = "text-muted-small")
+    },
+
+    if(!same_grid){
+      p(instructions$bias_download_grids, class = "text-muted-small")
+    },
+
+    radioButtons("bias_dl_format",
+                 label = tags$span("Format", class = "text-widget-title"),
+                 choices = c("SpatRaster (.tif)" = "tif",
+                             "Data frame (.csv)" = "csv"),
+                 selected = "tif",
+                 inline = TRUE),
+
+    tags$small("Data frames always include the x and y coordinates.",
+               class = "text-muted-small"),
+    br(), br(),
+
+    footer = tagList(
+      modalButton("Close"),
+      downloadButton("bias_dl_btn", "Download", class = "btn-continue")
+    ),
+    easyClose = FALSE
+  ))
+})
+
+# The button is off while nothing is ticked, and while the ticks mix layers
+# from two different grids
+observe({
+  id <- bias_dl_target()
+  req(id)
+  shinyjs::toggleState("bias_dl_btn", condition = bias_dl_selection(id)$ok)
+})
+
+output$bias_dl_btn <- downloadHandler(
+
+  filename = function(){
+    ell <- session_data$ellipsoid_list[[bias_dl_target()]]
+    nm <- gsub("[^A-Za-z0-9._-]", "", bias_export_name(ell))
+    ext <- if(identical(input$bias_dl_format, "tif")) ".tif" else ".csv"
+    paste0(substr(nm, 1, 60), ext)
+  },
+
+  content = function(file){
+
+    sel <- bias_dl_selection(bias_dl_target())
+
+    if(!isTRUE(sel$ok)){
+      stop("No layers selected, or the selected layers are on different grids.")
+    }
+
+    # Subsetting only, nothing is prepared or applied again
+    parts <- list()
+
+    if(length(sel$surf_sel) > 0){
+      parts <- c(parts, list(sel$surfaces[[sel$surf_sel]]))
+    }
+
+    if(length(sel$app_sel) > 0){
+      parts <- c(parts, list(sel$applied[[sel$app_sel]]))
+    }
+
+    out <- if(length(parts) == 1) parts[[1]] else c(parts[[1]], parts[[2]])
+
+    if(identical(input$bias_dl_format, "tif")){
+      terra::writeRaster(out, file, filetype = "GTiff", overwrite = TRUE)
+    } else {
+      # na.rm = NA drops only cells that are NA in every layer
+      df <- terra::as.data.frame(out, xy = TRUE, na.rm = NA)
+      utils::write.csv(df, file, row.names = FALSE)
+    }
+  }
+)

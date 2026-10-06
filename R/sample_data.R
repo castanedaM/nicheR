@@ -1,17 +1,17 @@
-#' Sample occurrence data from a prediction surface
+#' Sample records from a prediction surface
 #'
 #' @description
-#' Samples \code{n_occ} virtual occurrence points from a suitability or
+#' Samples \code{n} virtual records from a suitability or
 #' Mahalanobis distance prediction surface. Supports centroid, edge, and
 #' random sampling strategies, and accepts both raster (\code{SpatRaster})
 #' and data frame inputs.
 #'
-#' @usage sample_data(n_occ, prediction, prediction_layer = NULL,
+#' @usage sample_data(n, prediction, prediction_layer = NULL,
 #'                    sampling = "centroid", method = "suitability",
 #'                    sampling_mask = NULL, seed = 1, strict = NULL,
 #'                    verbose = TRUE)
 #'
-#' @param n_occ Integer. Number of occurrence points to sample.
+#' @param n Integer. Number of records to sample.
 #' @param prediction A \code{SpatRaster} or data frame containing the
 #'   prediction surface to sample from.
 #' @param prediction_layer Character. Name of the layer or column to use as
@@ -39,15 +39,15 @@
 #' probability weights used when drawing points:
 #' \itemize{
 #'   \item \code{sampling = "centroid"}, \code{method = "suitability"}:
-#'   weights proportional to suitability — higher near the niche center.
+#'   weights proportional to suitability, higher near the niche center.
 #'   \item \code{sampling = "edge"}, \code{method = "suitability"}:
-#'   weights proportional to \eqn{1 - \text{suitability}} — higher near the
+#'   weights proportional to \eqn{1 - \text{suitability}}, higher near the
 #'   niche boundary.
 #'   \item \code{sampling = "centroid"}, \code{method = "mahalanobis"}:
-#'   weights inversely proportional to Mahalanobis distance — higher near
+#'   weights inversely proportional to Mahalanobis distance, higher near
 #'   the centroid.
 #'   \item \code{sampling = "edge"}, \code{method = "mahalanobis"}:
-#'   weights proportional to Mahalanobis distance — higher near the boundary.
+#'   weights proportional to Mahalanobis distance, higher near the boundary.
 #'   \item \code{sampling = "random"}: equal weights regardless of method.
 #' }
 #'
@@ -56,7 +56,7 @@
 #' zeros or \code{NA}s exceeds 25\%.
 #'
 #' @return
-#' A data frame of sampled occurrence points with the same columns as the
+#' A data frame of sampled records with the same columns as the
 #' input \code{prediction} (minus the internal \code{pred} column). If
 #' \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 #' and \code{y} coordinate columns.
@@ -66,16 +66,16 @@
 #'                                      package = "nicheR"))
 #'
 #' # Centroid strategy: samples cluster near the niche center
-#' occ_centroid <- sample_data(n_occ = 100,
+#' rec_centroid <- sample_data(n = 100,
 #'                             prediction = pred_df,
 #'                             prediction_layer = "suitability_trunc",
 #'                             sampling = "centroid",
 #'                             method = "suitability",
 #'                             strict = TRUE)
-#' head(occ_centroid)
+#' head(rec_centroid)
 #'
 #' # Edge strategy: samples spread toward the niche boundary
-#' occ_edge <- sample_data(n_occ = 100,
+#' rec_edge <- sample_data(n = 100,
 #'                         prediction = pred_df,
 #'                         prediction_layer = "suitability_trunc",
 #'                         sampling = "edge",
@@ -83,13 +83,13 @@
 #'                         strict = TRUE)
 #'
 #' # Random strategy: samples distributed uniformly across suitable area
-#' occ_random <- sample_data(n_occ = 100,
+#' rec_random <- sample_data(n = 100,
 #'                           prediction = pred_df,
 #'                           prediction_layer = "suitability_trunc",
 #'                           sampling = "random")
 #'
 #' @export
-sample_data <- function(n_occ,
+sample_data <- function(n,
                         prediction,
                         prediction_layer = NULL,
                         sampling = "centroid",
@@ -110,10 +110,10 @@ sample_data <- function(n_occ,
                       choices = c("suitability", "mahalanobis"),
                       several.ok = FALSE)
 
-  if(!is.numeric(n_occ) || length(n_occ) != 1L || is.na(n_occ) || n_occ <= 0){
-    stop("'n_occ' must be a single positive number.")
+  if(!is.numeric(n) || length(n) != 1L || is.na(n) || n <= 0){
+    stop("'n' must be a single positive number.")
   }
-  n_occ <- as.integer(n_occ)
+  n <- as.integer(n)
 
   if(!is.numeric(seed) || length(seed) != 1L || is.na(seed)){
     stop("'seed' must be a single number.")
@@ -246,8 +246,8 @@ sample_data <- function(n_occ,
 
   # Ensure sample size possible ----------------------------------------------
 
-  if(n_occ > nrow(df)){
-    stop("'n_occ' is larger than the number of available samples.")
+  if(n > nrow(df)){
+    stop("'n' is larger than the number of available samples.")
   }
 
   # Weights -------------------------------------------------------------------
@@ -282,7 +282,7 @@ sample_data <- function(n_occ,
   # Sample --------------------------------------------------------------------
 
   set.seed(seed)
-  idx <- sample.int(nrow(df), size = n_occ, replace = FALSE, prob = w)
+  idx <- sample.int(nrow(df), size = n, replace = FALSE, prob = w)
 
   # Return sampled points
   df$pred <- NULL

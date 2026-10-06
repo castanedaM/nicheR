@@ -1124,39 +1124,7 @@ output$build_plot_settings_ui <- renderUI({
 
 # Export Logic ------------------------------------------------------------
 
-plot_open_device <- function(file, ext, w_val, h_val, unit, res, cex_val){
-
-  if(is.null(unit)) unit <- "mm"
-  if(is.null(w_val)) w_val <- 166
-  if(is.null(h_val)) h_val <- 166
-  if(is.null(res)) res <- 300
-  if(is.null(cex_val)) cex_val <- 1
-
-  to_inches <- function(val){
-    switch(unit, "mm" = val / 25.4, "in" = val, "px" = val / res)
-  }
-  to_px <- function(val){
-    switch(unit,
-           "mm" = round(val / 25.4 * res),
-           "in" = round(val * res),
-           "px" = round(val))
-  }
-
-  if(ext == "png"){
-    png(file, width = to_px(w_val), height = to_px(h_val), res = res)
-  } else if(ext == "pdf"){
-    pdf(file, width = to_inches(w_val), height = to_inches(h_val))
-  } else if(ext == "svg"){
-    svg(file, width = to_inches(w_val), height = to_inches(h_val))
-  }
-
-  # Set every cex parameter so individual plot calls do not override them
-  par(cex = cex_val,
-      cex.axis = cex_val,
-      cex.lab = cex_val,
-      cex.main = cex_val * 1.1,
-      cex.sub = cex_val * 0.9)
-}
+# plot_open_device() lives in helpers.R, shared by every tab's export
 
 output$build_export_settings_ui <- renderUI({
 

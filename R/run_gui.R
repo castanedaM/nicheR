@@ -2,7 +2,7 @@
 #'
 #' Opens a graphical interface to the nicheR workflow: building ellipsoids
 #' from environmental ranges, predicting suitability across a study area,
-#' preparing and applying sampling bias, and generating virtual occurrences.
+#' preparing and applying sampling bias, and generating virtual data.
 #'
 #' The app is an interface to the package functions, not a separate
 #' implementation. Every control maps onto a call that can be made directly
@@ -21,7 +21,7 @@
 #' @details Uploaded rasters and tables are held in memory for the duration of
 #' the session and are not written to disk unless a session or a figure is
 #' explicitly saved. For a walkthrough of the interface, see
-#' `vignette("shiny_app", package = "nicheR")`.
+#' `vignette("shiny_app_vignette", package = "nicheR")`.
 #'
 #' @seealso [build_ellipsoid()], [predict()], [prepare_bias()],
 #' [sample_data()]

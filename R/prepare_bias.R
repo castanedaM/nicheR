@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Standardizes and combines one or more bias layers into a composite bias
-#' surface for use in biased occurrence sampling. Each layer is min-max
+#' surface for use in biased sampling. Each layer is min-max
 #' normalized to \code{[0, 1]} and assigned a directional effect
 #' (\code{"direct"} or \code{"inverse"}) before being multiplied together
 #' into a single composite surface.
@@ -10,7 +10,7 @@
 #' @usage prepare_bias(bias_surface, effect_direction = c("direct", "inverse"),
 #'                     template_layer = NULL, include_composite = TRUE,
 #'                     include_processed_layers = FALSE, mask_na = FALSE,
-#'                     verbose = TRUE)
+#'                     floor = NULL, verbose = TRUE)
 #'
 #' @param bias_surface A \code{SpatRaster} (single or multi-layer) or a list
 #'   of \code{SpatRaster} objects representing the raw bias layers.
@@ -28,10 +28,14 @@
 #'   standardized individual layers (after directional transformation) in the
 #'   output. Default is \code{FALSE}.
 #' @param mask_na Logical. Controls how \code{NA} values are handled when
-#'   combining layers. If \code{TRUE}, uses the intersection of layer extents —
+#'   combining layers. If \code{TRUE}, uses the intersection of layer extents:
 #'   any pixel with an \code{NA} in any layer becomes \code{NA} in the
 #'   composite. If \code{FALSE} (default), uses the union of extents and
 #'   ignores \code{NA}s where other layers have valid values.
+#' @param floor Optional numeric. Lowest value allowed in the composite bias
+#'   surface. Cells below it are raised to it, so no cell is left with a
+#'   weight of zero. If \code{NULL} (default), the composite is left as
+#'   computed. Only used when \code{include_composite = TRUE}.
 #' @param verbose Logical. If \code{TRUE} (default), prints progress messages.
 #'
 #' @details
@@ -55,7 +59,7 @@
 #' \code{include_composite} and \code{include_processed_layers} arguments:
 #' \itemize{
 #'   \item \code{composite_surface}: A \code{SpatRaster} with the combined
-#'   bias surface, named \code{"standarized_composite_bias_surface"}.
+#'   bias surface, named \code{"standardized_composite_bias_surface"}.
 #'   \item \code{processed_layers}: A multi-layer \code{SpatRaster} with the
 #'   standardized and direction-transformed individual layers.
 #'   \item \code{combination_formula}: A character string showing the formula
@@ -64,7 +68,7 @@
 #'
 #' @seealso \code{\link{apply_bias}} to apply the prepared bias surface to a
 #'   suitability prediction, \code{\link{sample_biased_data}} to sample
-#'   occurrences from the resulting bias-weighted surface.
+#'   records from the resulting bias-weighted surface.
 #'
 #' @examples
 #' pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
@@ -275,11 +279,11 @@ prepare_bias <- function(bias_surface,
     if(this_dir == "inverse"){
       formula_entries[i] <- paste0("(1-", nm, ")")
       directional_bias_list[[i]] <- 1 - scaled
-      names(directional_bias_list[[i]]) <- paste0("standarized_", nm, "_inverse", resample_tag)
+      names(directional_bias_list[[i]]) <- paste0("standardized_", nm, "_inverse", resample_tag)
     }else{
       formula_entries[i] <- nm
       directional_bias_list[[i]] <- scaled
-      names(directional_bias_list[[i]]) <- paste0("standarized_", nm, "_direct", resample_tag)
+      names(directional_bias_list[[i]]) <- paste0("standardized_", nm, "_direct", resample_tag)
     }
   }
 
@@ -298,7 +302,7 @@ prepare_bias <- function(bias_surface,
     verbose_message(
       verbose,
       paste0(
-        "Step: building standarized (min/max) directional composite bias surface (mask_na = ",
+        "Step: building standardized (min/max) directional composite bias surface (mask_na = ",
         mask_na, ")...\n"
       )
     )
@@ -331,7 +335,7 @@ prepare_bias <- function(bias_surface,
       out_rast$combination_formula <- formula_entries[1]
     }
 
-    names(composite_raster) <- "standarized_composite_bias_surface"
+    names(composite_raster) <- "standardized_composite_bias_surface"
     out_rast$composite_surface <- composite_raster
 
     if(isTRUE(include_processed_layers)){
@@ -344,7 +348,7 @@ prepare_bias <- function(bias_surface,
   }
 
   # Adjust to floor
-  if(!is.null(floor)) {
+  if(!is.null(floor) && isTRUE(include_composite)){
     out_rast$composite_surface <- terra::clamp(out_rast$composite_surface,
                                                lower = floor)
   }

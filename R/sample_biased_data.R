@@ -1,18 +1,18 @@
-#' Sample occurrence data from a bias-weighted prediction surface
+#' Sample records from a bias-weighted prediction surface
 #'
 #' @description
-#' Samples \code{n_occ} virtual occurrence points using the bias-weighted
+#' Samples \code{n} virtual records using the bias-weighted
 #' prediction values directly as sampling probabilities. Unlike
-#' \code{sample_data()}, there is no sampling strategy argument — the
+#' \code{sample_data()}, there is no sampling strategy argument. The
 #' prediction layer values themselves define where points are drawn from,
-#' making this function suited for simulating realistically biased occurrence
+#' making this function suited for simulating realistically biased
 #' records.
 #'
-#' @usage sample_biased_data(n_occ, prediction, prediction_layer = NULL,
+#' @usage sample_biased_data(n, prediction, prediction_layer = NULL,
 #'                           sampling_mask = NULL, seed = 1, verbose = TRUE,
 #'                           strict = NULL)
 #'
-#' @param n_occ Integer. Number of occurrence points to sample.
+#' @param n Integer. Number of records to sample.
 #' @param prediction A \code{SpatRaster} or data frame containing the
 #'   bias-weighted prediction surface to sample from.
 #' @param prediction_layer Character. Name of the layer or column to use as
@@ -41,7 +41,7 @@
 #' \code{"trunc"} or if the proportion of zeros or \code{NA}s exceeds 25\%.
 #'
 #' @return
-#' A data frame of sampled occurrence points with the same columns as the
+#' A data frame of sampled records with the same columns as the
 #' input \code{prediction} (minus the internal \code{pred} column). If
 #' \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 #' and \code{y} coordinate columns.
@@ -54,15 +54,15 @@
 #' biased_pred <- terra::rast(system.file("extdata/applied_bias_rast.tif",
 #'                                      package = "nicheR"))
 #'
-#' # Sample points form bias surface (not probability surface)
-#' occ_biased <- sample_biased_data(n_occ = 100,
+#' # Sample points from bias surface (not probability surface)
+#' rec_biased <- sample_biased_data(n = 100,
 #'                                  prediction = biased_pred,
 #'                                  prediction_layer = "suitability_biased_direct")
 #'
-#' head(occ_biased)
+#' head(rec_biased)
 #'
 #' @export
-sample_biased_data <- function(n_occ,
+sample_biased_data <- function(n,
                                prediction,
                                prediction_layer = NULL,
                                sampling_mask = NULL,
@@ -73,10 +73,10 @@ sample_biased_data <- function(n_occ,
 
   verbose_message(verbose, "Starting: sample_biased_data()\n")
 
-  if(!is.numeric(n_occ) || length(n_occ) != 1L || is.na(n_occ) || n_occ <= 0){
-    stop("'n_occ' must be a single positive number.")
+  if(!is.numeric(n) || length(n) != 1L || is.na(n) || n <= 0){
+    stop("'n' must be a single positive number.")
   }
-  n_occ <- as.integer(n_occ)
+  n <- as.integer(n)
 
   if(!is.numeric(seed) || length(seed) != 1L || is.na(seed)){
     stop("'seed' must be a single number.")
@@ -176,8 +176,8 @@ sample_biased_data <- function(n_occ,
     stop("No valid prediction values available for sampling after filtering.")
   }
 
-  if(n_occ > nrow(df)){
-    stop("'n_occ' is larger than the number of available samples.")
+  if(n > nrow(df)){
+    stop("'n' is larger than the number of available samples.")
   }
 
   w <- df$pred
@@ -193,7 +193,7 @@ sample_biased_data <- function(n_occ,
   }
 
   set.seed(seed)
-  idx <- sample.int(nrow(df), size = n_occ, replace = FALSE, prob = w)
+  idx <- sample.int(nrow(df), size = n, replace = FALSE, prob = w)
 
   df$pred <- NULL
   out <- df[idx, , drop = FALSE]

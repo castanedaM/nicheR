@@ -6,7 +6,7 @@ This is an update of an existing package.
 
 In this version the following changes were made:
 
-- Added `run_app()`, a Shiny interface to the package workflow. The
+- Added `run_gui()`, a Shiny interface to the package workflow. The
   application files are in `inst/shiny/` and are not evaluated during checks.
   The example is wrapped in `\dontrun{}` because the application blocks the
   console until closed and cannot run without a display.
@@ -19,9 +19,7 @@ In this version the following changes were made:
   list may need updating.]
 - Added the vignette `shiny_app`, documenting the interface.
 - `shinydashboard` and `shinyjs` are declared in Imports. They are used by the
-  application in `inst/shiny/`, which `R CMD check` does not scan, so they are
-  imported at package level in `R/nicheR-package.R` to make the dependency
-  explicit.
+  application in `inst/shiny/`.
 
 ## Test environments
 
@@ -43,8 +41,7 @@ In this version the following changes were made:
 
 * Installed size is 9.2Mb, of which 6.5Mb is `doc/`. The vignettes document a
   workflow that is inherently visual, and the figures are needed to show what
-  the ellipsoids and predictions look like. Figure resolution has been reduced
-  to keep the total down.
+  the ellipsoids and predictions look like.
 
 * The note "unable to verify current time" reflects a network issue on the
   submitting machine and is unrelated to the package.

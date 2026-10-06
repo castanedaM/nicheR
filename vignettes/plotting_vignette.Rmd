@@ -32,8 +32,8 @@ knitr::opts_chunk$set(
   - [Subsampling large datasets](#subsampling-large-datasets)
   - [Fixed axis limits for comparing ellipsoids](#fixed-axis-limits-for-comparing-ellipsoids)
 - [add_data() and add_ellipsoid()](#add_data-and-add_ellipsoid)
-  - [Layering background, occurrences, and boundary](#layering-background-occurrences-and-boundary)
-  - [Coloring occurrence points by a continuous variable](#coloring-occurrence-points-by-a-continuous-variable)
+  - [Layering background, records, and boundary](#layering-background-records-and-boundary)
+  - [Coloring records by a continuous variable](#coloring-records-by-a-continuous-variable)
 - [plot_ellipsoid_pairs()](#plot_ellipsoid_pairs)
   - [Pairs with background](#pairs-with-background)
   - [Pairs with predictions](#pairs-with-predictions)
@@ -369,19 +369,19 @@ Without `fixed_lims`, each panel would rescale to its own data extent, making th
 
 ## add_data() and add_ellipsoid()
 
-`add_data()` and `add_ellipsoid()` layer content onto an existing plot opened by `plot_ellipsoid()`. The key thing to keep in mind is drawing order: whatever is drawn last sits on top. The typical order is background first, occurrence points second, ellipsoid boundary last.
+`add_data()` and `add_ellipsoid()` layer content onto an existing plot opened by `plot_ellipsoid()`. The key thing to keep in mind is drawing order: whatever is drawn last sits on top. The typical order is background first, records second, ellipsoid boundary last.
 
 <br>
 
-### Layering background, occurrences, and boundary
+### Layering background, records, and boundary
 
-This is the most common layering pattern. We open the plot with a muted background, add occurrence points in a distinctive color, then draw the ellipsoid boundary on top so it is not obscured by the points.
+This is the most common layering pattern. We open the plot with a muted background, add records in a distinctive color, then draw the ellipsoid boundary on top so it is not obscured by the points.
 
 ```{r layering}
-# Simulate occurrence points from inside the ellipsoid
+# Simulate records from inside the ellipsoid
 set.seed(42)
-occ_idx <- sample(which(pred_trunc$suitability_trunc > 0), 40)
-occ_pts <- back_data[occ_idx, ref_ellipse$var_names]
+rec_idx <- sample(which(pred_trunc$suitability_trunc > 0), 40)
+rec_pts <- back_data[rec_idx, ref_ellipse$var_names]
 
 par(mar = mars)
 
@@ -393,10 +393,10 @@ plot_ellipsoid(ref_ellipse,
                pch = ".", lwd = 1,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
-               main = "Background + occurrences + boundary")
+               main = "Background + records + boundary")
 
-# Step 2: occurrence points on top of background
-add_data(occ_pts,
+# Step 2: records on top of background
+add_data(rec_pts,
          x = "bio_1", y = "bio_12",
          pts_col = "#0004d5", pch = 19, cex = 1.2)
 
@@ -404,7 +404,7 @@ add_data(occ_pts,
 add_ellipsoid(ref_ellipse, col_ell = "#e10000", lwd = 2)
 
 legend("topright",
-       legend = c("Background", "Occurrences", "Ellipsoid boundary"),
+       legend = c("Background", "Records", "Ellipsoid boundary"),
        col    = c("#c5c5c5", "#0004d5", "#e10000"),
        pch    = c(16, 19, NA), lty = c(NA, NA, 1),
        lwd    = c(NA, NA, 2), cex = 0.8, bty = "n")
@@ -412,14 +412,14 @@ legend("topright",
 
 <br>
 
-### Coloring occurrence points by a continuous variable
+### Coloring records by a continuous variable
 
-`add_data()` also supports `col_layer`, which maps a continuous column onto a palette the same way `plot_ellipsoid()` does. This is useful for showing suitability, Mahalanobis distance, or any other variable at the occurrence locations on top of a background.
+`add_data()` also supports `col_layer`, which maps a continuous column onto a palette the same way `plot_ellipsoid()` does. This is useful for showing suitability, Mahalanobis distance, or any other variable at the record locations on top of a background.
 
 ```{r add_data_col_layer}
-# Predict suitability at the occurrence points
-occ_pred <- predict(ref_ellipse,
-                    newdata = occ_pts,
+# Predict suitability at the records
+rec_pred <- predict(ref_ellipse,
+                    newdata = rec_pts,
                     include_suitability = TRUE,
                     include_mahalanobis = FALSE,
                     verbose = FALSE)
@@ -434,10 +434,10 @@ plot_ellipsoid(ref_ellipse,
                pch = ".", lwd = 2,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
-               main = "Occurrences colored by suitability")
+               main = "Records colored by suitability")
 
-# Occurrence points colored by suitability
-add_data(occ_pred,
+# Records colored by suitability
+add_data(rec_pred,
          x = "bio_1", y = "bio_12",
          col_layer = "suitability",
          pal       = vir_pal,
@@ -471,7 +471,7 @@ range_3d <- data.frame(bio_1  = c(27, 35),
                        bio_12 = c(1000, 1500),
                        bio_15 = c(60, 75))
 
-ellipse_3d <- build_ellipsoid(range = range_3d)
+ellipse_3d <- build_ellipsoid(ranges = range_3d)
 
 par(cex = 0.7)
 

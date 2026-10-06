@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_utilities.R
 \name{add_data}
 \alias{add_data}
-\title{Add occurrence points or other data to an existing E-space plot}
+\title{Add records or other data to an existing E-space plot}
 \usage{
 add_data(data, x, y,
  pts_col = "#000000",pts_alpha  = 1,

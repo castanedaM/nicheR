@@ -1,6 +1,6 @@
 # Title: Data tab server logic
 # Description: Handles file upload, validation, and variable selection
-# Date last updated: 09/29/2026
+# Date last updated: 10/06/2026
 
 # Start session button in about
 observeEvent(input$about_start_session_btn, {
@@ -81,6 +81,7 @@ observeEvent(input$build_clear_files, {
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
   session_data$file_type <- NULL
+  session_data$data_source <- NULL
   session_data$vars <- NULL
 
   shinyjs::reset("build_raster_file")
@@ -136,6 +137,10 @@ observeEvent(input$build_data_upload_btn, {
     session_data$bg_raster <- rast
     session_data$bg_df <- terra::as.data.frame(rast, xy = TRUE, na.rm = TRUE)
 
+    # File names as uploaded, so the session report can name them. The
+    # browser sends only the name, never the folder.
+    session_data$data_source <- input$build_raster_file$name
+
     showNotification("Raster loaded successfully.", type = "message", duration = 4)
     updateTabsetPanel(session, "build_tabs", selected = "build_range_tab")
     return()
@@ -157,6 +162,7 @@ observeEvent(input$build_data_upload_btn, {
     if(is.null(df)) return()
 
     session_data$bg_df <- df
+    session_data$data_source <- input$build_df_file$name
 
     x_col <- names(df)[grepl(X_COL_PATTERN, names(df), ignore.case = TRUE)][1]
     y_col <- names(df)[grepl(Y_COL_PATTERN, names(df), ignore.case = TRUE)][1]
@@ -241,6 +247,17 @@ observeEvent(input$build_confirm_variables_btn, {
     req(input$build_virtual_n_dims)
     n_dims <- input$build_virtual_n_dims
 
+    # The box accepts anything typed into it, its min and max only limit the
+    # arrows. Fewer than two dimensions leaves no variable pair, and the
+    # covariance and plot code need at least one.
+    if(length(n_dims) != 1 || !is.finite(n_dims) || n_dims != round(n_dims) ||
+       n_dims < 2 || n_dims > MAX_DIMS){
+      showNotification(paste0("Choose a whole number of dimensions between 2 and ",
+                              MAX_DIMS, "."),
+                       type = "error", duration = 5)
+      return()
+    }
+
     vars <- vapply(seq_len(n_dims), function(i){
       val <- input[[paste0("build_virtual_var_name_", i)]]
       if(is.null(val) || !nzchar(val)) paste0("var", i) else val
@@ -248,6 +265,17 @@ observeEvent(input$build_confirm_variables_btn, {
 
     if(length(unique(vars)) != length(vars)){
       showNotification("Variable names must be unique.", type = "error", duration = 4)
+      return()
+    }
+
+    # The names become input ids and column names, so they are kept to
+    # letters, numbers and underscores, starting with a letter
+    bad <- vars[!grepl("^[A-Za-z][A-Za-z0-9_]*$", vars)]
+
+    if(length(bad) > 0){
+      showNotification(paste0(instructions$build_virtual_names_invalid,
+                              " Check: ", paste(bad, collapse = ", "), "."),
+                       type = "error", duration = 6)
       return()
     }
 
@@ -271,6 +299,13 @@ observeEvent(input$build_confirm_variables_btn, {
                      val <- input[[paste0("build_var_select_", i)]]
                      if(is.null(val)) all_vars[i] else val
                    }, character(1))[active]
+
+    # One variable leaves no pair to build covariances or plots from
+    if(length(vars) < 2){
+      showNotification("Select at least two variables.",
+                       type = "error", duration = 5)
+      return()
+    }
 
     session_data$vars <- vars
 
@@ -334,15 +369,23 @@ observeEvent(input$build_confirm_edit_variables_btn, {
 
 
   session_data$sampling_mask <- NULL
-  session_data$ellipsoid_occurrence_list <- list()
+  session_data$ellipsoid_records_list <- list()
 
 })
 
-# Reset logic if user changes from one input to the other of the input data
-observeEvent(input$build_data_input_type_choice, {
+# INPUT TYPE SWITCH -------------------------------------------------------
+
+# The input type the session is built on. The radio can be clicked at any
+# time, so this is what a new choice is compared against, and what the radio
+# goes back to when a switch is cancelled.
+data_input_type_active <- reactiveVal(NULL)
+
+# Clears everything that depends on the input data
+reset_input_data <- function(){
 
   session_data$input_mode <- NULL
   session_data$file_type <- NULL
+  session_data$data_source <- NULL
 
   session_data$bg_raster <- NULL
   session_data$bg_df <- NULL
@@ -351,22 +394,71 @@ observeEvent(input$build_data_input_type_choice, {
   session_data$session_range <- NULL
   session_data$df_range <- NULL
 
-  session_data$ellipsoid_list <-list()
+  session_data$ellipsoid_list <- list()
   session_data$current_ellipsoid <- NULL
 
-  session_data$ellipsoid_prediction_list <-list()
+  session_data$ellipsoid_prediction_list <- list()
+  session_data$prediction_settings <- list()
 
+  session_data$bias_source <- NULL
   session_data$bias_raster <- NULL
   session_data$prepared_bias <- NULL
+  session_data$bias_settings <- list()
   session_data$ellipsoid_prediction_list_biased <- list()
 
-
   session_data$sampling_mask <- NULL
-  session_data$ellipsoid_occurrence_list <- list()
+  session_data$ellipsoid_records_list <- list()
 
   updateRadioButtons(session, "build_range_method_choice", selected = character(0))
+}
+
+# Switching the input type starts the session over. With nothing built yet it
+# happens right away. Once variables are confirmed or an ellipsoid exists,
+# the app asks first, since one click on the radio would otherwise discard
+# every ellipsoid, prediction and record set.
+observeEvent(input$build_data_input_type_choice, {
+
+  new_type <- input$build_data_input_type_choice
+
+  # The radio was put back by Cancel below, so nothing changed
+  if(identical(new_type, data_input_type_active())) return()
+
+  has_work <- !is.null(session_data$vars) ||
+    length(session_data$ellipsoid_list) > 0 ||
+    !is.null(session_data$current_ellipsoid)
+
+  if(!has_work){
+    reset_input_data()
+    data_input_type_active(new_type)
+    return()
+  }
+
+  showModal(modalDialog(
+    title = "Switch input type?",
+    p(instructions$build_switch_input_type, class = "text-instruction"),
+    footer = tagList(
+      actionButton("build_cancel_input_type_btn", "Cancel"),
+      actionButton("build_confirm_input_type_btn",
+                   "Yes, switch",
+                   class = "btn-cancel")
+    ),
+    easyClose = FALSE
+  ))
 
 }, ignoreInit = TRUE)
+
+# Cancel puts the radio back on the type the session is built on
+observeEvent(input$build_cancel_input_type_btn, {
+  removeModal()
+  updateRadioButtons(session, "build_data_input_type_choice",
+                     selected = data_input_type_active())
+})
+
+observeEvent(input$build_confirm_input_type_btn, {
+  removeModal()
+  reset_input_data()
+  data_input_type_active(input$build_data_input_type_choice)
+})
 
 # Render Outputs ----------------------------------------------------------
 
@@ -541,7 +633,11 @@ output$build_variable_selector_ui <- renderUI({
   # Virtual mode: ask for number of dimensions, then name each one
   if(identical(session_data$input_mode, "virtual")){
 
-    n_dims <- if(!is.null(input$build_virtual_n_dims)) input$build_virtual_n_dims else 2
+    # Kept drawable while the box is empty or holds something out of range.
+    # Confirm is what rejects a number that cannot be used.
+    n_dims <- input$build_virtual_n_dims
+    if(length(n_dims) != 1 || !is.finite(n_dims)) n_dims <- 2
+    n_dims <- min(max(as.integer(n_dims), 1L), MAX_DIMS)
 
     name_rows <- lapply(seq_len(n_dims), function(i){
       fluidRow(

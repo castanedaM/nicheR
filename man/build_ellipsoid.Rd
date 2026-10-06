@@ -4,7 +4,7 @@
 \alias{build_ellipsoid}
 \title{Build a probabilistic ellipsoidal niche from ranges}
 \usage{
-build_ellipsoid(ranges, cl = 0.99,
+build_ellipsoid(ranges, cl = 0.95,
                        verbose = TRUE)
 }
 \arguments{

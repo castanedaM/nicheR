@@ -28,28 +28,33 @@
 #' uses eigen-decomposition to transform standard normal variables into the
 #' coordinate system defined by the ellipsoid's covariance structure.
 #'
-  #' When \code{truncate = TRUE}, the function generates candidate points
-#' uniformly distributed within a bounding box (hyper-cube) defined by the
-#' ellipsoid's \code{axes_coordinates}. Points falling outside the ellipsoid
-#' (where Mahalanobis distance \eqn{Md >} \code{chi2_cutoff}) are removed.
-#'
-#' From this filtered pool, \code{n} points are selected using weighted random
-#' sampling without replacement. The weights are determined by the \code{effect}
+#' When \code{truncate = TRUE}, every point falls inside the ellipsoid, that
+#' is, where the squared Mahalanobis distance \eqn{Md \le} \code{chi2_cutoff}.
+#' How the points are distributed inside it depends on the \code{effect}
 #' argument:
 #' \itemize{
-#'   \item \code{"direct"}: Weights are proportional to the multivariate normal
-#'   density (\eqn{\exp(-0.5 \times Md)}), clustering points near the centroid.
-#'   \item \code{"inverse"}: Weights are proportional to the complement of the
-#'   normal density (\eqn{1 - \exp(-0.5 \times Md)}), pushing points toward the edges.
-#'   \item \code{"uniform"}: All points within the ellipsoid have equal weight,
-#'   resulting in a uniform spatial distribution.
+#'   \item \code{"direct"}: Points follow the multivariate normal density
+#'   (\eqn{\exp(-0.5 \times Md)}) truncated at the ellipsoid boundary, which
+#'   clusters them near the centroid. They are drawn from the normal
+#'   distribution itself, and the draws that fall outside are discarded.
+#'   \item \code{"inverse"}: Points follow the complement of the normal density
+#'   (\eqn{1 - \exp(-0.5 \times Md)}), which pushes them toward the edges.
+#'   Candidates are drawn uniformly inside the ellipsoid and each one is kept
+#'   with a probability proportional to that weight.
+#'   \item \code{"uniform"}: All locations within the ellipsoid are equally
+#'   likely, resulting in a uniform distribution through its volume.
 #' }
+#'
+#' For \code{"inverse"} and \code{"uniform"}, candidates are drawn uniformly
+#' within a bounding box around the ellipsoid, the centroid plus and minus
+#' \eqn{\sqrt{diag(\Sigma) \times}} \code{chi2_cutoff}, and those outside
+#' the ellipsoid are removed.
 #'
 #' @return
 #' A matrix with \code{n} rows and columns corresponding to the
 #' environmental variables (dimensions) of the input \code{object}.
 #'
-#' @importFrom stats runif rnorm
+#' @importFrom stats runif rnorm pchisq
 #'
 #' @examples
 #' # Loading data
@@ -77,7 +82,7 @@ virtual_data <- function(object,
   if (!inherits(object, "nicheR_ellipsoid")) {
     stop("Argument 'object' must be of class 'nicheR_ellipsoid'.")
   }
-  if (!is.numeric(n) && n >= 1) {
+  if (!is.numeric(n) || length(n) != 1L || !is.finite(n) || n < 1) {
     stop("Argument 'n' must be an integer > 0.")
   }
   if (!is.logical(truncate)) {
@@ -106,56 +111,100 @@ virtual_data <- function(object,
   ev <- object$eigen$values
 
   if (truncate) {
-    # Get the range for each variable across all axes
-    half <- sqrt(diag(cov_matrix) * object$chi2_cutoff)
-    v_min <- centroid - half
-    v_max <- centroid + half
-
-    # Truncating with Mahalanobis distance and chi-squared cutoff
+    # Chi-squared cutoff that defines the ellipsoid boundary
     conf_cutoff <- object$chi2_cutoff
-    inv_cov <- object$Sigma_inv
 
     final_points <- matrix(nrow = 0, ncol = p)
 
-    while (nrow(final_points) < n) {
-      ## Batch size
-      batch_size <- ceiling((n - nrow(final_points)) / 0.1)
+    if (effect == "direct") {
+      # Truncated multivariate normal. Points are drawn from the normal
+      # itself and those outside the ellipsoid are discarded, so what is kept
+      # follows the normal density inside the boundary in any number of
+      # dimensions.
 
-      ## Generate uniform random points in the space defined by the axes
-      v_raw_cube <- mapply(runif, n = rep(batch_size, p),
-                           min = v_min, max = v_max)
+      ## Square root of Sigma (V * L^0.5), as in the untruncated case
+      to_cov <- es$vectors %*% diag(sqrt(pmax(ev, 0)), p)
 
-      ## Mahalanobis distance to points
-      diffs <- sweep(v_raw_cube, 2L, centroid, "-")
-      d2 <- rowSums((diffs %*% inv_cov) * diffs)
+      ## Share of normal draws expected to fall inside the ellipsoid
+      p_inside <- pchisq(conf_cutoff, df = p)
 
-      ## Get points and distances within the confidence cutoff
-      inside <- d2 <= conf_cutoff
+      while (nrow(final_points) < n) {
+        ## Batch size, with a margin so one pass is usually enough
+        batch_size <- ceiling((n - nrow(final_points)) /
+                                max(p_inside, 0.05) * 1.1) + 10L
 
-      ### Safety check: if no points are inside, skip to next iteration
-      if (!any(inside)) next
+        ## Standard normal draws
+        z <- matrix(rnorm(p * batch_size), nrow = batch_size)
 
-      v_raw_cube <- v_raw_cube[inside, , drop = FALSE]
-      d2 <- d2[inside]
+        ## For a standard normal draw, the squared Mahalanobis distance of
+        ## the transformed point is the squared length of the draw
+        inside <- rowSums(z^2) <= conf_cutoff
 
-      ## Multivariate normal from the Mahalanobis distance
-      mvnd <- exp(-0.5 * d2)
+        ### Safety check: if no points are inside, skip to next iteration
+        if (!any(inside)) next
 
-      if (effect == "direct") {
-        weights <- mvnd
-      } else if (effect == "inverse") {
-        weights <- 1 - mvnd
-      } else {
-        weights <- rep(1, nrow(v_raw_cube)) # Uniform
+        ## Transform to the ellipsoid and add to our collection
+        pts <- sweep(z[inside, , drop = FALSE] %*% t(to_cov), 2L,
+                     centroid, "+")
+        final_points <- rbind(final_points, pts)
       }
 
-      ## Sample points based on weights, ensuring we don't exceed n
-      keep <- sample(seq_len(nrow(v_raw_cube)),
-                     size = min(nrow(v_raw_cube), n - nrow(final_points)),
-                     prob = weights, replace = FALSE)
+    } else {
+      # Uniform candidates inside the ellipsoid, for "uniform" and "inverse"
 
-      ## Add the sampled points to our collection
-      final_points <- rbind(final_points, v_raw_cube[keep, , drop = FALSE])
+      ## Get the range for each variable across all axes
+      half <- sqrt(diag(cov_matrix) * conf_cutoff)
+      v_min <- centroid - half
+      v_max <- centroid + half
+
+      inv_cov <- object$Sigma_inv
+
+      ## Largest weight "inverse" can take, reached on the boundary
+      w_max <- 1 - exp(-0.5 * conf_cutoff)
+
+      while (nrow(final_points) < n) {
+        ## Batch size
+        batch_size <- ceiling((n - nrow(final_points)) / 0.1)
+
+        ## Generate uniform random points in the space defined by the axes
+        v_raw_cube <- mapply(runif, n = rep(batch_size, p),
+                             min = v_min, max = v_max)
+
+        ## Mahalanobis distance to points
+        diffs <- sweep(v_raw_cube, 2L, centroid, "-")
+        d2 <- rowSums((diffs %*% inv_cov) * diffs)
+
+        ## Get points and distances within the confidence cutoff
+        inside <- d2 <= conf_cutoff
+
+        ### Safety check: if no points are inside, skip to next iteration
+        if (!any(inside)) next
+
+        v_raw_cube <- v_raw_cube[inside, , drop = FALSE]
+        d2 <- d2[inside]
+
+        if (effect == "uniform") {
+          ## Every candidate inside has the same weight. The draw is kept as
+          ## it was, so a given seed still returns the same points.
+          weights <- rep(1, nrow(v_raw_cube))
+
+          keep <- sample(seq_len(nrow(v_raw_cube)),
+                         size = min(nrow(v_raw_cube), n - nrow(final_points)),
+                         prob = weights, replace = FALSE)
+
+        } else {
+          ## Inverse. Each candidate is kept with probability equal to its
+          ## weight over the largest weight, so the kept points follow the
+          ## weight itself. Picking a fixed number from a small pool does
+          ## not, since it keeps nearly every candidate whatever its weight.
+          weights <- 1 - exp(-0.5 * d2)
+
+          keep <- which(runif(nrow(v_raw_cube)) < weights / w_max)
+        }
+
+        ## Add the sampled points to our collection
+        final_points <- rbind(final_points, v_raw_cube[keep, , drop = FALSE])
+      }
     }
 
     # Trim to exactly n and ensure names

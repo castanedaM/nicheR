@@ -701,7 +701,7 @@ terra::plot(binary_rast,
 
 <br>
 
-Blue cells represent areas where environmental conditions fall within the niche, and grey cells are outside it. This layer is directly usable for downstream analyses such as species richness mapping, PAM construction, and comparisons with observed occurrence data.
+Blue cells represent areas where environmental conditions fall within the niche, and grey cells are outside it. This layer is directly usable for downstream analyses such as species richness mapping, PAM construction, and comparisons with observed records.
 
 <br>
 
@@ -714,7 +714,7 @@ range_3d <- data.frame(bio_1  = c(27, 35),
                        bio_12 = c(1000, 1500),
                        bio_15 = c(60, 75))
 
-ellipse_3d <- build_ellipsoid(range = range_3d)
+ellipse_3d <- build_ellipsoid(ranges = range_3d)
 
 ellipse_3d
 ```

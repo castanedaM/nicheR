@@ -29,7 +29,7 @@ for overwriting existing files and ensures the file extension is .rds.
 # Build a simple ellipsoid to save
 range_df <- data.frame(bio_1  = c(15, 25),
                        bio_12 = c(500, 1500))
-ell <- build_ellipsoid(range = range_df)
+ell <- build_ellipsoid(ranges = range_df)
 
 # Save to a temporary file
 tmp <- tempfile(fileext = ".rds")

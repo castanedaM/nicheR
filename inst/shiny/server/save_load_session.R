@@ -4,7 +4,7 @@
 # terra objects are C++ pointers and cannot be saved directly, so every
 # raster is wrapped on the way out and unwrapped on the way in.
 
-# Date last updated: 08/06/2026
+# Date last updated: 10/06/2026
 
 
 # Bumped when the saved structure changes in a way older files cannot
@@ -153,6 +153,15 @@ observeEvent(input$build_load_session_btn, {
   session_list$.session_version <- NULL
   session_list$.saved_at <- NULL
 
+  # Sessions saved before this list was renamed carry it under the old name
+  if(!is.null(session_list$ellipsoid_occurrence_list)){
+    session_list$ellipsoid_records_list <- session_list$ellipsoid_occurrence_list
+    session_list$ellipsoid_occurrence_list <- NULL
+  }
+
+  # Read before anything is restored, to tell below whether vars changed
+  vars_before <- session_data$vars
+
   for(nm in names(session_list)){
     session_data[[nm]] <- session_list[[nm]]
   }
@@ -177,6 +186,15 @@ observeEvent(input$build_load_session_btn, {
     session_data$current_ellipsoid <- NULL
   }
 
+  # A change of variables empties the working slot through an observer in
+  # build_tab.R. That observer runs after this handler, so it would undo the
+  # slot filled above. The flag lets this one change through. It is only set
+  # when vars really changed, since otherwise the observer does not run and
+  # the flag would be left on for the next change.
+  if(!identical(vars_before, session_data$vars)){
+    vars_reset_skip(TRUE)
+  }
+
   # Forces every isolated panel to rebuild against the restored state
   ell_slot(ell_slot() + 1L)
 
@@ -184,7 +202,7 @@ observeEvent(input$build_load_session_btn, {
                    type = "message", duration = 4)
 
   # Land on the furthest step the restored session actually reached
-  if(length(session_data$ellipsoid_occurrence_list) > 0){
+  if(length(session_data$ellipsoid_records_list) > 0){
     updateTabItems(session, "sidebar_menu", selected = "generate_tab")
   } else if(length(session_data$ellipsoid_prediction_list_biased) > 0){
     updateTabItems(session, "sidebar_menu", selected = "bias_tab")

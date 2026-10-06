@@ -19,7 +19,7 @@ a single reproducible workflow."),
 space using background layers and user-defined variable ranges."),
 
   about_build_points = c(
-    "Set ranges manually, from occurrence data, or from background statistics",
+    "Set ranges manually, from uploaded data, or from background statistics",
     "Adjust covariance to rotate the ellipsoid",
     "Move the niche centroid without changing axis tolerance ranges",
     "Save multiple named ellipsoid versions"
@@ -45,7 +45,7 @@ generation toward areas with specific detection effort."),
     "Examples: urbanization, distance to water, road density, collector coverage, any detection proxy"
   ),
 
-  about_generate = HTML("Generate occurrences or sample virtual data from the fitted niche,
+  about_generate = HTML("Generate records or sample virtual data from the fitted niche,
 optionally weighted by the bias layer."),
 
   about_generate_points = c(
@@ -93,6 +93,23 @@ ranges directly, without uploading any spatial data."),
 WorldClim bioclimatic variables for Central America, including a bias layer
 for later steps. Click Continue to select which variables to use."),
 
+  build_switch_input_type = paste0(
+    "Switching the input type starts the session over. The data, the ",
+    "variables, every ellipsoid, and anything predicted, biased, or generated ",
+    "from them will be removed. Save the session first if you want to keep it."
+  ),
+
+  build_update_stale = paste0(
+    "This ellipsoid has predictions, biased layers, or record sets that ",
+    "were made from its previous version. Updating removes them, since they ",
+    "no longer describe it. Predict it again afterwards."
+  ),
+
+  build_virtual_names_invalid = paste0(
+    "Variable names can use letters, numbers, and underscores, and must ",
+    "start with a letter."
+  ),
+
 
   # BUILD TAB: VARIABLES ---------------------------------------------------
 
@@ -113,7 +130,7 @@ current selection, the ellipsoid, and any covariance adjustments.",
 
   build_range_intro = HTML("Ranges set the minimum and maximum value of each
 variable, which together define the extent of the ellipsoid. Start by specifying
-the confidence level the statistical metric that defines the limits of the ellipsoid"),
+the confidence level, the statistical metric that defines the limits of the ellipsoid."),
 
   build_range_choice = HTML("Choose one of the three methods below.
   You can switch methods and change values at any time, then rebuild."),
@@ -124,16 +141,16 @@ Defaults are the first and third quartiles of your background data. Lines in
 the plot update as you change these values. Use Reset to Defaults to restore
 them, then Initialize Ellipsoid when ready."),
 
-  build_range_data = HTML("Upload a CSV with occurrence or other environmental
+  build_range_data = HTML("Upload a CSV with environmental
 data for your species of interest.\nColumn names must match your selected variables exactly, or the upload will not be recognized. Once matched, observed min/max values appear below, and
-Expand Min/Max (%) let you widen the range outward in either direction. Lines
+Expand Min/Max (%) let you widen the ranges outward in either direction. Lines
 in the plot update as you adjust them."),
 
   build_range_stats = HTML("Provide summary statistics for the chosen
 variables. Defaults shown here are derived from your background data, but can be changed
 to known values for your species of interest. Expand Min/Max (%) widen the
-resulting range outward, not the mean itself. Confidence level controls how
-wide the range is before any expansion."),
+resulting ranges outward, not the mean itself. Confidence level controls how
+wide the ranges are before any expansion."),
 
   build_range_manual_tooltip = "Type minimum and maximum values directly for
 each variable.",
@@ -214,8 +231,8 @@ button to go back to editing, or the copy button in the library, to make changes
   build_save_ell_modal = "Give this ellipsoid a name. Use letters, numbers,
 and spaces only. Spaces will be replaced with underscores.",
 
-  build_delete_ell = "This will permanently remove the ellipsoid and any
-prediction results associated with it.",
+  build_delete_ell = "This will permanently remove the ellipsoid, its
+predictions, its biased predictions, and any records generated from them.",
 
   build_reference = HTML("The ellipsoid summary reports volume and centroid
 changes relative to a reference. By default this is whatever the working
@@ -278,6 +295,8 @@ predictions, and any other layer (bias, data) derived from it.",
   predict_ellipsoid_select_tooltip = "Choose which saved ellipsoid to predict
 with, or All versions to predict with every one at once.",
 
+  predict_no_layers = "Select at least one prediction layer before predicting.",
+
   predict_virtual_unavailable = HTML("Prediction needs raster layers, so it
 is unavailable in virtual mode. Go straight to Generate, which samples
 directly from the ellipsoid."),
@@ -286,6 +305,21 @@ directly from the ellipsoid."),
 unavailable in virtual mode."),
 
   # BIAS TAB ---------------------------------------------------------------
+
+  bias_skip = paste0(
+    "Records will be sampled from the unbiased prediction. ",
+    "You can come back to this step at any time."
+  ),
+
+  bias_no_gspace = HTML("Sampling bias is geographic, so it needs a raster
+study area. This session has no geographic layers, so this step is
+unavailable."),
+
+  bias_layer_select_tooltip = "Choose which prediction layer to apply bias
+to, or All prediction layers to apply it to every one.",
+
+  bias_plot_settings = "Choose the color palette for the maps, reverse it,
+and set the color of cells with no data.",
 
   bias = HTML("Bias input adds controlled sampling bias to a prediction
 layer. Note that once bias has been applied, the prediction is no longer a
@@ -298,7 +332,7 @@ sampling probability) or an inverse effect (decrease sampling probability)."),
 represent sampling bias across the study area, or use the example layers
 provided."),
 
-  bias_skipped = "Bias skipped. Occurrences will be sampled from the
+  bias_skipped = "Bias skipped. Records will be sampled from the
 unbiased prediction.",
 
   bias_needs_prediction = "Run a prediction on the Predict tab before adding
@@ -313,10 +347,12 @@ Combinations that already exist are skipped, so you can add layers without
 losing what is already applied."),
 
   bias_edit_upload = "This removes the current bias layers, the prepared
-surface, and any applied bias. You will need to upload and prepare again.",
+surface, any applied bias, and any record sets generated from biased
+layers. You will need to upload and prepare again.",
 
-  bias_edit_prepare = "This removes the prepared surface and any applied
-bias. The uploaded layers are kept.",
+  bias_edit_prepare = "This removes the prepared surface, any applied bias,
+and any record sets generated from biased layers. The uploaded layers are
+kept.",
 
   bias_clear_apply = "This removes every biased surface. The uploaded layers
 and the prepared surface are kept.",
@@ -328,7 +364,7 @@ the Build tab."),
   bias_library_empty = "No saved ellipsoids yet.",
 
   bias_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, its biased predictions, and any occurrences generated from them.",
+predictions, its biased predictions, and any records generated from them.",
 
   bias_mask_na_tooltip = "Union keeps any pixel with at least one valid value
 across layers.
@@ -349,10 +385,21 @@ apply bias to, or All versions to apply to every one.",
     "using (max + min) - x. Changes the prediction, not the bias surface."
   ),
 
+  bias_download = paste0(
+    "Choose the layers to download and the format. ",
+    "The composite and the prepared layers are the same for every ellipsoid. ",
+    "The applied layers are the biased predictions of this ellipsoid."
+  ),
+
+  bias_download_grids = paste0(
+    "The bias layers and the biased predictions are on different grids, ",
+    "so they cannot go in one file. Download them separately."
+  ),
+
   # GENERATE TAB -----------------------------------------------------------
 
   generate_needs_prediction = "Run a prediction on the Predict tab before
-generating occurrences.",
+generating records.",
 
   generate_intro = HTML("Sample virtual data from a prediction surface.
                         Biased layers are shown in orange if bias has been applied."),
@@ -369,7 +416,7 @@ to the Build tab. To view the generated set of records press on view (eye)"),
   generate_library_empty = "No saved ellipsoids yet.",
 
   generate_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, its biased predictions, and any occurrences generated from them.",
+predictions, its biased predictions, and any records generated from them.",
 
   generate_sampling_tooltip = "Centroid: higher probability near the niche centroid.
   Edge: higher probability near the niche edge.
@@ -381,21 +428,21 @@ from. Orange layers have bias applied.",
   generate_strict_tooltip = "When True, removes NA and zero-valued cells
 before sampling. Recommended for truncated layers.",
 
-  generate_advanced_tooltip = "Optional sampling mask and the random seed
-used for reproducible draws.",
+  generate_advanced_tooltip = "Optional sampling mask that restricts where
+points can be drawn.",
 
   generate_seed_tooltip = "Same seed and same settings produce the same
-occurrences. Change it to draw a different replicate.",
+records. Change it to draw a different replicate.",
 
   generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
 data from, or 'All versions' to generate for every one.",
 
-  generate_summary_empty = "No occurrence sets yet. Generate one to see it here.",
+  generate_summary_empty = "No record sets yet. Generate one to see it here.",
 
   generate_max_visible = "Up to four sets can be shown at once. Hide one
 before showing another.",
 
-  generate_summary = HTML("Every occurrence set you generate is listed here.
+  generate_summary = HTML("Every record set you generate is listed here.
 Sets accumulate: changing any parameter adds a set rather than replacing one.
 Use the eye to choose which appear in the plots, up to four at a time."),
 

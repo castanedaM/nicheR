@@ -40,22 +40,27 @@ covariance matrix, without any constraints on their location. The function
 uses eigen-decomposition to transform standard normal variables into the
 coordinate system defined by the ellipsoid's covariance structure.
 
-When \code{truncate = TRUE}, the function generates candidate points
-uniformly distributed within a bounding box (hyper-cube) defined by the
-ellipsoid's \code{axes_coordinates}. Points falling outside the ellipsoid
-(where Mahalanobis distance \eqn{Md >} \code{chi2_cutoff}) are removed.
-
-From this filtered pool, \code{n} points are selected using weighted random
-sampling without replacement. The weights are determined by the \code{effect}
+When \code{truncate = TRUE}, every point falls inside the ellipsoid, that
+is, where the squared Mahalanobis distance \eqn{Md \le} \code{chi2_cutoff}.
+How the points are distributed inside it depends on the \code{effect}
 argument:
 \itemize{
-  \item \code{"direct"}: Weights are proportional to the multivariate normal
-  density (\eqn{\exp(-0.5 \times Md)}), clustering points near the centroid.
-  \item \code{"inverse"}: Weights are proportional to the complement of the
-  normal density (\eqn{1 - \exp(-0.5 \times Md)}), pushing points toward the edges.
-  \item \code{"uniform"}: All points within the ellipsoid have equal weight,
-  resulting in a uniform spatial distribution.
+  \item \code{"direct"}: Points follow the multivariate normal density
+  (\eqn{\exp(-0.5 \times Md)}) truncated at the ellipsoid boundary, which
+  clusters them near the centroid. They are drawn from the normal
+  distribution itself, and the draws that fall outside are discarded.
+  \item \code{"inverse"}: Points follow the complement of the normal density
+  (\eqn{1 - \exp(-0.5 \times Md)}), which pushes them toward the edges.
+  Candidates are drawn uniformly inside the ellipsoid and each one is kept
+  with a probability proportional to that weight.
+  \item \code{"uniform"}: All locations within the ellipsoid are equally
+  likely, resulting in a uniform distribution through its volume.
 }
+
+For \code{"inverse"} and \code{"uniform"}, candidates are drawn uniformly
+within a bounding box around the ellipsoid, the centroid plus and minus
+\eqn{\sqrt{diag(\Sigma) \times}} \code{chi2_cutoff}, and those outside
+the ellipsoid are removed.
 }
 \examples{
 # Loading data

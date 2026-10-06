@@ -1,10 +1,10 @@
 # Title: Generate tab plot logic
 
 # Description: E-space, G-space, and combined plots for the generate tab.
-# Mirrors predict_tab_plot.R, with generated occurrences drawn over the
+# Mirrors predict_tab_plot.R, with generated records drawn over the
 # surface they were sampled from.
 
-# Date last updated: 08/06/2026
+# Date last updated: 10/06/2026
 
 
 # Functions ---------------------------------------------------------------
@@ -36,7 +36,7 @@ generate_draw_espace_panel <- function(v1, v2, s, set = NULL, title = NULL){
          main = ttl)
   }
 
-  # Occurrences drawn first so they sit under the background and ellipsoid
+  # Records drawn first so they sit under the background and ellipsoid
   draw_sets <- if(!is.null(set)) set else s$occ_set
 
   if(!is.null(draw_sets) && length(draw_sets) > 0){
@@ -117,7 +117,7 @@ generate_draw_espace_pairs <- function(vars, s){
   layout(1)
 }
 
-# One panel per occurrence set, same variable pair, so several sampling
+# One panel per record set, same variable pair, so several sampling
 # runs can be compared side by side
 generate_draw_espace_sets <- function(v1, v2, s, sets){
 
@@ -154,7 +154,7 @@ generate_draw_gspace_panel <- function(rast, s, title = NULL, set = NULL,
   nm <- if(!is.null(set)) set[1] else s$occ_set[1]
 
   if(!is.null(nm)){
-    occ <- session_data$ellipsoid_occurrence_list[[s$ell$ell_id]][[nm]]
+    occ <- session_data$ellipsoid_records_list[[s$ell$ell_id]][[nm]]
     if(!is.null(occ) && nrow(occ) > 0){
       points(occ$x, occ$y,
              pch = s$occ_pch,
@@ -164,8 +164,8 @@ generate_draw_gspace_panel <- function(rast, s, title = NULL, set = NULL,
   }
 }
 
-# Distinct colours when several sets share a panel. Falls back to the
-# single configured occurrence colour when only one is drawn.
+# Distinct colors when several sets share a panel. Falls back to the
+# single configured record color when only one is drawn.
 generate_set_colors <- function(sets, s){
 
   if(length(sets) <= 1) return(setNames(s$occ_col, sets))
@@ -184,14 +184,14 @@ generate_plot_vars <- reactive({
   session_data$vars
 })
 
-# Occurrence set names for the current ellipsoid, one per prediction layer
+# Record set names for the current ellipsoid, one per prediction layer
 # that was sampled from
 generate_occ_sets <- reactive({
 
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(character(0))
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
   if(is.null(occ)) return(character(0))
 
   names(occ)
@@ -204,7 +204,7 @@ generate_occ_label_map <- reactive({
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(character(0))
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(character(0))
 
   labs <- occ_set_labels(occ)
@@ -216,7 +216,7 @@ generate_set_label <- function(nm, s){
   if(is.na(lab)) nm else unname(lab)
 }
 
-# Environmental values at the occurrence coordinates. generate_occ_for_ell()
+# Environmental values at the record coordinates. generate_occ_for_ell()
 # returns x and y only, so the values have to be extracted before the points
 # can be drawn in environmental space. Cached per ellipsoid.
 generate_occ_espace <- reactive({
@@ -224,7 +224,7 @@ generate_occ_espace <- reactive({
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(NULL)
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(NULL)
 
   rast <- session_data$bg_raster
@@ -234,9 +234,12 @@ generate_occ_espace <- reactive({
 
     if(is.null(df) || nrow(df) == 0) return(NULL)
 
-    # Sets with no coordinates are environmental values already. Detected by
-    # structure rather than by the mode attribute, so this also covers the
-    # non-spatial CSV case and any set written before mode was recorded.
+    # Sets that already hold the environmental values are used as they are.
+    # That is every virtual set and every set from a table session, which
+    # can carry x and y next to the values. Detected by structure rather
+    # than by the mode attribute, so it also covers any set written before
+    # mode was recorded.
+    if(all(vars %in% names(df))) return(df)
     if(!all(c("x", "y") %in% names(df))) return(df)
 
     if(is.null(rast)) return(NULL)
@@ -251,11 +254,11 @@ generate_occ_espace <- reactive({
     cbind(df[, c("x", "y")], vals)
   })
 })
-# The raster an occurrence set was sampled from. Checks the biased list
+# The raster a record set was sampled from. Checks the biased list
 # first, since a biased layer name never appears in the unbiased stack.
 generate_source_raster <- function(ell_id, set){
 
-  occ <- session_data$ellipsoid_occurrence_list[[ell_id]][[set]]
+  occ <- session_data$ellipsoid_records_list[[ell_id]][[set]]
   layer <- occ_meta(occ, "layer", set)
 
   biased <- session_data$ellipsoid_prediction_list_biased[[ell_id]]
@@ -331,7 +334,7 @@ output$generate_espace_plot_top_options_ui <- renderUI({
   vars <- generate_plot_vars()
   req(vars)
 
-  # Which sets appear is chosen with the eye icons in the occurrence
+  # Which sets appear is chosen with the eye icons in the record
   # summary, so nothing set-related belongs here
   fluidRow(
     column(width = 1, tags$span("Layout:", class = "text-widget-title")),
@@ -376,7 +379,7 @@ output$generate_espace_plot <- renderPlot({
 
   show_sets <- generate_visible_sets()
 
-  # Pairs view overlays every visible set on the same panels, colour-coded.
+  # Pairs view overlays every visible set on the same panels, color-coded.
   # 2D view gives each its own panel.
   s$occ_set <- show_sets
 
@@ -450,7 +453,7 @@ output$generate_espace_plot_bottom_options_ui <- renderUI({
 
 # G-SPACE -----------------------------------------------------------------
 
-# Panel choice lives in the occurrence summary, so this row is empty. Kept
+# Panel choice lives in the record summary, so this row is empty. Kept
 # as an output so the uiOutput in ui.R still resolves.
 output$generate_gspace_plot_top_options_ui <- renderUI({
   NULL
@@ -482,7 +485,7 @@ output$generate_gspace_plot <- renderPlot({
   if(length(sets) == 0){
     plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE,
          xlab = "", ylab = "", main = "G-space")
-    text(0.5, 0.5, "No occurrences generated for this ellipsoid.",
+    text(0.5, 0.5, "No records generated for this ellipsoid.",
          cex = 1, col = "grey50")
     return(invisible(NULL))
   }
@@ -506,7 +509,7 @@ output$generate_gspace_plot <- renderPlot({
       next
     }
 
-    n_pts <- nrow(session_data$ellipsoid_occurrence_list[[ell$ell_id]][[nm]])
+    n_pts <- nrow(session_data$ellipsoid_records_list[[ell$ell_id]][[nm]])
 
     generate_draw_gspace_panel(src, s,
                                title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
@@ -621,7 +624,7 @@ output$generate_combined_plot <- renderPlot({
 
   layout(m)
 
-  occ_list <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+  occ_list <- session_data$ellipsoid_records_list[[ell$ell_id]]
 
   # E-space, one panel per selected set
   par(mar = c(4, 4, 2, 1))
@@ -724,10 +727,10 @@ output$generate_plot_settings_ui <- renderUI({
     collapsible = TRUE,
     collapsed = TRUE,
 
-    # Occurrence points
+    # Record points
     fluidRow(
       column(width = 3,
-             tags$span("Occurrence shape", class = "text-widget-title"),
+             tags$span("Record shape", class = "text-widget-title"),
              selectInput("generate_occ_pch", label = NULL,
                          choices = c("Filled circle" = "16",
                                      "Open circle" = "1",
@@ -735,10 +738,10 @@ output$generate_plot_settings_ui <- renderUI({
                                      "Filled triangle" = "17"),
                          selected = "16")),
       column(width = 3,
-             tags$span("Occurrence size", class = "text-widget-title"),
+             tags$span("Record size", class = "text-widget-title"),
              numericInput("generate_occ_cex", label = NULL, value = 0.7,
                           min = 0.1, max = 5, step = 0.1)),
-      color_input("generate_occ_col", "Occurrence color", "#c0392b"),
+      color_input("generate_occ_col", "Record color", "#c0392b"),
       color_input("generate_plot_bg_col", "Background point color", "#B3B3B3")
     ),
 
@@ -1014,7 +1017,7 @@ output$generate_confirm_export <- downloadHandler(
              for(nm in show_sets){
                src <- generate_source_raster(ell$ell_id, nm)
                if(is.null(src)){ plot.new(); next }
-               n_pts <- nrow(session_data$ellipsoid_occurrence_list[[ell$ell_id]][[nm]])
+               n_pts <- nrow(session_data$ellipsoid_records_list[[ell$ell_id]][[nm]])
                generate_draw_gspace_panel(src, s,
                                           title = paste0(generate_set_label(nm, s), " (n = ", n_pts, ")"),
                                           set = nm)
@@ -1048,7 +1051,7 @@ output$generate_confirm_export <- downloadHandler(
              layout(if(identical(lay, "row")) cbind(e_block, g_block)
                     else rbind(e_block, g_block))
 
-             occ_list <- session_data$ellipsoid_occurrence_list[[ell$ell_id]]
+             occ_list <- session_data$ellipsoid_records_list[[ell$ell_id]]
 
              par(mar = c(4, 4, 2, 1))
              for(nm in e_sets){

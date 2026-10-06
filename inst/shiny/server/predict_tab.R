@@ -4,7 +4,7 @@
 # ellipsoids onto the background data, and lists the saved ellipsoids in a
 # view-only library.
 
-# Date Last Updated: 09/29/2026
+# Date Last Updated: 10/06/2026
 
 
 # PREDICTION LAYERS -------------------------------------------------------
@@ -83,7 +83,7 @@ output$predict_advanced_settings_ui <- renderUI({
                tagList(tags$span("Truncation level adjustment",
                                  class = "text-widget-title"),
                        tags$span(icon("circle-info"),
-                                 title = instructions$adjust_trunc_tooltip,
+                                 title = instructions$predict_adjust_trunc_tooltip,
                                  class = "tooltip-icon"))),
         column(width = 4,
                numericInput(inputId = "predict_adjust_trunc",
@@ -269,7 +269,7 @@ observeEvent(input$predict_run_btn, {
 
     # A new prediction invalidates anything derived from the old one
     session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-    session_data$ellipsoid_occurrence_list[[id]] <- NULL
+    session_data$ellipsoid_records_list[[id]] <- NULL
 
     n_ok <- n_ok + 1L
   }
@@ -465,22 +465,14 @@ observeEvent(input$predict_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_occurrence_list[[id]] <- NULL
+  session_data$ellipsoid_records_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
-  # Copies of the deleted ellipsoid, captured before reparenting so the
-  # message reports only what this delete changed
-  orphaned <- names(session_data$ellipsoid_list)[
-    vapply(session_data$ellipsoid_list,
-           function(e) identical(e$parent_id, id), logical(1))]
-
+  # Copies of the deleted ellipsoid are kept and become roots
   session_data$ellipsoid_list <- lapply(session_data$ellipsoid_list, function(e){
     if(identical(e$parent_id, id)) e$parent_id <- NULL
     e
   })
-
-  dbg("DELETE ", id, "  reparented to root: ",
-      if(length(orphaned) == 0) "none" else paste(orphaned, collapse = ", "))
 
   cur <- session_data$current_ellipsoid
 

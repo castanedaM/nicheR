@@ -1,8 +1,8 @@
 ---
-title: "Generate occurrence data"
+title: "Generate data"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Generate occurrence data}
+  %\VignetteIndexEntry{Generate data}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -30,13 +30,13 @@ knitr::opts_chunk$set(
     -   [Basic generation](#sec-basic-generation)
     -   [Visualizing virtual data](#sec-visualizing-virtual-data-in-2d)
     -   [Three-dimensional virtual example](#sec-three-dimensional-virtual-example)
--   [Part 2: Spatially-Explicit Occurrence Data](#sec-part-2-spatially-explicit-occurrence-data)
+-   [Part 2: Spatially-Explicit Data](#sec-part-2-spatially-explicit-data)
     -   [Basic generation in 2D](#sec-basic-generation-in-2d)
     -   [Effect of the `sampling` argument](#sec-effect-of-the-sampling-argument)
     -   [Effect of the `method` argument](#sec-effect-of-the-method-argument)
     -   [Effect of the `strict` argument](#sec-effect-of-the-strict-argument)
     -   [Three-Dimensional Example](#sec-three-dimensional-example)
--   [Part 3: Biased Occurrence Data](#sec-part-3-biased-occurrence-data)
+-   [Part 3: Biased Data](#sec-part-3-biased-data)
     -   [Basic biased generation in 2D](#sec-basic-biased-generation-in-2d)
     -   [Effect of the biased `strict` argument](#sec-effect-of-the-biased-strict-argument)
     -   [Three-Dimensional Biased Example](#sec-three-dimensional-biased-example)
@@ -46,13 +46,13 @@ knitr::opts_chunk$set(
 
 # Description {#description}
 
-The `nicheR` package allows you to simulate how a species might be distributed by generating synthetic occurrence data from continuous prediction surfaces. This vignette progresses through three levels of complexity:
+The `nicheR` package allows you to simulate how a species might be distributed by generating synthetic data from continuous prediction surfaces. This vignette progresses through three levels of complexity:
 
 1.  **Virtual Data:** Simulating species entirely within Environmental Space (E-Space), bypassing geographic rasters to test theoretical concepts.
 
-2.  **Geographic Occurrence Data:** Acting as a "virtual ecologist" to generate presence points across a physical landscape (G-Space) based on theoretical preferences.
+2.  **Geographic Data:** Acting as a "virtual ecologist" to generate presence points across a physical landscape (G-Space) based on theoretical preferences.
 
-3.  **Biased Occurrence Data:** Introducing real-world collection bias (e.g., nighttime light, proximity to roads, species richness, land use land cover) to see how human sampling effort distorts our view of a species' niche.
+3.  **Biased Data:** Introducing real-world collection bias (e.g., nighttime light, proximity to roads, species richness, land use land cover) to see how human sampling effort distorts our view of a species' niche.
 
 <br>
 
@@ -100,12 +100,12 @@ We will use the pre-calculated virtual backgrounds (`pred_virt_2d` and `pred_vir
 
 ## Basic generation {#sec-basic-generation}
 
-The `virtual_data()` function acts as the non-spatial twin to `sample_data()`. It picks "occurrences" from our virtual background.
+The `virtual_data()` function acts as the non-spatial twin to `sample_data()`. It picks "records" from our virtual background.
 
 ```{r}
-occ_virt_basic <- virtual_data(object = ref_ellipse, n = 1000)
+rec_virt_basic <- virtual_data(object = ref_ellipse, n = 1000)
 
-head(occ_virt_basic)
+head(rec_virt_basic)
 ```
 
 <br>
@@ -117,7 +117,7 @@ Since virtual data lacks Geography, we visualize it exclusively in E-Space. The 
 ```{r}
 plot_ellipsoid(ref_ellipse, dim = c(1, 2), pch = ".", col_bg = "#9a9797", 
                xlab = "Bio1 (Temp)", ylab = "Bio12 (Precip)", main = "Virtual E-Space")
-add_data(occ_virt_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_virt_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
@@ -128,8 +128,8 @@ add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_
 We can simulate pure virtual points across a 3-dimensional niche. The workflow is identical: generate a 3D background, score its suitability, and sample from it.
 
 ```{r}
-# Sample 100 virtual occurrences from the 3D background
-occ_virt_3d <- virtual_data(
+# Sample 100 virtual records from the 3D background
+rec_virt_3d <- virtual_data(
   n = 100, 
   object = example_sp_4
 )
@@ -138,47 +138,47 @@ occ_virt_3d <- virtual_data(
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 
 plot_ellipsoid(example_sp_4, dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio12")
-add_data(occ_virt_3d, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_virt_3d, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 
 plot_ellipsoid(example_sp_4, dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio15")
-add_data(occ_virt_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(rec_virt_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
 <br>
 
-# Part 2: Spatially-Explicit Occurrence Data {#sec-part-2-spatially-explicit-occurrence-data}
+# Part 2: Spatially-Explicit Data {#sec-part-2-spatially-explicit-data}
 
-While virtual data exists solely in climate theory, `sample_data()` projects the niche onto a physical landscape raster. This generates spatial occurrences with physical coordinates (Longitude/Latitude) while simultaneously extracting their underlying environmental values. As a result, we can visualize and analyze these occurrences in both Geographic Space (G-Space) and Environmental Space (E-Space) at the same time.
+While virtual data exists solely in climate theory, `sample_data()` projects the niche onto a physical landscape raster. This generates spatial records with physical coordinates (Longitude/Latitude) while simultaneously extracting their underlying environmental values. As a result, we can visualize and analyze these records in both Geographic Space (G-Space) and Environmental Space (E-Space) at the same time.
 
 <br>
 
 ## Basic generation in 2D {#sec-basic-generation-in-2d}
 
-Let's generate 100 geographically grounded occurrences using the default suitability layer of our 2D prediction raster.
+Let's generate 100 geographically grounded records using the default suitability layer of our 2D prediction raster.
 
 ```{r}
-occ_geo_basic <- sample_data(
-  n_occ = 100,
+rec_geo_basic <- sample_data(
+  n = 100,
   prediction = pred_2d,
   prediction_layer = "suitability",
   seed = 123
 )
 
-occ_geo_basic_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                                    occ_geo_basic[ , c("x", "y")])
+rec_geo_basic_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                                    rec_geo_basic[ , c("x", "y")])
 
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 
 # 1. Geographic Space
 terra::plot(pred_2d[["suitability"]], main = "G-Space: Geographic Map")
-points(occ_geo_basic[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+points(rec_geo_basic[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 # 2. Environmental Space
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), 
                dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Temp vs Precip")
-add_data(occ_geo_basic_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_geo_basic_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
@@ -195,33 +195,33 @@ The `sampling` argument determines the spatial bias of the selection probability
 -   **`random`**: Uniform distribution across suitable habitats.
 
 ```{r}
-occ_cent <- sample_data(100, pred_2d, "suitability", sampling = "centroid", seed = 123)
-occ_edge <- sample_data(100, pred_2d, "suitability", sampling = "edge", seed = 123)
-occ_rand <- sample_data(100, pred_2d, "suitability", sampling = "random", seed = 123)
+rec_cent <- sample_data(100, pred_2d, "suitability", sampling = "centroid", seed = 123)
+rec_edge <- sample_data(100, pred_2d, "suitability", sampling = "edge", seed = 123)
+rec_rand <- sample_data(100, pred_2d, "suitability", sampling = "random", seed = 123)
 
-occ_cent_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_cent[ , c("x", "y")])
-occ_edge_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_edge[ , c("x", "y")])
-occ_rand_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_rand[ , c("x", "y")])
+rec_cent_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_cent[ , c("x", "y")])
+rec_edge_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_edge[ , c("x", "y")])
+rec_rand_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_rand[ , c("x", "y")])
 
 par(mfrow = c(3, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Centroid
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Centroid Sampling"); points(occ_cent[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Centroid Sampling"); points(rec_cent[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Centroid")
-add_data(occ_cent_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_cent_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Edge
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Edge Sampling"); points(occ_edge[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Edge Sampling"); points(rec_edge[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Edge")
-add_data(occ_edge_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_edge_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Random
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Random Sampling"); points(occ_rand[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Random Sampling"); points(rec_rand[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Random")
-add_data(occ_rand_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_rand_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -235,86 +235,86 @@ The `method` argument controls the underlying mathematical weight used to draw t
 -   **`mahalanobis`**: Weights based on the multivariate environmental distance, creating a stricter concentration in optimal environments.
 
 ```{r}
-occ_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
-occ_maha <- sample_data(100, pred_2d, "Mahalanobis", method = "mahalanobis", seed = 123)
+rec_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
+rec_maha <- sample_data(100, pred_2d, "Mahalanobis", method = "mahalanobis", seed = 123)
 
-occ_suit_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_suit[ , c("x", "y")])
-occ_maha_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_maha[ , c("x", "y")])
+rec_suit_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_suit[ , c("x", "y")])
+rec_maha_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_maha[ , c("x", "y")])
 
 
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Suitability
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Method = Suitability"); points(occ_suit[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Method = Suitability"); points(rec_suit[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Suitability")
-add_data(occ_suit_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_suit_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Mahalanobis
-terra::plot(pred_2d[["Mahalanobis"]], main = "G-Space: Method = Mahalanobis"); points(occ_maha[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["Mahalanobis"]], main = "G-Space: Method = Mahalanobis"); points(rec_maha[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Mahalanobis")
-add_data(occ_maha_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_maha_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
 
 ## Effect of the `strict` argument {#sec-effect-of-the-strict-argument}
 
-By default (`strict = FALSE`), generating occurrences allows points to fall slightly outside the strict boundaries of the fundamental niche to simulate sink populations. Setting `strict = TRUE` (using a truncated layer) establishes a hard boundary.
+By default (`strict = FALSE`), generating records allows points to fall slightly outside the strict boundaries of the fundamental niche to simulate sink populations. Setting `strict = TRUE` (using a truncated layer) establishes a hard boundary.
 
 ```{r}
-occ_strict_F <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
-occ_strict_T <- sample_data(100, pred_2d, "suitability_trunc", strict = TRUE, seed = 123)
+rec_strict_F <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
+rec_strict_T <- sample_data(100, pred_2d, "suitability_trunc", strict = TRUE, seed = 123)
 
-occ_strict_F_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_strict_F[ , c("x", "y")])
-occ_strict_T_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               occ_strict_T[ , c("x", "y")])
+rec_strict_F_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_strict_F[ , c("x", "y")])
+rec_strict_T_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
+                               rec_strict_T[ , c("x", "y")])
 
 
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
 
 # Lax
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Strict = FALSE"); points(occ_strict_F[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability"]], main = "G-Space: Strict = FALSE"); points(rec_strict_F[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = FALSE")
-add_data(occ_strict_F_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_strict_F_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 # Strict
-terra::plot(pred_2d[["suitability_trunc"]], main = "G-Space: Strict = TRUE"); points(occ_strict_T[, 1:2], pch = 20, col = "red")
+terra::plot(pred_2d[["suitability_trunc"]], main = "G-Space: Strict = TRUE"); points(rec_strict_T[, 1:2], pch = 20, col = "red")
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = TRUE")
-add_data(occ_strict_T_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_strict_T_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
 
 ## Three-Dimensional Example {#sec-three-dimensional-example}
 
-Generating occurrences for a 3-dimensional niche operates exactly the same way. We simply pass the 3D prediction raster and view the outputs across multiple axes (e.g., Temperature vs. Precipitation, and Temperature vs. Seasonality).
+Generating records for a 3-dimensional niche operates exactly the same way. We simply pass the 3D prediction raster and view the outputs across multiple axes (e.g., Temperature vs. Precipitation, and Temperature vs. Seasonality).
 
 ```{r}
-occ_geo_3d <- sample_data(100, pred_3d, "suitability", seed = 123)
+rec_geo_3d <- sample_data(100, pred_3d, "suitability", seed = 123)
 
-occ_geo_3d_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
-                               occ_geo_3d[ , c("x", "y")])
+rec_geo_3d_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
+                               rec_geo_3d[ , c("x", "y")])
 
 
 par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
 terra::plot(pred_3d[["suitability"]], main = "G-Space: 3D Projection")
-points(occ_geo_3d[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+points(rec_geo_3d[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
-add_data(occ_geo_3d_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_geo_3d_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
-add_data(occ_geo_3d_pts, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(rec_geo_3d_pts, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 ```
 
 <br>
 
-# Part 3: Biased Occurrence Data {#sec-part-3-biased-occurrence-data}
+# Part 3: Biased Data {#sec-part-3-biased-data}
 
-In the real world, species occurrence data is heavily influenced by human accessibility. If a model is trained on biased data, it will predict *where the observers go*, rather than *where the species lives*.
+In the real world, species records are heavily influenced by human accessibility. If a model is trained on biased data, it will predict *where the observers go*, rather than *where the species lives*.
 
 Using `sample_biased_data()`, we can draw points from a raster that has already been mathematically multiplied by a bias layer (e.g., nighttime light, distance to roads) to simulate this real-world distortion.
 
@@ -325,27 +325,27 @@ Using `sample_biased_data()`, we can draw points from a raster that has already 
 Once the spatial points are generated, we must use `terra::extract()` to pull the underlying climate values so we can plot them in E-Space and observe the distortion.
 
 ```{r}
-occ_bias_xy <- sample_biased_data(
-  n_occ = 100, 
+rec_bias_xy <- sample_biased_data(
+  n = 100, 
   prediction = bias_2d, 
   prediction_layer = "suitability_biased_direct", 
   strict = FALSE,
   seed = 123
 )
 
-occ_bias_xy_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
-                               occ_bias_xy[ , c("x", "y")])
+rec_bias_xy_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
+                               rec_bias_xy[ , c("x", "y")])
 
 
 # Extract environmental data at these coordinates to view E-space distortion
-occ_bias_env <- terra::extract(bios, occ_bias_xy[, c("x", "y")])
+rec_bias_env <- terra::extract(bios, rec_bias_xy[, c("x", "y")])
 
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map")
-terra::points(occ_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::points(rec_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Distorted Niche")
-add_data(occ_bias_xy_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_bias_xy_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
@@ -361,19 +361,19 @@ This is mathematically intentional! In biased sampling, the prediction layer val
 
 ## Effect of the biased `strict` argument {#sec-effect-of-the-biased-strict-argument}
 
-While we don't control sampling strategies, we *can* control whether occurrences are allowed in zero-probability/NA cells. Setting `strict = TRUE` acts as a strict firewall, removing any `NA` and zero-valued pixels prior to pulling samples.
+While we don't control sampling strategies, we *can* control whether records are allowed in zero-probability/NA cells. Setting `strict = TRUE` acts as a strict firewall, removing any `NA` and zero-valued pixels prior to pulling samples.
 
 ```{r}
 # strict = TRUE ensures sampling ONLY happens in explicitly positive bias areas
-occ_bias_strict_xy <- sample_biased_data(100, bias_2d, "suitability_biased_direct", strict = TRUE, seed = 123)
-occ_bias_strict_env <- terra::extract(bios, occ_bias_strict_xy[, c("x", "y")])
+rec_bias_strict_xy <- sample_biased_data(100, bias_2d, "suitability_biased_direct", strict = TRUE, seed = 123)
+rec_bias_strict_env <- terra::extract(bios, rec_bias_strict_xy[, c("x", "y")])
 
 par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
 terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map (Strict)")
-terra::points(occ_bias_strict_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::points(rec_bias_strict_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict Bias")
-add_data(occ_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 ```
 
 <br>
@@ -383,19 +383,19 @@ add_data(occ_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch
 Finally, let's look at biased sampling on a 3-dimensional niche (`example_sp_4`).
 
 ```{r}
-occ_bias_3d_xy <- sample_biased_data(100, bias_3d, "suitability_biased_direct", seed = 123)
-occ_bias_3d_env <- terra::extract(bios, occ_bias_3d_xy[, c("x", "y")])
+rec_bias_3d_xy <- sample_biased_data(100, bias_3d, "suitability_biased_direct", seed = 123)
+rec_bias_3d_env <- terra::extract(bios, rec_bias_3d_xy[, c("x", "y")])
 
 par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
 terra::plot(bias_3d[["suitability_biased_direct"]], main = "G-Space: 3D Biased Map")
-terra::points(occ_bias_3d_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+terra::points(rec_bias_3d_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
-add_data(occ_bias_3d_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(rec_bias_3d_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
 
 plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
-add_data(occ_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(rec_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
 add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
 ```
 
@@ -412,12 +412,12 @@ Because we generated standard spatial coordinates and data frames, exporting the
 
 ```{r}
 # Save Pure Virtual Data
-write.csv(occ_virt_basic, file = tempfile(), row.names = FALSE)
+write.csv(rec_virt_basic, file = tempfile(), row.names = FALSE)
 
 # Save Geographic Data
-write.csv(occ_geo_basic, file = tempfile(), row.names = FALSE)
+write.csv(rec_geo_basic, file = tempfile(), row.names = FALSE)
 
 # Save Biased Data (combining XY and environmental data)
-biased_final <- cbind(occ_bias_xy, occ_bias_env)
+biased_final <- cbind(rec_bias_xy, rec_bias_env)
 write.csv(biased_final, file = tempfile(), row.names = FALSE)
 ```

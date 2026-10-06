@@ -22,7 +22,7 @@
 #' The ellipsoid contour is defined using a chi-square cutoff
 #' \eqn{c^2 = \chi^2_{n}(\mathrm{cl})}, where \eqn{n} is the number of variables.
 #'
-#' @usage build_ellipsoid(ranges, cl = 0.99,
+#' @usage build_ellipsoid(ranges, cl = 0.95,
 #'                        verbose = TRUE)
 #'
 #' @param ranges A 2-row \code{matrix} or \code{data.frame} of bounds, with variables

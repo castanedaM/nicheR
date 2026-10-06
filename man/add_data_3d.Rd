@@ -31,7 +31,7 @@ range <- data.frame(bio_1  = c(22, 32),
                     bio_15 = c(45, 115))
 
 ## Build the ellipsoid
-ell5 <- build_ellipsoid(range = range)
+ell5 <- build_ellipsoid(ranges = range)
 ell5$cov_limits
 
 ell5u <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12" = 200,

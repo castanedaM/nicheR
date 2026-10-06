@@ -2,61 +2,12 @@
 # Description: E-space, G-space, and combined plots for the predict tab.
 #              Mirrors build_tab_plot.R, with no range lines and with
 #              overlays driven by the stored predictions.
-# Date last updated: 09/29/2026
+# Date last updated: 10/06/2026
 
 # Functions -----------------------------------------------------------------
 
-# Continuous palette for prediction layers. hcl.colors is base R since 3.6,
-# so no extra dependency is needed.
-pred_palette <- function(name = "viridis", reverse = FALSE, n = 100){
-  if(!name %in% hcl.pals()) name <- "viridis"
-  cols <- grDevices::hcl.colors(n, palette = name)
-  if(isTRUE(reverse)) rev(cols) else cols
-}
-
-# Maps a numeric vector onto palette colours. Returns NA for NA values so
-# points() skips them.
-pred_colors <- function(vals, pal, rng = NULL){
-  if(is.null(rng)) rng <- range(vals, na.rm = TRUE)
-  if(!all(is.finite(rng)) || diff(rng) == 0) return(rep(pal[1], length(vals)))
-  idx <- cut(vals, breaks = seq(rng[1], rng[2], length.out = length(pal) + 1),
-             labels = FALSE, include.lowest = TRUE)
-  pal[idx]
-}
-
-# Standalone colour bar drawn in its own panel. Called after the plot grid
-# so every panel shares one legend.
-pred_legend_panel <- function(rng, pal, label = ""){
-
-  if(is.null(rng) || !all(is.finite(rng))) return(invisible(NULL))
-
-  old_mar <- par("mar")
-  on.exit(par(mar = old_mar))
-  par(mar = c(2.5, 4, 0.5, 4))
-
-  plot(NA, NA, xlim = c(0, 1), ylim = c(0, 1),
-       axes = FALSE, xlab = "", ylab = "")
-
-  xs <- seq(0.15, 0.85, length.out = length(pal) + 1)
-  rect(xs[-length(xs)], 0.45, xs[-1], 0.8, col = pal, border = NA)
-  rect(0.15, 0.45, 0.85, 0.8, border = "#888", lwd = 0.5)
-
-  ticks <- seq(0.15, 0.85, length.out = 5)
-  vals <- seq(rng[1], rng[2], length.out = 5)
-  segments(ticks, 0.45, ticks, 0.38, col = "#888", lwd = 0.5)
-  text(ticks, 0.32, format(round(vals, 2)), cex = 0.65, adj = c(0.5, 1))
-
-  if(nzchar(label)) text(0.5, 0.9, label, cex = 0.75, adj = c(0.5, 0))
-}
-
-# Value range for the overlay, shared by every panel in a grid
-pred_layer_range <- function(vals_df, layer){
-  if(is.null(vals_df) || is.null(layer)) return(NULL)
-  if(!layer %in% names(vals_df)) return(NULL)
-  rng <- range(vals_df[[layer]], na.rm = TRUE)
-  if(!all(is.finite(rng))) return(NULL)
-  rng
-}
+# pred_palette(), pred_colors(), pred_legend_panel() and pred_layer_range()
+# live in helpers.R, shared with the generate tab
 
 predict_draw_espace_panel <- function(v1, v2, s, layer = NULL, title = NULL){
 

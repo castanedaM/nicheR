@@ -171,7 +171,7 @@ ell_reset_target <- function(ell){
   range_df <- as.data.frame(rbind(unlist(inputs$min), unlist(inputs$max)),
                             row.names = c("min", "max"))
 
-  tryCatch(build_ellipsoid(range = range_df, cl = ell$cl, verbose = FALSE),
+  tryCatch(build_ellipsoid(ranges = range_df, cl = ell$cl, verbose = FALSE),
            error = function(e) NULL)
 }
 
@@ -302,7 +302,7 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
 # GENERATE TAB ------------------------------------------------------------
 
 
-#' Parameters that define an occurrence set
+#' Parameters that define a record set
 #'
 #' Two sets are the same set only if all of these match.
 #'
@@ -310,9 +310,9 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
 occ_set_fields <- c("mode", "layer", "n_occ", "seed", "sampling",
                     "strict", "mask", "truncate", "effect")
 
-#' Read one metadata attribute from an occurrence set
+#' Read one metadata attribute from a record set
 #'
-#' @param df An occurrence set data frame.
+#' @param df A record set data frame.
 #' @param field Attribute name, normally one of occ_set_fields.
 #' @param default Value returned when the attribute is absent.
 #'
@@ -345,13 +345,13 @@ virtual_sampling_labels <- c(direct = "centroid",
                              inverse = "edge",
                              uniform = "random")
 
-#' Sampling label for an occurrence set
+#' Sampling label for a record set
 #'
 #' Returns the stored value when there is one. Sets generated before biased
 #' and virtual sets recorded a sampling value fall back to the "biased"
 #' attribute or the virtual effect, so older sessions still read correctly.
 #'
-#' @param df An occurrence set data frame.
+#' @param df A record set data frame.
 #'
 #' @returns A single character label, or NA when nothing is recorded.
 #'
@@ -372,7 +372,7 @@ occ_sampling <- function(df){
 }
 
 
-#' Canonical key for an occurrence set
+#' Canonical key for a record set
 #'
 #' Never shown to the user, only used for identity. Any parameter change
 #' produces a different key, so sets accumulate rather than overwrite.
@@ -390,7 +390,7 @@ occ_set_signature <- function(attrs){
 }
 
 
-#' Short display labels for a list of occurrence sets
+#' Short display labels for a list of record sets
 #'
 #' Always names the layer, then adds only the fields that vary across the
 #' sets present, so a run differing only by seed reads
@@ -400,7 +400,7 @@ occ_set_signature <- function(attrs){
 #' just "virtual", so unlike a raster layer name it says nothing about how
 #' the points were drawn.
 #'
-#' @param occ_list Named list of occurrence set data frames.
+#' @param occ_list Named list of record set data frames.
 #'
 #' @returns A named character vector: names are labels, values are keys.
 #'
@@ -462,7 +462,7 @@ occ_set_labels <- function(occ_list){
 }
 
 
-#' Sample occurrences for one ellipsoid across several layers
+#' Sample records for one ellipsoid across several layers
 #'
 #' Each layer is pulled from either the prediction or the biased prediction.
 #' Biased layers go to sample_biased_data(), which already carries the
@@ -473,19 +473,30 @@ occ_set_labels <- function(occ_list){
 #' @param pred_list Named list of unbiased prediction SpatRasters.
 #' @param biased_list Named list of biased prediction SpatRasters.
 #' @param layers Character vector of layer names to sample from.
-#' @param n_occ Number of occurrences to draw per layer.
+#' @param n_occ Number of records to draw per layer.
 #' @param sampling One of "centroid", "edge", or "random". Unbiased only.
 #' @param strict Logical, or NULL to let the function auto-detect.
 #' @param sampling_mask Optional SpatRaster restricting where points fall.
+#'   Raster predictions only.
 #' @param seed Integer random seed.
+#' @param var_names The ellipsoid's variable names. Used for table
+#'   predictions, to pick the environmental columns kept in the result.
+#'
+#' @details A session built on a table that could not be turned into a raster
+#'   predicts onto that table, so its prediction is a data frame. sample_data()
+#'   takes those as well. The points then carry the environmental values, plus
+#'   the coordinate columns when the table has them, and no mask applies.
 #'
 #' @returns A named list of data frames, one per layer that succeeded. Each
 #'   carries a "biased" attribute recording which function produced it.
+#'   Raster predictions give x and y, table predictions give the
+#'   environmental values.
 #'
 #' @noRd
 generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
                                  layers, n_occ, sampling,
-                                 strict, sampling_mask, seed = 123L){
+                                 strict, sampling_mask, seed = 123L,
+                                 var_names = NULL){
 
   results <- list()
 
@@ -508,7 +519,11 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
       NULL
     }
 
-    if(is.null(source_rast)){
+    # Table prediction, sampled row by row. pred_as_df() (predict_tab.R) puts
+    # back the coordinate columns when the background table has them.
+    is_table <- !is_biased && is.data.frame(pred) && layer %in% names(pred)
+
+    if(is.null(source_rast) && !is_table){
       message("Layer '", layer, "' not found for ", ell_id, ". Skipping.")
       next
     }
@@ -516,7 +531,7 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
     occ <- if(is_biased){
 
       tryCatch(
-        sample_biased_data(n_occ = n_occ,
+        sample_biased_data(n = n_occ,
                            prediction = source_rast,
                            prediction_layer = layer,
                            sampling_mask = sampling_mask,
@@ -537,16 +552,20 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
         "suitability"
       }
 
+      # sample_data() warns when a table has no x and y. That is expected
+      # for a table session, so the warning is not passed on.
       tryCatch(
-        sample_data(n_occ = n_occ,
-                    prediction = source_rast,
-                    prediction_layer = layer,
-                    sampling = sampling,
-                    method = method,
-                    sampling_mask = sampling_mask,
-                    seed = seed,
-                    strict = strict,
-                    verbose = FALSE),
+        suppressWarnings(
+          sample_data(n = n_occ,
+                      prediction = if(is_table) pred_as_df(pred) else source_rast,
+                      prediction_layer = layer,
+                      sampling = sampling,
+                      method = method,
+                      sampling_mask = if(is_table) NULL else sampling_mask,
+                      seed = seed,
+                      strict = strict,
+                      verbose = FALSE)
+        ),
         error = function(e){
           message("Generate failed for ", ell_id, " (", layer, "): ", e$message)
           NULL
@@ -555,7 +574,14 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
     }
 
     if(!is.null(occ)){
-      out <- occ[, c("x", "y"), drop = FALSE]
+
+      out <- if(is_table){
+        keep <- intersect(c(pred_xy_cols(names(occ)), var_names), names(occ))
+        occ[, keep, drop = FALSE]
+      } else {
+        occ[, c("x", "y"), drop = FALSE]
+      }
+
       attr(out, "biased") <- is_biased
       results[[layer]] <- out
     }
@@ -565,7 +591,7 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 }
 
 
-#' Sample virtual occurrences directly from an ellipsoid
+#' Sample virtual records directly from an ellipsoid
 #'
 #' Virtual mode has no prediction surface and no geography, so points come
 #' from virtual_data(), which draws from the multivariate normal defined by

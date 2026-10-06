@@ -44,7 +44,7 @@ The main functions covered in this vignette are:
 - `update_ellipsoid_covariance()`: modifies the covariance structure of an existing ellipsoid to introduce correlations between environmental variables.
 - `plot_ellipsoid()`: visualizes an ellipsoid in two-dimensional environmental space, optionally alongside background data.
 - `add_ellipsoid()`: adds an additional ellipsoid to an existing plot for visual comparison.
-- `add_data()`: overlays additional data points (centroids, other background data, occurrence records) onto an existing ellipsoid plot.
+- `add_data()`: overlays additional data points (centroids, other background data, records) onto an existing ellipsoid plot.
 - `plot_ellipsoid_pairs()`: plots all pairwise projections of a multidimensional ellipsoid at once.
 - `save_nicheR()` / `read_nicheR()`: saves and reloads `nicheR` objects to and from disk.
 
@@ -128,7 +128,7 @@ range <- data.frame(bio_1  = c(20, 32),
                     bio_12 = c(750, 4000))
 
 # Build the ellipsoid
-ell <- build_ellipsoid(range = range)
+ell <- build_ellipsoid(ranges = range)
 ```
 
 <br>
@@ -177,7 +177,7 @@ plot_ellipsoid(ell, background = bios_df, dim = c(1, 2))
 
 The appearance of both the background points and the ellipsoid boundary can be adjusted using familiar base R graphical parameters: point style and size for the background are controlled via pch, cex_bg, and col_bg, while the ellipsoid line style and color are set with lty, lwd, and col_ell. The axis limits of the plot can be fixed using the fixed_lims argument, and the number of background points rendered can be reduced with bg_sample to improve plotting speed when working with dense environmental data. 
 
-The `add_data()` function can be used to overlay additional information onto the plot, such as the ellipsoid centroid, species occurrence records, or a second set of background points. In the example below we add the centroid of the ellipsoid as a reference point.
+The `add_data()` function can be used to overlay additional information onto the plot, such as the ellipsoid centroid, species records, or a second set of background points. In the example below we add the centroid of the ellipsoid as a reference point.
 
 ```{r plot_styled}
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000,
@@ -252,7 +252,7 @@ Let's start with a second species characterized by cooler and wetter environment
 ```{r build_sp2}
 range <- data.frame(bio_1  = c(12, 24),
                     bio_12 = c(1400, 4500))
-ell3 <- build_ellipsoid(range = range)
+ell3 <- build_ellipsoid(ranges = range)
 ell3$cov_limits
 ell3 <- update_ellipsoid_covariance(ell3, c("bio_1-bio_12" = 500))
 ```
@@ -285,7 +285,7 @@ Now let's define a third species with a very different ecological character: a w
 ```{r build_sp3}
 range <- data.frame(bio_1  = c(18, 30),
                     bio_12 = c(200, 1100))
-ell4 <- build_ellipsoid(range = range)
+ell4 <- build_ellipsoid(ranges = range)
 ell4$cov_limits
 ell4 <- update_ellipsoid_covariance(ell4, c("bio_1-bio_12" = 120))
 ```
@@ -365,7 +365,7 @@ range <- data.frame(bio_1  = c(22, 32),
                     bio_12 = c(800, 4200),
                     bio_15 = c(45, 115))
 
-ell5 <- build_ellipsoid(range = range)
+ell5 <- build_ellipsoid(ranges = range)
 ell5
 ```
 
