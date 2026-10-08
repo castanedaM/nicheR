@@ -1,18 +1,18 @@
-#' Sample records from a bias-weighted prediction surface
+#' Sample data points from a bias-weighted prediction surface
 #'
 #' @description
-#' Samples \code{n} virtual records using the bias-weighted
+#' Samples \code{n} virtual data points using the bias-weighted
 #' prediction values directly as sampling probabilities. Unlike
 #' \code{sample_data()}, there is no sampling strategy argument. The
 #' prediction layer values themselves define where points are drawn from,
 #' making this function suited for simulating realistically biased
-#' records.
+#' data points.
 #'
 #' @usage sample_biased_data(n, prediction, prediction_layer = NULL,
 #'                           sampling_mask = NULL, seed = 1, verbose = TRUE,
 #'                           strict = NULL)
 #'
-#' @param n Integer. Number of records to sample.
+#' @param n Integer. Number of data points to sample.
 #' @param prediction A \code{SpatRaster} or data frame containing the
 #'   bias-weighted prediction surface to sample from.
 #' @param prediction_layer Character. Name of the layer or column to use as
@@ -41,7 +41,7 @@
 #' \code{"trunc"} or if the proportion of zeros or \code{NA}s exceeds 25\%.
 #'
 #' @return
-#' A data frame of sampled records with the same columns as the
+#' A data frame of sampled data points with the same columns as the
 #' input \code{prediction} (minus the internal \code{pred} column). If
 #' \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 #' and \code{y} coordinate columns.
@@ -55,11 +55,11 @@
 #'                                      package = "nicheR"))
 #'
 #' # Sample points from bias surface (not probability surface)
-#' rec_biased <- sample_biased_data(n = 100,
+#' pts_biased <- sample_biased_data(n = 100,
 #'                                  prediction = biased_pred,
-#'                                  prediction_layer = "suitability_biased_direct")
+#'                                  prediction_layer = "suitability_centroid_biased")
 #'
-#' head(rec_biased)
+#' head(pts_biased)
 #'
 #' @export
 sample_biased_data <- function(n,
@@ -69,7 +69,6 @@ sample_biased_data <- function(n,
                                seed = 1,
                                verbose = TRUE,
                                strict = NULL){
-  gc()
 
   verbose_message(verbose, "Starting: sample_biased_data()\n")
 
@@ -199,7 +198,6 @@ sample_biased_data <- function(n,
   out <- df[idx, , drop = FALSE]
 
   verbose_message(verbose, "Done: sampled ", nrow(out), " points from biased prediction layer\n")
-  gc()
 
   out
 }

@@ -1,9 +1,9 @@
-#' Sample records from a prediction surface
+#' Sample data points from a prediction surface
 #'
 #' @description
-#' Samples \code{n} virtual records from a suitability or
+#' Samples \code{n} virtual data points from a suitability or
 #' Mahalanobis distance prediction surface. Supports centroid, edge, and
-#' random sampling strategies, and accepts both raster (\code{SpatRaster})
+#' uniform sampling strategies, and accepts both raster (\code{SpatRaster})
 #' and data frame inputs.
 #'
 #' @usage sample_data(n, prediction, prediction_layer = NULL,
@@ -11,14 +11,14 @@
 #'                    sampling_mask = NULL, seed = 1, strict = NULL,
 #'                    verbose = TRUE)
 #'
-#' @param n Integer. Number of records to sample.
+#' @param n Integer. Number of data points to sample.
 #' @param prediction A \code{SpatRaster} or data frame containing the
 #'   prediction surface to sample from.
 #' @param prediction_layer Character. Name of the layer or column to use as
 #'   the prediction values. Required when \code{prediction} contains multiple
 #'   layers or columns.
 #' @param sampling Character. Sampling strategy. One of \code{"centroid"}
-#'   (default), \code{"edge"}, or \code{"random"}. Controls where within the
+#'   (default), \code{"edge"}, or \code{"uniform"}. Controls where within the
 #'   niche points are preferentially drawn from.
 #' @param method Character. Weighting method. One of \code{"suitability"}
 #'   (default) or \code{"mahalanobis"}. Must match the type of values in
@@ -48,15 +48,28 @@
 #'   the centroid.
 #'   \item \code{sampling = "edge"}, \code{method = "mahalanobis"}:
 #'   weights proportional to Mahalanobis distance, higher near the boundary.
-#'   \item \code{sampling = "random"}: equal weights regardless of method.
+#'   \item \code{sampling = "uniform"}: equal weights for every available
+#'   cell or row, regardless of method.
 #' }
+#'
+#' Weights apply to cells (or rows of a data frame), so \code{"uniform"}
+#' gives every available cell the same chance of being drawn. In environmental
+#' space the sampled points then follow the conditions that are most common on
+#' the surface. To spread points evenly through the niche volume, use
+#' \code{\link{virtual_data}} with \code{sampling = "uniform"}.
+#'
+#' The function stops when \code{method} disagrees with the layer name, for
+#' example \code{method = "mahalanobis"} on a layer called
+#' \code{"suitability_trunc"}, since the wrong pairing samples the wrong part
+#' of the niche. It warns when \code{method = "mahalanobis"} is used on a
+#' layer whose name gives no hint and whose values all fall in \code{[0, 1]}.
 #'
 #' When \code{strict = NULL}, the function auto-detects truncation by checking
 #' whether the layer name contains \code{"trunc"} or whether the proportion of
 #' zeros or \code{NA}s exceeds 25\%.
 #'
 #' @return
-#' A data frame of sampled records with the same columns as the
+#' A data frame of sampled data points with the same columns as the
 #' input \code{prediction} (minus the internal \code{pred} column). If
 #' \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 #' and \code{y} coordinate columns.
@@ -66,27 +79,27 @@
 #'                                      package = "nicheR"))
 #'
 #' # Centroid strategy: samples cluster near the niche center
-#' rec_centroid <- sample_data(n = 100,
+#' pts_centroid <- sample_data(n = 100,
 #'                             prediction = pred_df,
 #'                             prediction_layer = "suitability_trunc",
 #'                             sampling = "centroid",
 #'                             method = "suitability",
 #'                             strict = TRUE)
-#' head(rec_centroid)
+#' head(pts_centroid)
 #'
 #' # Edge strategy: samples spread toward the niche boundary
-#' rec_edge <- sample_data(n = 100,
+#' pts_edge <- sample_data(n = 100,
 #'                         prediction = pred_df,
 #'                         prediction_layer = "suitability_trunc",
 #'                         sampling = "edge",
-#'                         method = "mahalanobis",
+#'                         method = "suitability",
 #'                         strict = TRUE)
 #'
-#' # Random strategy: samples distributed uniformly across suitable area
-#' rec_random <- sample_data(n = 100,
-#'                           prediction = pred_df,
-#'                           prediction_layer = "suitability_trunc",
-#'                           sampling = "random")
+#' # Uniform strategy: samples distributed uniformly across suitable area
+#' pts_uniform <- sample_data(n = 100,
+#'                            prediction = pred_df,
+#'                            prediction_layer = "suitability_trunc",
+#'                            sampling = "uniform")
 #'
 #' @export
 sample_data <- function(n,
@@ -103,7 +116,7 @@ sample_data <- function(n,
   verbose_message(verbose, "Starting: sample_data()\n")
 
   sampling <- match.arg(tolower(sampling),
-                        choices = c("centroid", "edge", "random"),
+                        choices = c("centroid", "edge", "uniform"),
                         several.ok = FALSE)
 
   method <- match.arg(tolower(method),
@@ -224,6 +237,9 @@ sample_data <- function(n,
 
   # Method-specific value checks ---------------------------------------------
 
+  # The layer name and the method have to describe the same kind of layer
+  check_method_layer(method, pred_name, max_value = max(df$pred, na.rm = TRUE))
+
   if(method == "suitability"){
     rng <- range(df$pred, na.rm = TRUE)
     if(rng[1] < (0 - tol) || rng[2] > (1 + tol)){
@@ -252,7 +268,7 @@ sample_data <- function(n,
 
   # Weights -------------------------------------------------------------------
 
-  if(sampling == "random"){
+  if(sampling == "uniform"){
 
     w <- rep(1, nrow(df))
 

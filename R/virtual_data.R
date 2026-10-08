@@ -6,18 +6,19 @@
 #' object.
 #'
 #' @usage
-#' virtual_data(object, n = 100, truncate = FALSE, effect = "direct", seed = 1)
+#' virtual_data(object, n = 100, truncate = FALSE, sampling = "centroid",
+#'              seed = 1)
 #'
 #' @param object A \code{nicheR_ellipsoid} object containing at least
 #'   \code{centroid} and \code{cov_matrix}.
 #' @param n Integer. The number of virtual points to generate. Default = 100.
 #' @param truncate Logical. If \code{TRUE}, points are constrained
 #'   within the confidence limit (\code{cl}) defined in the object.
-#' @param effect Character. The distribution pattern of points.
-#'   \code{"direct"} (default) creates a concentration near the centroid.
-#'   \code{"inverse"} creates higher density towards the edges.
+#' @param sampling Character. The distribution pattern of points.
+#'   \code{"centroid"} (default) creates a concentration near the centroid.
+#'   \code{"edge"} creates higher density towards the edges.
 #'   \code{"uniform"} distributes points evenly throughout the ellipsoid volume.
-#'   Note: \code{"inverse"} and \code{"uniform"} require \code{truncate = TRUE}.
+#'   Note: \code{"edge"} and \code{"uniform"} require \code{truncate = TRUE}.
 #' @param seed Integer. Random seed for reproducibility. Default = 1.
 #'   Set to \code{NULL} for no seeding.
 #'
@@ -30,14 +31,14 @@
 #'
 #' When \code{truncate = TRUE}, every point falls inside the ellipsoid, that
 #' is, where the squared Mahalanobis distance \eqn{Md \le} \code{chi2_cutoff}.
-#' How the points are distributed inside it depends on the \code{effect}
+#' How the points are distributed inside it depends on the \code{sampling}
 #' argument:
 #' \itemize{
-#'   \item \code{"direct"}: Points follow the multivariate normal density
+#'   \item \code{"centroid"}: Points follow the multivariate normal density
 #'   (\eqn{\exp(-0.5 \times Md)}) truncated at the ellipsoid boundary, which
 #'   clusters them near the centroid. They are drawn from the normal
 #'   distribution itself, and the draws that fall outside are discarded.
-#'   \item \code{"inverse"}: Points follow the complement of the normal density
+#'   \item \code{"edge"}: Points follow the complement of the normal density
 #'   (\eqn{1 - \exp(-0.5 \times Md)}), which pushes them toward the edges.
 #'   Candidates are drawn uniformly inside the ellipsoid and each one is kept
 #'   with a probability proportional to that weight.
@@ -45,7 +46,7 @@
 #'   likely, resulting in a uniform distribution through its volume.
 #' }
 #'
-#' For \code{"inverse"} and \code{"uniform"}, candidates are drawn uniformly
+#' For \code{"edge"} and \code{"uniform"}, candidates are drawn uniformly
 #' within a bounding box around the ellipsoid, the centroid plus and minus
 #' \eqn{\sqrt{diag(\Sigma) \times}} \code{chi2_cutoff}, and those outside
 #' the ellipsoid are removed.
@@ -62,18 +63,18 @@
 #' data("ref_ellipse", package = "nicheR")
 #'
 #' # Generate virtual data from the reference niche
-#' vdata_direct <- virtual_data(ref_ellipse, n = 100, effect = "direct")
-#' vdata_inverse <- virtual_data(ref_ellipse, n = 100,
-#'                               effect = "inverse", truncate = TRUE)
+#' vdata_centroid <- virtual_data(ref_ellipse, n = 100, sampling = "centroid")
+#' vdata_edge <- virtual_data(ref_ellipse, n = 100,
+#'                            sampling = "edge", truncate = TRUE)
 #'
 #' # Check a sample of the generated data
-#' head(vdata_direct)
-#' head(vdata_inverse)
+#' head(vdata_centroid)
+#' head(vdata_edge)
 #' @export
 virtual_data <- function(object,
                          n = 100,
                          truncate = FALSE,
-                         effect = "direct",
+                         sampling = "centroid",
                          seed = 1) {
   # Detecting potential errors
   if (missing(object)) {
@@ -88,14 +89,14 @@ virtual_data <- function(object,
   if (!is.logical(truncate)) {
     stop("Argument 'truncate' must be a logical.")
   }
-  if (!is.character(effect)) {
-    stop("Argument 'effect' must be a character.")
+  if (!is.character(sampling)) {
+    stop("Argument 'sampling' must be a character.")
   }
-  if (!effect %in% c("direct", "inverse", "uniform")) {
-    stop("Argument 'effect' must be 'direct', 'inverse', or 'uniform'.")
+  if (!sampling %in% c("centroid", "edge", "uniform")) {
+    stop("Argument 'sampling' must be 'centroid', 'edge', or 'uniform'.")
   }
-  if (effect %in% c("inverse", "uniform") && !truncate) {
-    stop("Effect 'inverse' and 'uniform' only possible when 'truncate = TRUE'.")
+  if (sampling %in% c("edge", "uniform") && !truncate) {
+    stop("Sampling 'edge' and 'uniform' only possible when 'truncate = TRUE'.")
   }
   if (!is.null(seed)) {
     set.seed(seed)
@@ -116,7 +117,7 @@ virtual_data <- function(object,
 
     final_points <- matrix(nrow = 0, ncol = p)
 
-    if (effect == "direct") {
+    if (sampling == "centroid") {
       # Truncated multivariate normal. Points are drawn from the normal
       # itself and those outside the ellipsoid are discarded, so what is kept
       # follows the normal density inside the boundary in any number of
@@ -150,7 +151,7 @@ virtual_data <- function(object,
       }
 
     } else {
-      # Uniform candidates inside the ellipsoid, for "uniform" and "inverse"
+      # Uniform candidates inside the ellipsoid, for "uniform" and "edge"
 
       ## Get the range for each variable across all axes
       half <- sqrt(diag(cov_matrix) * conf_cutoff)
@@ -159,7 +160,7 @@ virtual_data <- function(object,
 
       inv_cov <- object$Sigma_inv
 
-      ## Largest weight "inverse" can take, reached on the boundary
+      ## Largest weight "edge" can take, reached on the boundary
       w_max <- 1 - exp(-0.5 * conf_cutoff)
 
       while (nrow(final_points) < n) {
@@ -183,7 +184,7 @@ virtual_data <- function(object,
         v_raw_cube <- v_raw_cube[inside, , drop = FALSE]
         d2 <- d2[inside]
 
-        if (effect == "uniform") {
+        if (sampling == "uniform") {
           ## Every candidate inside has the same weight. The draw is kept as
           ## it was, so a given seed still returns the same points.
           weights <- rep(1, nrow(v_raw_cube))
@@ -193,7 +194,7 @@ virtual_data <- function(object,
                          prob = weights, replace = FALSE)
 
         } else {
-          ## Inverse. Each candidate is kept with probability equal to its
+          ## Edge. Each candidate is kept with probability equal to its
           ## weight over the largest weight, so the kept points follow the
           ## weight itself. Picking a fixed number from a small pool does
           ## not, since it keeps nearly every candidate whatever its weight.
