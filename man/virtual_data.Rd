@@ -4,7 +4,8 @@
 \alias{virtual_data}
 \title{Generate data based on a ellipsoidal niche}
 \usage{
-virtual_data(object, n = 100, truncate = FALSE, effect = "direct", seed = 1)
+virtual_data(object, n = 100, truncate = FALSE, sampling = "centroid",
+             seed = 1)
 }
 \arguments{
 \item{object}{A \code{nicheR_ellipsoid} object containing at least
@@ -15,11 +16,11 @@ virtual_data(object, n = 100, truncate = FALSE, effect = "direct", seed = 1)
 \item{truncate}{Logical. If \code{TRUE}, points are constrained
 within the confidence limit (\code{cl}) defined in the object.}
 
-\item{effect}{Character. The distribution pattern of points.
-\code{"direct"} (default) creates a concentration near the centroid.
-\code{"inverse"} creates higher density towards the edges.
+\item{sampling}{Character. The distribution pattern of points.
+\code{"centroid"} (default) creates a concentration near the centroid.
+\code{"edge"} creates higher density towards the edges.
 \code{"uniform"} distributes points evenly throughout the ellipsoid volume.
-Note: \code{"inverse"} and \code{"uniform"} require \code{truncate = TRUE}.}
+Note: \code{"edge"} and \code{"uniform"} require \code{truncate = TRUE}.}
 
 \item{seed}{Integer. Random seed for reproducibility. Default = 1.
 Set to \code{NULL} for no seeding.}
@@ -42,14 +43,14 @@ coordinate system defined by the ellipsoid's covariance structure.
 
 When \code{truncate = TRUE}, every point falls inside the ellipsoid, that
 is, where the squared Mahalanobis distance \eqn{Md \le} \code{chi2_cutoff}.
-How the points are distributed inside it depends on the \code{effect}
+How the points are distributed inside it depends on the \code{sampling}
 argument:
 \itemize{
-  \item \code{"direct"}: Points follow the multivariate normal density
+  \item \code{"centroid"}: Points follow the multivariate normal density
   (\eqn{\exp(-0.5 \times Md)}) truncated at the ellipsoid boundary, which
   clusters them near the centroid. They are drawn from the normal
   distribution itself, and the draws that fall outside are discarded.
-  \item \code{"inverse"}: Points follow the complement of the normal density
+  \item \code{"edge"}: Points follow the complement of the normal density
   (\eqn{1 - \exp(-0.5 \times Md)}), which pushes them toward the edges.
   Candidates are drawn uniformly inside the ellipsoid and each one is kept
   with a probability proportional to that weight.
@@ -57,7 +58,7 @@ argument:
   likely, resulting in a uniform distribution through its volume.
 }
 
-For \code{"inverse"} and \code{"uniform"}, candidates are drawn uniformly
+For \code{"edge"} and \code{"uniform"}, candidates are drawn uniformly
 within a bounding box around the ellipsoid, the centroid plus and minus
 \eqn{\sqrt{diag(\Sigma) \times}} \code{chi2_cutoff}, and those outside
 the ellipsoid are removed.
@@ -68,11 +69,11 @@ the ellipsoid are removed.
 data("ref_ellipse", package = "nicheR")
 
 # Generate virtual data from the reference niche
-vdata_direct <- virtual_data(ref_ellipse, n = 100, effect = "direct")
-vdata_inverse <- virtual_data(ref_ellipse, n = 100,
-                              effect = "inverse", truncate = TRUE)
+vdata_centroid <- virtual_data(ref_ellipse, n = 100, sampling = "centroid")
+vdata_edge <- virtual_data(ref_ellipse, n = 100,
+                           sampling = "edge", truncate = TRUE)
 
 # Check a sample of the generated data
-head(vdata_direct)
-head(vdata_inverse)
+head(vdata_centroid)
+head(vdata_edge)
 }

@@ -1,15 +1,15 @@
 # Title: Generate Tab server
 
-# Description: Server for the generate tab. Samples virtual records
+# Description: Server for the generate tab. Samples virtual data points
 # from a prediction surface, biased or unbiased, for one or more
 # saved ellipsoids.
 
 # Date Last Updated: 10/06/2026
 
 
-# RECORD SET VISIBILITY ---------------------------------------------------
+# POINT SET VISIBILITY ----------------------------------------------------
 
-# Record sets currently drawn in the plots. Keys are prefixed with the
+# Point sets currently drawn in the plots. Keys are prefixed with the
 # ellipsoid id, since two ellipsoids can produce sets with identical
 # parameter signatures.
 occ_visible <- reactiveVal(character(0))
@@ -23,13 +23,13 @@ OCC_MAX_VISIBLE <- 4L
 
 # Sets the user has toggled visible for the current ellipsoid, in the order
 # they were toggled. Falls back to the first set so the plots are never
-# blank when records exist.
+# blank when data points exist.
 generate_visible_sets <- reactive({
 
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(character(0))
 
-  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_point_sets_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(character(0))
 
   prefix <- paste0(ell$ell_id, "::")
@@ -86,7 +86,7 @@ generate_show_form <- reactiveVal(FALSE)
 # the raster and virtual branches cannot drift.
 generate_summary_box <- function(){
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
 
   n_sets <- sum(vapply(occ, length, integer(1)))
   n_pts <- sum(vapply(occ, function(ell_res){
@@ -99,7 +99,7 @@ generate_summary_box <- function(){
       width = 12,
       collapsible = TRUE,
       collapsed = TRUE,
-      p(paste0(n_pts, " record(s) across ", n_sets, " set(s) from ",
+      p(paste0(n_pts, " data point(s) across ", n_sets, " set(s) from ",
                length(occ), " ellipsoid(s)."),
         class = "text-instruction"),
       fluidRow(
@@ -130,7 +130,7 @@ output$generate_controls_ui <- renderUI({
     )
   }
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
   has_occ <- length(occ) > 0
 
   if(has_occ && !isTRUE(generate_show_form())){
@@ -291,7 +291,7 @@ generate_virtual_controls <- function(){
     )
   }
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
   has_occ <- length(occ) > 0
 
   if(has_occ && !isTRUE(generate_show_form())){
@@ -343,9 +343,9 @@ generate_virtual_controls <- function(){
                tags$div(class = "tooltip-label-row",
                         tags$span("Point distribution", class = "text-widget-title"),
                         tags$span(icon("circle-info"),
-                                  title = instructions$generate_effect_tooltip,
+                                  title = instructions$generate_virtual_sampling_tooltip,
                                   class = "tooltip-icon")),
-               uiOutput("generate_effect_ui"))
+               uiOutput("generate_virtual_sampling_ui"))
       ),
 
       fluidRow(
@@ -358,29 +358,30 @@ generate_virtual_controls <- function(){
   )
 }
 
-# Inverse and uniform need truncation, so they are removed rather than
+# Edge and uniform need truncation, so they are removed rather than
 # offered and then rejected
-output$generate_effect_ui <- renderUI({
+output$generate_virtual_sampling_ui <- renderUI({
   truncate <- !identical(input$generate_truncate, "FALSE")
 
-  effect_labels <- if(truncate) c("Centroid", "Edge", "Random") else "Centroid"
-  effect_values <- if(truncate) c("direct", "inverse", "uniform") else "direct"
+  sampling_labels <- if(truncate) c("Centroid", "Edge", "Uniform") else "Centroid"
+  sampling_values <- if(truncate) c("centroid", "edge", "uniform") else "centroid"
 
-  keep <- if(!is.null(input$generate_effect) &&
-             input$generate_effect %in% effect_values){
-    input$generate_effect
+  keep <- if(!is.null(input$generate_virtual_sampling) &&
+             input$generate_virtual_sampling %in% sampling_values){
+    input$generate_virtual_sampling
   } else {
-    "direct"
+    "centroid"
   }
 
   tagList(
-    radioButtons("generate_effect", label = NULL,
-                 choiceNames = lapply(effect_labels,
+    radioButtons("generate_virtual_sampling", label = NULL,
+                 choiceNames = lapply(sampling_labels,
                                       function(x) tags$span(x, class = "text-widget-inner")),
-                 choiceValues = effect_values,
+                 choiceValues = sampling_values,
                  selected = keep, inline = TRUE),
     if(!truncate){
-      p(instructions$generate_effect_needs_truncate, class = "text-muted-small")
+      p(instructions$generate_virtual_sampling_needs_truncate,
+        class = "text-muted-small")
     }
   )
 })
@@ -441,7 +442,7 @@ output$generate_surface_ui <- renderUI({
     r <- bias_list[[id]]
     if(!inherits(r, "SpatRaster")) return(character(0))
     nms <- pred_layer_names(r, versions[[id]])
-    src <- sub("_biased_(direct|inverse)$", "", nms)
+    src <- sub("_(centroid|edge|uniform)_biased$", "", nms)
     nms[!src %in% c("x", "y", versions[[id]]$var_names)]
   })))
 
@@ -505,9 +506,9 @@ output$generate_surface_ui <- renderUI({
                        choiceNames = list(
                          tags$span("Centroid", class = "text-widget-inner"),
                          tags$span("Edge", class = "text-widget-inner"),
-                         tags$span("Random", class = "text-widget-inner")
+                         tags$span("Uniform", class = "text-widget-inner")
                        ),
-                       choiceValues = c("centroid", "edge", "random"),
+                       choiceValues = c("centroid", "edge", "uniform"),
                        selected = keep_sampling,
                        inline = TRUE),
     uiOutput("generate_method_msg_ui")
@@ -599,7 +600,11 @@ observeEvent(input$generate_run_btn, {
 
     n <- as.integer(input$generate_n_occ)
     truncate <- !identical(input$generate_truncate, "FALSE")
-    effect <- if(!is.null(input$generate_effect)) input$generate_effect else "direct"
+    sampling <- if(!is.null(input$generate_virtual_sampling)){
+      input$generate_virtual_sampling
+    } else {
+      "centroid"
+    }
 
     seed <- if(!is.null(input$generate_seed) && is.finite(input$generate_seed)){
       as.integer(input$generate_seed)
@@ -609,14 +614,12 @@ observeEvent(input$generate_run_btn, {
 
     # Same signature for every ellipsoid, which is correct: sets are keyed
     # within an ellipsoid, so two ellipsoids sharing parameters share a key.
-    # Sampling is the effect in the words the raster sets use, so the summary
-    # and the downloads read the same in both modes. Effect keeps the value
-    # that was passed to virtual_data().
+    # Sampling is the value passed to virtual_data().
     attrs <- list(mode = "virtual", layer = "virtual", n_occ = n,
                   seed = seed,
-                  sampling = unname(virtual_sampling_labels[effect]),
+                  sampling = sampling,
                   strict = NA, mask = "none",
-                  truncate = truncate, effect = effect)
+                  truncate = truncate)
 
     key <- occ_set_signature(attrs)
 
@@ -627,17 +630,17 @@ observeEvent(input$generate_run_btn, {
       ell <- versions[[id]]
       if(is.null(ell)) next
 
-      df <- generate_virtual_for_ell(ell, n, truncate, effect, seed)
+      df <- generate_virtual_for_ell(ell, n, truncate, sampling, seed)
       if(is.null(df) || nrow(df) == 0) next
 
       for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
       attr(df, "created") <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
-      if(is.null(session_data$ellipsoid_records_list[[id]])){
-        session_data$ellipsoid_records_list[[id]] <- list()
+      if(is.null(session_data$ellipsoid_point_sets_list[[id]])){
+        session_data$ellipsoid_point_sets_list[[id]] <- list()
       }
 
-      session_data$ellipsoid_records_list[[id]][[key]] <- df
+      session_data$ellipsoid_point_sets_list[[id]][[key]] <- df
 
       # New sets are shown by default, up to the panel limit
       vis <- occ_visible()
@@ -769,7 +772,7 @@ observeEvent(input$generate_run_btn, {
   }
 
   # Assigned per id rather than replacing the whole list, so one failed
-  # ellipsoid does not discard records that already succeeded
+  # ellipsoid does not discard data points that already succeeded
   for(id in selected_ids){
 
     for(run in runs){
@@ -808,8 +811,7 @@ observeEvent(input$generate_run_btn, {
                       strict = strict,
                       mask = mask_name,
                       mode = "raster",
-                      truncate = NA,
-                      effect = NA)
+                      truncate = NA)
 
         for(f in occ_set_fields) attr(df, f) <- attrs[[f]]
 
@@ -817,11 +819,11 @@ observeEvent(input$generate_run_btn, {
 
         key <- occ_set_signature(attrs)
 
-        if(is.null(session_data$ellipsoid_records_list[[id]])){
-          session_data$ellipsoid_records_list[[id]] <- list()
+        if(is.null(session_data$ellipsoid_point_sets_list[[id]])){
+          session_data$ellipsoid_point_sets_list[[id]] <- list()
         }
 
-        session_data$ellipsoid_records_list[[id]][[key]] <- df
+        session_data$ellipsoid_point_sets_list[[id]][[key]] <- df
 
         # New sets are shown by default, up to the panel limit
         vis <- occ_visible()
@@ -847,7 +849,7 @@ observeEvent(input$generate_run_btn, {
 
   n_skipped <- n_attempted - n_success
 
-  msg <- paste0(n_success, " record set(s) generated.")
+  msg <- paste0(n_success, " point set(s) generated.")
   if(n_skipped > 0L) msg <- paste0(msg, " ", n_skipped, " skipped.")
 
   showNotification(msg, type = "message", duration = 4)
@@ -857,16 +859,16 @@ observeEvent(input$generate_edit_link, {
   generate_show_form(TRUE)
 })
 
-# RECORD SETS -------------------------------------------------------------
+# POINT SETS --------------------------------------------------------------
 
-# Flat index of every record set, so the summary can render rows and
+# Flat index of every point set, so the summary can render rows and
 # the download handlers can be created against stable numeric ids.
 generate_occ_index <- reactive({
 
   ell <- session_data$current_ellipsoid
   if(is.null(ell)) return(NULL)
 
-  occ <- session_data$ellipsoid_records_list[[ell$ell_id]]
+  occ <- session_data$ellipsoid_point_sets_list[[ell$ell_id]]
   if(is.null(occ) || length(occ) == 0) return(NULL)
 
   lab_of <- generate_occ_label_map()
@@ -902,7 +904,7 @@ generate_occ_index <- reactive({
 # idx_rows needs ell_id, ell_name, and set.
 generate_occ_table <- function(idx_rows){
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
 
   parts <- lapply(seq_len(nrow(idx_rows)), function(j){
     r <- idx_rows[j, ]
@@ -965,7 +967,7 @@ output$generate_dl_ell <- downloadHandler(
   filename = function(){
     idx <- generate_occ_index()
     nm <- gsub("[^A-Za-z0-9_-]", "_", idx$ell_name[1])
-    paste0(nm, "_records.csv")
+    paste0(nm, "_data_points.csv")
   },
   content = function(file){
     idx <- generate_occ_index()
@@ -977,11 +979,11 @@ output$generate_dl_ell <- downloadHandler(
 output$generate_dl_all <- downloadHandler(
 
   filename = function(){
-    paste0("nicheR_records_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+    paste0("nicheR_data_points_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
   },
   content = function(file){
 
-    occ <- session_data$ellipsoid_records_list
+    occ <- session_data$ellipsoid_point_sets_list
     req(length(occ) > 0)
 
     versions <- session_data$ellipsoid_list
@@ -1014,12 +1016,12 @@ observeEvent(input$generate_delete_set, {
 
   r <- idx[i, ]
 
-  session_data$ellipsoid_records_list[[r$ell_id]][[r$set]] <- NULL
+  session_data$ellipsoid_point_sets_list[[r$ell_id]][[r$set]] <- NULL
 
   # Drop the ellipsoid entry entirely once its last set is gone, so the
   # library status returns to "not generated"
-  if(length(session_data$ellipsoid_records_list[[r$ell_id]]) == 0){
-    session_data$ellipsoid_records_list[[r$ell_id]] <- NULL
+  if(length(session_data$ellipsoid_point_sets_list[[r$ell_id]]) == 0){
+    session_data$ellipsoid_point_sets_list[[r$ell_id]] <- NULL
   }
 
   occ_visible(setdiff(occ_visible(), occ_vis_key(r$ell_id, r$set)))
@@ -1032,9 +1034,9 @@ observeEvent(input$generate_new_set_link, {
   generate_show_form(TRUE)
 })
 
-# RECORD SUMMARY ----------------------------------------------------------
+# POINT SET SUMMARY -------------------------------------------------------
 
-output$generate_records_summary_ui <- renderUI({
+output$generate_point_sets_summary_ui <- renderUI({
 
   ell <- session_data$current_ellipsoid
 
@@ -1042,7 +1044,7 @@ output$generate_records_summary_ui <- renderUI({
 
   if(is.null(idx)){
     return(
-      box(title = tags$span("Record sets", class = "text-section-header"),
+      box(title = tags$span("Point sets", class = "text-section-header"),
           width = 12,
           collapsible = TRUE,
           collapsed = FALSE,
@@ -1091,7 +1093,7 @@ output$generate_records_summary_ui <- renderUI({
     )
   })
 
-  box(title = tags$span(paste0("Record sets: ", idx$ell_name[1]),
+  box(title = tags$span(paste0("Point sets: ", idx$ell_name[1]),
                         class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
@@ -1136,7 +1138,7 @@ output$generate_ellipsoid_library_ui <- renderUI({
 
   predicted <- names(session_data$ellipsoid_prediction_list)
   biased <- names(session_data$ellipsoid_prediction_list_biased)
-  generated <- names(session_data$ellipsoid_records_list)
+  generated <- names(session_data$ellipsoid_point_sets_list)
 
   # Working slot, the ellipsoid the plots on this tab use. Read-only here,
   # editing happens on the Build tab.
@@ -1162,7 +1164,7 @@ output$generate_ellipsoid_library_ui <- renderUI({
     ell <- versions[[id]]
 
     status <- if(id %in% generated){
-      list(txt = "records generated", col = "#097a21")
+      list(txt = "data points generated", col = "#097a21")
     } else if(id %in% biased){
       list(txt = "biased, not generated", col = "#aaa")
     } else if(id %in% predicted){
@@ -1294,7 +1296,7 @@ observeEvent(input$generate_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_records_list[[id]] <- NULL
+  session_data$ellipsoid_point_sets_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
   # Copies of the deleted ellipsoid are kept and become roots

@@ -7,15 +7,15 @@
 # Date Last Updated: 10/06/2026
 
 
-# BIASED RECORDS ----------------------------------------------------------
+# BIASED POINT SETS -------------------------------------------------------
 
-# Removes every record set that was drawn from a biased layer. Called
+# Removes every point set that was drawn from a biased layer. Called
 # wherever the biased predictions are cleared, since those sets would
 # otherwise point at surfaces that no longer exist. Returns how many sets
 # were removed.
-drop_biased_records <- function(){
+drop_biased_point_sets <- function(){
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
   if(length(occ) == 0) return(0L)
 
   n_removed <- 0L
@@ -33,7 +33,7 @@ drop_biased_records <- function(){
   # An ellipsoid with no sets left goes back to "not generated"
   occ <- occ[vapply(occ, length, integer(1)) > 0]
 
-  session_data$ellipsoid_records_list <- occ
+  session_data$ellipsoid_point_sets_list <- occ
 
   n_removed
 }
@@ -159,7 +159,7 @@ observeEvent(input$bias_upload_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
-  drop_biased_records()
+  drop_biased_point_sets()
 
   showNotification(paste0(terra::nlyr(rast), " bias layer(s) loaded successfully."),
                    type = "message", duration = 4)
@@ -183,7 +183,7 @@ observeEvent(input$bias_example_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
-  drop_biased_records()
+  drop_biased_point_sets()
 
   showNotification("Example bias raster loaded.", type = "message", duration = 4)
 })
@@ -212,12 +212,12 @@ observeEvent(input$bias_confirm_edit_upload_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
-  n_removed <- drop_biased_records()
+  n_removed <- drop_biased_point_sets()
   shinyjs::reset("bias_raster_file")
 
   showNotification(paste0("Bias raster cleared. Upload a new file.",
                           if(n_removed > 0){
-                            paste0(" ", n_removed, " record set(s) from ",
+                            paste0(" ", n_removed, " point set(s) from ",
                                    "biased layers were removed.")
                           }),
                    type = "message", duration = 4)
@@ -404,7 +404,7 @@ observeEvent(input$bias_prepare_btn, {
   session_data$bias_settings <- list(effect_direction = effect_direction,
                                      mask_na = mask_na)
   session_data$ellipsoid_prediction_list_biased <- list()
-  drop_biased_records()
+  drop_biased_point_sets()
 
   showNotification("Bias prepared successfully.", type = "message", duration = 4)
 })
@@ -431,11 +431,11 @@ observeEvent(input$bias_confirm_edit_prepare_btn, {
   session_data$prepared_bias <- NULL
   session_data$bias_settings <- NULL
   session_data$ellipsoid_prediction_list_biased <- list()
-  n_removed <- drop_biased_records()
+  n_removed <- drop_biased_point_sets()
 
   showNotification(paste0("Bias preparation cleared. Adjust settings and re-prepare.",
                           if(n_removed > 0){
-                            paste0(" ", n_removed, " record set(s) from ",
+                            paste0(" ", n_removed, " point set(s) from ",
                                    "biased layers were removed.")
                           }),
                    type = "message", duration = 4)
@@ -575,20 +575,23 @@ output$bias_apply_ui <- renderUI({
 
       uiOutput("bias_layer_selector_ui"),
 
+      uiOutput("bias_method_msg_ui"),
+
       fluidRow(
         column(width = 12,
                tags$div(class = "tooltip-label-row",
-                        tags$span("Prediction layer effect direction", class = "text-widget-title"),
+                        tags$span("Sampling", class = "text-widget-title"),
                         tags$span(icon("circle-info"),
-                                  title = instructions$bias_apply_direction_tooltip,
+                                  title = instructions$bias_apply_sampling_tooltip,
                                   class = "tooltip-icon")),
-               radioButtons("bias_effect_direction",
+               radioButtons("bias_sampling",
                             label = NULL,
                             choiceNames = list(
-                              tags$span("Direct", class = "text-widget-inner"),
-                              tags$span("Inverse", class = "text-widget-inner")),
-                            choiceValues = c("direct", "inverse"),
-                            selected = "direct",
+                              tags$span("Centroid", class = "text-widget-inner"),
+                              tags$span("Edge", class = "text-widget-inner"),
+                              tags$span("Uniform", class = "text-widget-inner")),
+                            choiceValues = c("centroid", "edge", "uniform"),
+                            selected = "centroid",
                             inline = TRUE))
       ),
 
@@ -607,7 +610,7 @@ output$bias_apply_ui <- renderUI({
 })
 # Layers offered depend on which version is selected, so this is a separate
 # output. Reading the version input inside bias_apply_ui would rebuild the
-# whole box, and the direction radio with it, on every version change.
+# whole box, and the sampling radio with it, on every version change.
 output$bias_layer_selector_ui <- renderUI({
 
   pred_list <- session_data$ellipsoid_prediction_list
@@ -660,6 +663,50 @@ output$bias_layer_selector_ui <- renderUI({
   )
 })
 
+# Mirrors how apply_bias_to_list() picks a method for each layer, so the
+# user sees what will happen before pressing Apply bias
+output$bias_method_msg_ui <- renderUI({
+
+  req(input$bias_prediction_layer)
+
+  layers <- if(identical(input$bias_prediction_layer, "all_pred")){
+
+    pred_list <- session_data$ellipsoid_prediction_list
+
+    sel_ell <- input$bias_ellipsoid_selected
+    if(is.null(sel_ell)) sel_ell <- "all"
+
+    ids <- if(identical(sel_ell, "all")) names(pred_list) else sel_ell
+
+    unique(unlist(lapply(ids, function(id){
+      p <- pred_list[[id]]
+      ell <- session_data$ellipsoid_list[[id]]
+      if(!inherits(p, "SpatRaster") || is.null(ell)) return(character(0))
+      report_pred_layer_names(p, ell)
+    })))
+
+  } else {
+    input$bias_prediction_layer
+  }
+
+  req(length(layers) > 0)
+
+  methods <- unique(vapply(layers, function(layer){
+    if(grepl("mahalanobis", layer, ignore.case = TRUE)){
+      "mahalanobis"
+    } else {
+      "suitability"
+    }
+  }, character(1)))
+
+  fluidRow(
+    column(width = 12,
+           tags$p(icon("circle-info"), " ",
+                  paste0("Method(s) detected: ", paste(methods, collapse = ", "), "."),
+                  style = "font-size: 10px; color: #aaa; margin: 4px 0 8px;"))
+  )
+})
+
 # Add new bias layer, in the ellipsoid library. Reopens the Apply bias box as
 # the form and scrolls up to it, since the box sits above the library. The
 # short wait lets the box redraw before the page moves.
@@ -694,10 +741,10 @@ observeEvent(input$bias_apply_btn, {
     input$bias_ellipsoid_selected
   }
 
-  direction <- if(!is.null(input$bias_effect_direction)){
-    input$bias_effect_direction
+  sampling <- if(!is.null(input$bias_sampling)){
+    input$bias_sampling
   } else {
-    "direct"
+    "centroid"
   }
 
   is_all_pred <- identical(input$bias_prediction_layer, "all_pred")
@@ -749,7 +796,7 @@ observeEvent(input$bias_apply_btn, {
         pred_rast = pred,
         layer = layer,
         prepared_bias = session_data$prepared_bias,
-        direction = direction
+        sampling = sampling
       )
 
       new_layers <- if(id %in% names(current_biased)){
@@ -988,7 +1035,7 @@ observeEvent(input$bias_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_records_list[[id]] <- NULL
+  session_data$ellipsoid_point_sets_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
   # Copies of the deleted ellipsoid are kept and become roots
@@ -1048,7 +1095,7 @@ bias_dl_applied <- function(id){
 
   if(!inherits(r, "SpatRaster") || is.null(ell)) return(NULL)
 
-  src <- sub("_biased_(direct|inverse)$", "", names(r))
+  src <- sub("_(centroid|edge|uniform)_biased$", "", names(r))
   keep <- names(r)[!src %in% c("x", "y", ell$var_names)]
 
   if(length(keep) == 0) return(NULL)

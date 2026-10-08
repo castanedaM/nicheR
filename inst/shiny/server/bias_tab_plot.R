@@ -208,10 +208,12 @@ output$bias_gspace_plot <- renderPlot({
     return(invisible(NULL))
   }
 
-  # No trailing underscore, so this matches whether or not apply_bias()
-  # appends the direction to the layer name
+  # apply_bias() names its outputs "<layer>_<sampling>_biased". Matched in
+  # full, so "suitability" does not pick up the "suitability_trunc" layers
   matched_bias <- if(has_bias){
-    names(bias_result)[startsWith(names(bias_result), paste0(layer, "_biased"))]
+    names(bias_result)[names(bias_result) %in%
+                         paste0(layer, "_", c("centroid", "edge", "uniform"),
+                                "_biased")]
   } else {
     character(0)
   }
@@ -492,8 +494,10 @@ output$bias_confirm_export <- downloadHandler(
              req(layer %in% names(pred_result))
 
              matched_bias <- if(inherits(bias_result, "SpatRaster")){
-               names(bias_result)[startsWith(names(bias_result),
-                                             paste0(layer, "_biased"))]
+               names(bias_result)[names(bias_result) %in%
+                                    paste0(layer, "_",
+                                           c("centroid", "edge", "uniform"),
+                                           "_biased")]
              } else {
                character(0)
              }

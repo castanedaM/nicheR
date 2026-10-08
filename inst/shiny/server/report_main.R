@@ -87,8 +87,8 @@ report_files_block <- function(){
     !identical(session_data$bias_source, "example")
   bias_files <- if(bias_upload) as.character(session_data$bias_source)
 
-  # Sampling masks, recorded on each record set
-  occ <- session_data$ellipsoid_records_list
+  # Sampling masks, recorded on each point set
+  occ <- session_data$ellipsoid_point_sets_list
   mask_files <- unlist(lapply(occ, function(sets){
     vapply(sets, function(df) as.character(occ_meta(df, "mask", "none")),
            character(1))

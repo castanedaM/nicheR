@@ -39,7 +39,7 @@ function(input, output, session){
 
     # Generate
     sampling_mask = NULL,
-    ellipsoid_records_list = list()
+    ellipsoid_point_sets_list = list()
 
   )
 

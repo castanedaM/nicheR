@@ -259,27 +259,40 @@ build_range_defaults <- function(vars, has_bg_df){
 #' @param pred_rast The unbiased prediction SpatRaster.
 #' @param layer Name of the prediction layer to bias.
 #' @param prepared_bias Output of prepare_bias().
-#' @param direction Either "direct" or "inverse".
+#' @param sampling One of "centroid", "edge", or "uniform".
+#'
+#' @details The method is derived from the layer name, the same way
+#'   generate_occ_for_ell() does it for sample_data().
 #'
 #' @returns The biased list with the new layer merged in, unchanged on failure.
 #'
 #' @noRd
 apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
-                               layer, prepared_bias, direction = "direct"){
+                               layer, prepared_bias, sampling = "centroid"){
+
+  method <- if(grepl("mahalanobis", layer, ignore.case = TRUE)){
+    "mahalanobis"
+  } else {
+    "suitability"
+  }
 
   result <- tryCatch(
     apply_bias(prepared_bias = prepared_bias,
                prediction = pred_rast,
                prediction_layer = layer,
-               effect_direction = direction,
+               sampling = sampling,
+               method = method,
                verbose = FALSE),
-    error = function(e) NULL
+    error = function(e){
+      message("Apply bias failed for ", ell_id, " (", layer, "): ", e$message)
+      NULL
+    }
   )
 
   if(is.null(result)) return(biased_list)
 
   # Extract the SpatRaster from the result, dropping combination_formula
-  new_rast <- result[[paste0(layer, "_biased")]]
+  new_rast <- result[[paste0(layer, "_", sampling, "_biased")]]
   if(is.null(new_rast) || !inherits(new_rast, "SpatRaster")) return(biased_list)
 
   if(!ell_id %in% names(biased_list)){
@@ -302,17 +315,17 @@ apply_bias_to_list <- function(biased_list, ell_id, pred_rast,
 # GENERATE TAB ------------------------------------------------------------
 
 
-#' Parameters that define a record set
+#' Parameters that define a point set
 #'
 #' Two sets are the same set only if all of these match.
 #'
 #' @noRd
 occ_set_fields <- c("mode", "layer", "n_occ", "seed", "sampling",
-                    "strict", "mask", "truncate", "effect")
+                    "strict", "mask", "truncate")
 
-#' Read one metadata attribute from a record set
+#' Read one metadata attribute from a point set
 #'
-#' @param df A record set data frame.
+#' @param df A point set data frame.
 #' @param field Attribute name, normally one of occ_set_fields.
 #' @param default Value returned when the attribute is absent.
 #'
@@ -334,24 +347,13 @@ occ_meta <- function(df, field, default = NA){
 #' @noRd
 occ_sampling_biased <- "bias weighted"
 
-#' Sampling labels for the virtual_data() effects
+#' Sampling label for a point set
 #'
-#' Virtual sets keep the effect passed to virtual_data(). Their sampling
-#' value uses the same words as the raster sets, so both modes read alike in
-#' the summary and in the downloads.
+#' Returns the stored value when there is one. Virtual sets store the value
+#' passed to virtual_data() as sampling. Sets generated before biased sets
+#' recorded a sampling value fall back to the "biased" attribute.
 #'
-#' @noRd
-virtual_sampling_labels <- c(direct = "centroid",
-                             inverse = "edge",
-                             uniform = "random")
-
-#' Sampling label for a record set
-#'
-#' Returns the stored value when there is one. Sets generated before biased
-#' and virtual sets recorded a sampling value fall back to the "biased"
-#' attribute or the virtual effect, so older sessions still read correctly.
-#'
-#' @param df A record set data frame.
+#' @param df A point set data frame.
 #'
 #' @returns A single character label, or NA when nothing is recorded.
 #'
@@ -363,16 +365,11 @@ occ_sampling <- function(df){
 
   if(isTRUE(attr(df, "biased", exact = TRUE))) return(occ_sampling_biased)
 
-  effect <- as.character(occ_meta(df, "effect"))
-  if(effect %in% names(virtual_sampling_labels)){
-    return(unname(virtual_sampling_labels[effect]))
-  }
-
   NA_character_
 }
 
 
-#' Canonical key for a record set
+#' Canonical key for a point set
 #'
 #' Never shown to the user, only used for identity. Any parameter change
 #' produces a different key, so sets accumulate rather than overwrite.
@@ -390,7 +387,7 @@ occ_set_signature <- function(attrs){
 }
 
 
-#' Short display labels for a list of record sets
+#' Short display labels for a list of point sets
 #'
 #' Always names the layer, then adds only the fields that vary across the
 #' sets present, so a run differing only by seed reads
@@ -400,7 +397,7 @@ occ_set_signature <- function(attrs){
 #' just "virtual", so unlike a raster layer name it says nothing about how
 #' the points were drawn.
 #'
-#' @param occ_list Named list of record set data frames.
+#' @param occ_list Named list of point set data frames.
 #'
 #' @returns A named character vector: names are labels, values are keys.
 #'
@@ -424,8 +421,7 @@ occ_set_labels <- function(occ_list){
     length(unique(vapply(meta, function(m) m[[f]], character(1)))) > 1
   }, logical(1))
 
-  # Effect is left out because sampling already says the same thing
-  show <- setdiff(unique(c("layer", occ_set_fields[varies])), "effect")
+  show <- unique(c("layer", occ_set_fields[varies]))
 
   labs <- vapply(meta, function(m){
 
@@ -462,7 +458,7 @@ occ_set_labels <- function(occ_list){
 }
 
 
-#' Sample records for one ellipsoid across several layers
+#' Sample data points for one ellipsoid across several layers
 #'
 #' Each layer is pulled from either the prediction or the biased prediction.
 #' Biased layers go to sample_biased_data(), which already carries the
@@ -473,8 +469,8 @@ occ_set_labels <- function(occ_list){
 #' @param pred_list Named list of unbiased prediction SpatRasters.
 #' @param biased_list Named list of biased prediction SpatRasters.
 #' @param layers Character vector of layer names to sample from.
-#' @param n_occ Number of records to draw per layer.
-#' @param sampling One of "centroid", "edge", or "random". Unbiased only.
+#' @param n_occ Number of data points to draw per layer.
+#' @param sampling One of "centroid", "edge", or "uniform". Unbiased only.
 #' @param strict Logical, or NULL to let the function auto-detect.
 #' @param sampling_mask Optional SpatRaster restricting where points fall.
 #'   Raster predictions only.
@@ -591,7 +587,7 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 }
 
 
-#' Sample virtual records directly from an ellipsoid
+#' Sample virtual data points directly from an ellipsoid
 #'
 #' Virtual mode has no prediction surface and no geography, so points come
 #' from virtual_data(), which draws from the multivariate normal defined by
@@ -601,18 +597,18 @@ generate_occ_for_ell <- function(ell_id, pred_list, biased_list,
 #' @param ell A nicheR_ellipsoid object.
 #' @param n Number of points to generate.
 #' @param truncate Logical, constrain points within the confidence limit.
-#' @param effect One of "direct", "inverse", or "uniform". The latter two
+#' @param sampling One of "centroid", "edge", or "uniform". The latter two
 #'   require truncate = TRUE.
 #' @param seed Integer random seed.
 #'
 #' @returns A data frame of environmental values, or NULL on failure.
 #'
 #' @noRd
-generate_virtual_for_ell <- function(ell, n, truncate, effect, seed = 123L){
+generate_virtual_for_ell <- function(ell, n, truncate, sampling, seed = 123L){
 
   # virtual_data enforces this too, but failing here gives a clearer message
-  if(effect %in% c("inverse", "uniform") && !isTRUE(truncate)){
-    message("Effect '", effect, "' requires truncation.")
+  if(sampling %in% c("edge", "uniform") && !isTRUE(truncate)){
+    message("Sampling '", sampling, "' requires truncation.")
     return(NULL)
   }
 
@@ -620,7 +616,7 @@ generate_virtual_for_ell <- function(ell, n, truncate, effect, seed = 123L){
     virtual_data(object = ell,
                  n = n,
                  truncate = truncate,
-                 effect = effect,
+                 sampling = sampling,
                  seed = seed),
     error = function(e){
       message("Virtual generate failed: ", e$message)

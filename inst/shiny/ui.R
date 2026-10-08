@@ -529,7 +529,7 @@ dashboardPage(
 
                         fluidRow(
                           uiOutput("generate_ellipsoid_library_ui"),
-                          uiOutput("generate_records_summary_ui")
+                          uiOutput("generate_point_sets_summary_ui")
                         )
                  ),
 

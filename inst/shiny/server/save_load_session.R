@@ -153,10 +153,12 @@ observeEvent(input$build_load_session_btn, {
   session_list$.session_version <- NULL
   session_list$.saved_at <- NULL
 
-  # Sessions saved before this list was renamed carry it under the old name
-  if(!is.null(session_list$ellipsoid_occurrence_list)){
-    session_list$ellipsoid_records_list <- session_list$ellipsoid_occurrence_list
-    session_list$ellipsoid_occurrence_list <- NULL
+  # Sessions saved before this list was renamed carry it under an old name
+  for(old in c("ellipsoid_occurrence_list", "ellipsoid_records_list")){
+    if(!is.null(session_list[[old]])){
+      session_list$ellipsoid_point_sets_list <- session_list[[old]]
+      session_list[[old]] <- NULL
+    }
   }
 
   # Read before anything is restored, to tell below whether vars changed
@@ -202,7 +204,7 @@ observeEvent(input$build_load_session_btn, {
                    type = "message", duration = 4)
 
   # Land on the furthest step the restored session actually reached
-  if(length(session_data$ellipsoid_records_list) > 0){
+  if(length(session_data$ellipsoid_point_sets_list) > 0){
     updateTabItems(session, "sidebar_menu", selected = "generate_tab")
   } else if(length(session_data$ellipsoid_prediction_list_biased) > 0){
     updateTabItems(session, "sidebar_menu", selected = "bias_tab")

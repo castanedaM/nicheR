@@ -369,7 +369,7 @@ observeEvent(input$build_confirm_edit_variables_btn, {
 
 
   session_data$sampling_mask <- NULL
-  session_data$ellipsoid_records_list <- list()
+  session_data$ellipsoid_point_sets_list <- list()
 
 })
 
@@ -407,7 +407,7 @@ reset_input_data <- function(){
   session_data$ellipsoid_prediction_list_biased <- list()
 
   session_data$sampling_mask <- NULL
-  session_data$ellipsoid_records_list <- list()
+  session_data$ellipsoid_point_sets_list <- list()
 
   updateRadioButtons(session, "build_range_method_choice", selected = character(0))
 }
@@ -415,7 +415,7 @@ reset_input_data <- function(){
 # Switching the input type starts the session over. With nothing built yet it
 # happens right away. Once variables are confirmed or an ellipsoid exists,
 # the app asks first, since one click on the radio would otherwise discard
-# every ellipsoid, prediction and record set.
+# every ellipsoid, prediction and point set.
 observeEvent(input$build_data_input_type_choice, {
 
   new_type <- input$build_data_input_type_choice

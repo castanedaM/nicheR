@@ -87,7 +87,7 @@
 #' @return Called for its side effect of creating a plot. Returns \code{NULL}
 #'  invisibly.
 #'
-#' @seealso \code{\link{add_data}} to overlay records,
+#' @seealso \code{\link{add_data}} to overlay data points,
 #' \code{\link{add_ellipsoid}} to overlay additional ellipsoid boundaries,
 #' \code{\link{plot_ellipsoid_pairs}} for pairwise plots of all dimensions
 #' \code{vignette("plotting_vignette", package = "nicheR")}
@@ -312,7 +312,7 @@ plot_ellipsoid <- function(object,
 
 
 
-#' Add records or other data to an existing E-space plot
+#' Add data points or other data to an existing E-space plot
 #'
 #' @description
 #' Adds points to an existing environmental space plot created with

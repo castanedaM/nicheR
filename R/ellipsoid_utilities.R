@@ -532,5 +532,65 @@ resolve_prediction <- function(prediction, prediction_layer){
 }
 
 
+#' Check that a weighting method agrees with its prediction layer
+#'
+#' @description
+#' Internal helper shared by \code{sample_data()} and \code{apply_bias()}.
+#' Suitability is highest at the niche centroid and Mahalanobis distance is
+#' lowest there, so pairing a layer with the wrong \code{method} weights the
+#' wrong part of the niche without raising any other error. This stops when
+#' the layer name says one kind of layer and \code{method} says the other,
+#' and warns when \code{method = "mahalanobis"} is used on a layer whose name
+#' gives no hint and whose values all fall in \code{[0, 1]}.
+#'
+#' @param method Character. \code{"suitability"} or \code{"mahalanobis"}.
+#' @param layer_name Character. Name of the prediction layer or column.
+#' @param max_value Numeric. Largest value in the layer, or \code{NULL} to
+#'   skip the value check.
+#'
+#' @return Invisibly \code{TRUE}. Called for its checks.
+#'
+#' @keywords internal
+#' @noRd
+check_method_layer <- function(method, layer_name, max_value = NULL){
+
+  shown <- ""
+  if(!is.null(layer_name) && length(layer_name) > 0L && !is.na(layer_name[1])){
+    shown <- as.character(layer_name[1])
+  }
+
+  nm <- tolower(shown)
+  looks_suit <- grepl("suit", nm, fixed = TRUE)
+  looks_mahal <- grepl("mahal", nm, fixed = TRUE)
+
+  if(method == "mahalanobis" && looks_suit && !looks_mahal){
+    stop(
+      "Layer '", shown, "' looks like a suitability layer, but ",
+      "method = 'mahalanobis'. Use method = 'suitability', or rename the ",
+      "layer if it holds Mahalanobis distances."
+    )
+  }
+
+  if(method == "suitability" && looks_mahal && !looks_suit){
+    stop(
+      "Layer '", shown, "' looks like a Mahalanobis distance layer, but ",
+      "method = 'suitability'. Use method = 'mahalanobis', or rename the ",
+      "layer if it holds suitability values."
+    )
+  }
+
+  if(method == "mahalanobis" && !looks_mahal && !is.null(max_value) &&
+     is.finite(max_value) && max_value <= 1){
+    warning(
+      "method = 'mahalanobis', but every value in layer '", shown,
+      "' is in [0, 1], which is what a suitability layer looks like. ",
+      "Check that this layer holds Mahalanobis distances."
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
 
 

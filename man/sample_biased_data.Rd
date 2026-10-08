@@ -2,14 +2,14 @@
 % Please edit documentation in R/sample_biased_data.R
 \name{sample_biased_data}
 \alias{sample_biased_data}
-\title{Sample records from a bias-weighted prediction surface}
+\title{Sample data points from a bias-weighted prediction surface}
 \usage{
 sample_biased_data(n, prediction, prediction_layer = NULL,
                           sampling_mask = NULL, seed = 1, verbose = TRUE,
                           strict = NULL)
 }
 \arguments{
-\item{n}{Integer. Number of records to sample.}
+\item{n}{Integer. Number of data points to sample.}
 
 \item{prediction}{A \code{SpatRaster} or data frame containing the
 bias-weighted prediction surface to sample from.}
@@ -32,18 +32,18 @@ auto-detected from the layer name and the proportion of zeros and
 \code{NA}s in the prediction values.}
 }
 \value{
-A data frame of sampled records with the same columns as the
+A data frame of sampled data points with the same columns as the
 input \code{prediction} (minus the internal \code{pred} column). If
 \code{prediction} is a \code{SpatRaster}, the output includes \code{x}
 and \code{y} coordinate columns.
 }
 \description{
-Samples \code{n} virtual records using the bias-weighted
+Samples \code{n} virtual data points using the bias-weighted
 prediction values directly as sampling probabilities. Unlike
 \code{sample_data()}, there is no sampling strategy argument. The
 prediction layer values themselves define where points are drawn from,
 making this function suited for simulating realistically biased
-records.
+data points.
 }
 \details{
 Prediction values are used directly as sampling weights, so they must be
@@ -62,11 +62,11 @@ biased_pred <- terra::rast(system.file("extdata/applied_bias_rast.tif",
                                      package = "nicheR"))
 
 # Sample points from bias surface (not probability surface)
-rec_biased <- sample_biased_data(n = 100,
+pts_biased <- sample_biased_data(n = 100,
                                  prediction = biased_pred,
-                                 prediction_layer = "suitability_biased_direct")
+                                 prediction_layer = "suitability_centroid_biased")
 
-head(rec_biased)
+head(pts_biased)
 
 }
 \seealso{

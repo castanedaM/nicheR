@@ -5,7 +5,8 @@
 \title{Apply sampling bias to prediction surfaces}
 \usage{
 apply_bias(prepared_bias, prediction, prediction_layer = NULL,
-                  effect_direction = "direct", verbose = TRUE)
+                  sampling = "centroid", method = "suitability",
+                  verbose = TRUE)
 }
 \arguments{
 \item{prepared_bias}{A single-layer \code{SpatRaster} composite bias
@@ -15,60 +16,92 @@ a \code{composite_surface} element.}
 \item{prediction}{A \code{SpatRaster} containing one or more prediction
 layers, for example suitability or Mahalanobis distance.}
 
-\item{prediction_layer}{Character. Name of the layer to extract from
-\code{prediction} when it contains multiple layers. If \code{NULL}
-(default) and \code{prediction} has a single layer, that layer is used.}
+\item{prediction_layer}{Character. Name of the layer to use from
+\code{prediction}. Required when \code{prediction} contains multiple
+layers. If \code{NULL} (default) and \code{prediction} has a single
+layer, that layer is used.}
 
-\item{effect_direction}{Character. How the prediction layer enters the
-product. \code{"direct"} (default) uses the prediction as is, so high
-prediction values increase sampling probability. \code{"inverse"}
-reflects the prediction around the midpoint of its own range,
-\eqn{(\max + \min) - x}, so high values decrease sampling probability.
-To reverse the bias surface instead, use \code{effect_direction} in
-\code{\link{prepare_bias}}.}
+\item{sampling}{Character. Sampling strategy. One of \code{"centroid"}
+(default), \code{"edge"}, or \code{"uniform"}. Controls where within the
+niche the weight is highest.}
+
+\item{method}{Character. Weighting method. One of \code{"suitability"}
+(default) or \code{"mahalanobis"}. Must match the type of values in
+\code{prediction_layer}: suitability values must be in \code{[0, 1]},
+Mahalanobis distances must be non-negative.}
 
 \item{verbose}{Logical. If \code{TRUE} (default), prints progress messages.}
 }
 \value{
 A named list of class \code{"nicheR_biased_surface"} containing:
 \itemize{
-  \item One \code{SpatRaster} per input prediction layer, named
-  \code{"<layer>_biased"}. The raster layer name includes the applied
-  direction (e.g., \code{"suitability_biased_direct"}).
+  \item One single-layer \code{SpatRaster} named
+  \code{"<layer>_<sampling>_biased"} (e.g.,
+  \code{"suitability_centroid_biased"}). The raster layer carries the
+  same name.
   \item \code{combination_formula}: a character string describing the
-  operation applied (e.g., \code{"suitability * bias"} or
-  \code{"(1 - suitability) * bias"}), including the reflection constant
-  actually used.
+  operation applied: \code{"suitability * bias"},
+  \code{"(1 - suitability) * bias"}, \code{"(1 / Mahalanobis) * bias"},
+  \code{"Mahalanobis * bias"}, or \code{"bias"} for
+  \code{sampling = "uniform"}.
 }
 }
 \description{
-Applies a prepared composite sampling bias surface to a prediction raster
-by multiplication. The bias surface is aligned to the prediction grid when
-needed and the result is cropped and masked to the prediction domain. The
-output is a product of the prediction and the bias and is therefore no
-longer interpretable as a probability.
+Combines a prepared composite sampling bias surface with a prediction
+layer. The prediction is first turned into a sampling weight, following
+the same \code{sampling} and \code{method} rules as
+\code{\link{sample_data}}, and that weight is multiplied by the bias
+surface. The bias surface is aligned to the prediction grid when needed
+and the result is cropped and masked to the prediction domain. The output
+is a relative sampling weight and is no longer interpretable as a
+probability.
 }
 \details{
+The \code{sampling} and \code{method} arguments define the weight that is
+multiplied by the bias surface, the same way they define the sampling
+weights in \code{\link{sample_data}}:
+\itemize{
+  \item \code{sampling = "centroid"}, \code{method = "suitability"}:
+  the suitability itself, higher near the niche center.
+  \item \code{sampling = "edge"}, \code{method = "suitability"}:
+  \eqn{1 - \text{suitability}}, higher near the niche boundary.
+  \item \code{sampling = "centroid"}, \code{method = "mahalanobis"}:
+  \eqn{1 / D^2}, with \eqn{D^2} the Mahalanobis distance, higher near the
+  centroid.
+  \item \code{sampling = "edge"}, \code{method = "mahalanobis"}:
+  \eqn{D^2}, higher near the boundary.
+  \item \code{sampling = "uniform"}: a weight of 1 in every cell that has a
+  prediction, so the output is the bias surface limited to those cells.
+}
+
+Cells where the prediction is zero or \code{NA} are set to \code{NA} in
+the output, so they cannot be sampled. This is what \code{strict = TRUE}
+does in \code{\link{sample_data}}, and here it is always applied. In a
+truncated layer these are the cells outside the niche, where
+\code{"edge"} and \code{"uniform"} would otherwise place their highest
+weights.
+
+The function stops when \code{method} disagrees with the layer name, for
+example \code{method = "mahalanobis"} on a layer called
+\code{"suitability_trunc"}. The two kinds of layer run in opposite
+directions, so the wrong pairing weights the wrong part of the niche. It
+warns when \code{method = "mahalanobis"} is used on an unnamed layer whose
+values all fall in \code{[0, 1]}.
+
 The function performs the following steps:
 \enumerate{
   \item Extracts the composite bias surface from \code{prepared_bias}.
   \item Verifies the bias values are within \code{[0, 1]} and that the
-  prediction values are non-negative.
+  prediction values agree with \code{method}.
   \item Aligns the bias surface to the prediction grid if geometries
   differ, using \code{terra::resample()} with nearest-neighbor
   interpolation.
-  \item Reflects the prediction when \code{effect_direction = "inverse"}.
-  \item Multiplies the (possibly reflected) prediction by the bias surface.
+  \item Removes the cells where the prediction is zero.
+  \item Turns the prediction into a weight according to \code{sampling}
+  and \code{method}.
+  \item Multiplies the weight by the bias surface.
   \item Crops and masks the output to the prediction domain.
 }
-
-The reflection is \eqn{(\max + \min) - x}, with \eqn{\min} and \eqn{\max}
-taken from the layer being inverted. It preserves the units and the range
-of the layer, does not rescale it, and reduces to \eqn{1 - x} when the
-layer runs from 0 to 1. Because the bounds come from the raster supplied,
-an inverted layer depends on the extent of that raster. Unbounded layers
-such as Mahalanobis distance are the case where this matters most, since
-the maximum is set by the most extreme cell in the study area.
 }
 \examples{
 pred_rast <- terra::rast(system.file("extdata/predictions_rast.tif",
@@ -81,23 +114,25 @@ bias_rast <- terra::rast(system.file("extdata/ma_biases.tif",
 bias <- prepare_bias(bias_surface = bias_rast[[1]],
                      effect_direction = "direct")
 
-# 2. Apply bias to the suitability layer
+# 2. Apply bias to the suitability layer, weighting toward the centroid
 biased_pred <- apply_bias(prepared_bias = bias,
                           prediction = pred_rast,
                           prediction_layer = "suitability")
 
-terra::plot(biased_pred$suitability_biased)
+terra::plot(biased_pred$suitability_centroid_biased)
 
-# 3. Sample away from the niche instead
-biased_inv <- apply_bias(prepared_bias = bias,
-                         prediction = pred_rast,
-                         prediction_layer = "suitability",
-                         effect_direction = "inverse")
+# 3. Weight toward the niche edge instead, using Mahalanobis distance
+biased_edge <- apply_bias(prepared_bias = bias,
+                          prediction = pred_rast,
+                          prediction_layer = "Mahalanobis_trunc",
+                          sampling = "edge",
+                          method = "mahalanobis")
 
-biased_inv$combination_formula
+biased_edge$combination_formula
 
 }
 \seealso{
 \code{\link{prepare_bias}} to build the composite bias surface,
-  \code{\link{sample_biased_data}} to sample records from the output.
+  \code{\link{sample_biased_data}} to sample data points from the output,
+  \code{\link{sample_data}} for the same weights without a bias surface.
 }

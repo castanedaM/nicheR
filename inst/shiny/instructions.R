@@ -45,11 +45,11 @@ generation toward areas with specific detection effort."),
     "Examples: urbanization, distance to water, road density, collector coverage, any detection proxy"
   ),
 
-  about_generate = HTML("Generate records or sample virtual data from the fitted niche,
+  about_generate = HTML("Generate data points or sample virtual data from the fitted niche,
 optionally weighted by the bias layer."),
 
   about_generate_points = c(
-    "Specify number of records",
+    "Specify number of data points",
     "Output is a data frame of coordinates and environmental values",
     "Batch generate across multiple saved versions",
     "Save batch generation or individual data frames"
@@ -100,7 +100,7 @@ for later steps. Click Continue to select which variables to use."),
   ),
 
   build_update_stale = paste0(
-    "This ellipsoid has predictions, biased layers, or record sets that ",
+    "This ellipsoid has predictions, biased layers, or point sets that ",
     "were made from its previous version. Updating removes them, since they ",
     "no longer describe it. Predict it again afterwards."
   ),
@@ -232,7 +232,7 @@ button to go back to editing, or the copy button in the library, to make changes
 and spaces only. Spaces will be replaced with underscores.",
 
   build_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, its biased predictions, and any records generated from them.",
+predictions, its biased predictions, and any data points generated from them.",
 
   build_reference = HTML("The ellipsoid summary reports volume and centroid
 changes relative to a reference. By default this is whatever the working
@@ -307,7 +307,7 @@ unavailable in virtual mode."),
   # BIAS TAB ---------------------------------------------------------------
 
   bias_skip = paste0(
-    "Records will be sampled from the unbiased prediction. ",
+    "Data points will be sampled from the unbiased prediction. ",
     "You can come back to this step at any time."
   ),
 
@@ -332,7 +332,7 @@ sampling probability) or an inverse effect (decrease sampling probability)."),
 represent sampling bias across the study area, or use the example layers
 provided."),
 
-  bias_skipped = "Bias skipped. Records will be sampled from the
+  bias_skipped = "Bias skipped. Data points will be sampled from the
 unbiased prediction.",
 
   bias_needs_prediction = "Run a prediction on the Predict tab before adding
@@ -347,11 +347,11 @@ Combinations that already exist are skipped, so you can add layers without
 losing what is already applied."),
 
   bias_edit_upload = "This removes the current bias layers, the prepared
-surface, any applied bias, and any record sets generated from biased
+surface, any applied bias, and any point sets generated from biased
 layers. You will need to upload and prepare again.",
 
   bias_edit_prepare = "This removes the prepared surface, any applied bias,
-and any record sets generated from biased layers. The uploaded layers are
+and any point sets generated from biased layers. The uploaded layers are
 kept.",
 
   bias_clear_apply = "This removes every biased surface. The uploaded layers
@@ -364,7 +364,7 @@ the Build tab."),
   bias_library_empty = "No saved ellipsoids yet.",
 
   bias_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, its biased predictions, and any records generated from them.",
+predictions, its biased predictions, and any data points generated from them.",
 
   bias_mask_na_tooltip = "Union keeps any pixel with at least one valid value
 across layers.
@@ -380,9 +380,10 @@ Inverse: higher values decrease sampling probability.",
   bias_ellipsoid_select_tooltip = "Choose which ellipsoid's prediction to
 apply bias to, or All versions to apply to every one.",
 
-  bias_apply_direction_tooltip = paste0(
-    "Direct samples toward high prediction values, inverse away from them, ",
-    "using (max + min) - x. Changes the prediction, not the bias surface."
+  bias_apply_sampling_tooltip = paste0(
+    "Centroid weights cells near the niche centroid, edge weights cells near ",
+    "the niche edge, and uniform weights every cell equally. The weight is ",
+    "multiplied by the bias surface."
   ),
 
   bias_download = paste0(
@@ -399,7 +400,7 @@ apply bias to, or All versions to apply to every one.",
   # GENERATE TAB -----------------------------------------------------------
 
   generate_needs_prediction = "Run a prediction on the Predict tab before
-generating records.",
+generating data points.",
 
   generate_intro = HTML("Sample virtual data from a prediction surface.
                         Biased layers are shown in orange if bias has been applied."),
@@ -410,17 +411,17 @@ generating records.",
 prediction extent.",
 
   generate_library = HTML("Ellipsoids saved on the Build tab appear here,
-with how many records each has generated. To edit an ellipsoid, go back
-to the Build tab. To view the generated set of records press on view (eye)"),
+with how many data points each has generated. To edit an ellipsoid, go back
+to the Build tab. To view the generated set of data points press on view (eye)"),
 
   generate_library_empty = "No saved ellipsoids yet.",
 
   generate_delete_ell = "This will permanently remove the ellipsoid, its
-predictions, its biased predictions, and any records generated from them.",
+predictions, its biased predictions, and any data points generated from them.",
 
   generate_sampling_tooltip = "Centroid: higher probability near the niche centroid.
   Edge: higher probability near the niche edge.
-  Random: random uniform probability across all suitable cells.",
+  Uniform: equal probability across all suitable cells.",
 
   generate_surface_tooltip = "Select one or more prediction layers to sample
 from. Orange layers have bias applied.",
@@ -432,17 +433,17 @@ before sampling. Recommended for truncated layers.",
 points can be drawn.",
 
   generate_seed_tooltip = "Same seed and same settings produce the same
-records. Change it to draw a different replicate.",
+data points. Change it to draw a different replicate.",
 
   generate_ellipsoid_select_tooltip = "Choose which ellipsoid to generate
 data from, or 'All versions' to generate for every one.",
 
-  generate_summary_empty = "No record sets yet. Generate one to see it here.",
+  generate_summary_empty = "No point sets yet. Generate one to see it here.",
 
   generate_max_visible = "Up to four sets can be shown at once. Hide one
 before showing another.",
 
-  generate_summary = HTML("Every record set you generate is listed here.
+  generate_summary = HTML("Every point set you generate is listed here.
 Sets accumulate: changing any parameter adds a set rather than replacing one.
 Use the eye to choose which appear in the plots, up to four at a time."),
 
@@ -456,11 +457,11 @@ and no geography, so the points are environmental values only."),
 ellipsoid's confidence limit. When false, they follow the unbounded normal
 distribution and some will fall outside.",
 
-  generate_effect_tooltip = "Centroid concentrates points near the centroid.
-Edge pushes them toward the edges. Random spreads them evenly through
+  generate_virtual_sampling_tooltip = "Centroid concentrates points near the centroid.
+Edge pushes them toward the edges. Uniform spreads them evenly through
 the ellipsoid volume.",
 
-  generate_effect_needs_truncate = "Edge and Random require truncation.",
+  generate_virtual_sampling_needs_truncate = "Edge and Uniform require truncation.",
 
   # SHARED: PLOT SETTINGS --------------------------------------------------
 

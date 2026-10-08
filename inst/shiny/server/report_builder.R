@@ -1024,8 +1024,8 @@ report_predict_prose <- function(ells, preds, n_group){
   out <- paste0(
     "Each of the ", n, " niche", if(n == 1) "" else "s",
     " defined above was projected ",
-    if(spatial) "across the study area" else "onto the background records",
-    ". For every ", if(spatial) "cell" else "record",
+    if(spatial) "across the study area" else "onto the background data",
+    ". For every ", if(spatial) "cell" else "point",
     ", the environmental values are compared against the ellipsoid to give a ",
     "measure of how close those conditions sit to the center of the niche.",
     if(n_group > 1){
@@ -1094,7 +1094,7 @@ report_pred_ell_prose <- function(ell, pred, id, obj, areas){
                          na.rm = TRUE)[1, 1]
     paste0(format(tot, big.mark = ","), " cells")
   } else {
-    paste0(format(nrow(pred), big.mark = ","), " records")
+    paste0(format(nrow(pred), big.mark = ","), " points")
   }
 
   open <- paste0("Projecting **", ell$ell_name, "** onto ", n_units,
@@ -1125,7 +1125,7 @@ report_pred_ell_prose <- function(ell, pred, id, obj, areas){
   } else {
 
     txt <- paste0(report_num(round(p * 100, 1)), "% of the ",
-                  if(spatial) "study area" else "background records",
+                  if(spatial) "study area" else "background data",
                   " falls inside the niche boundary.")
 
     rest <- areas[names(areas) != id]
@@ -1342,35 +1342,42 @@ report_bias_stats <- function(prepared){
 }
 
 
-#' Prediction layer and direction behind each stored biased layer
+#' Prediction layer, sampling and method behind each stored biased layer
 #'
-#' apply_bias() names every output "<layer>_biased_<direction>", and the app
+#' apply_bias() names every output "<layer>_<sampling>_biased", and the app
 #' stacks those layers per ellipsoid across repeated applications, so the stored
-#' raster records exactly which calls were made. Nothing here is inferred, which
-#' is why the Apply step needs no recorded settings the way Predict did.
+#' raster records exactly which calls were made. The method is the one
+#' apply_bias_to_list() derives from the layer name. Nothing here is inferred,
+#' which is why the Apply step needs no recorded settings the way Predict did.
 #'
 #' @param biased One element of ellipsoid_prediction_list_biased, a SpatRaster.
 #'
-#' @returns A data frame with columns name, layer and direction, one row per
-#' stored layer. layer and direction are NA for a name that does not parse.
+#' @returns A data frame with columns name, layer, sampling and method, one row
+#' per stored layer. layer, sampling and method are NA for a name that does
+#' not parse.
 #'
 #' @noRd
 report_bias_applied <- function(biased){
 
   if(!inherits(biased, "SpatRaster")){
     return(data.frame(name = character(0), layer = character(0),
-                      direction = character(0), stringsAsFactors = FALSE))
+                      sampling = character(0), method = character(0),
+                      stringsAsFactors = FALSE))
   }
 
   nms <- names(biased)
-  parsed <- regmatches(nms, regexec("^(.+)_biased_(direct|inverse)$", nms))
+  parsed <- regmatches(nms,
+                       regexec("^(.+)_(centroid|edge|uniform)_biased$", nms))
 
   part <- function(i){
     vapply(parsed, function(x) if(length(x) == 3L) x[i] else NA_character_,
            character(1))
   }
 
-  data.frame(name = nms, layer = part(2), direction = part(3),
+  lyr <- part(2)
+
+  data.frame(name = nms, layer = lyr, sampling = part(3),
+             method = ifelse(is.na(lyr), NA_character_, report_occ_method(lyr)),
              stringsAsFactors = FALSE)
 }
 
@@ -1378,7 +1385,7 @@ report_bias_applied <- function(biased){
 #' Ellipsoids grouped by the bias applications they received
 #'
 #' Two ellipsoids share an emitted call only when their stored layers name the
-#' same prediction layers applied in the same directions, and only when their
+#' same prediction layers applied with the same sampling, and only when their
 #' predictions live in the same emitted list, since the call subsets that list
 #' by name. Ellipsoids with no biased layers, or whose layer names did not
 #' parse, are dropped rather than guessed at.
@@ -1406,7 +1413,7 @@ report_bias_groups <- function(){
   keys <- vapply(ids, function(id){
     ap <- report_bias_applied(biased[[id]])
     if(nrow(ap) == 0 || any(is.na(ap$layer))) return(NA_character_)
-    paste(ap$layer, ap$direction, collapse = "|")
+    paste(ap$layer, ap$sampling, collapse = "|")
   }, character(1))
 
   pred_obj <- pg$list_obj[match(ids, pg$id)]
@@ -1437,8 +1444,11 @@ report_bias_groups <- function(){
 #' Value summary of each biased layer, against the layer it came from
 #'
 #' The unbiased mean is carried alongside so the prose can report how much the
-#' composite reduced the surface. The product of a surface and a composite in
-#' [0, 1] is never larger than the surface, so this is always a reduction.
+#' composite reduced the surface. It is taken over the cells the biased layer
+#' kept, since apply_bias() drops the cells where the prediction is zero. The
+#' comparison only means something when the weight is the layer itself
+#' (suitability with centroid, Mahalanobis with edge), which is checked in
+#' report_bias_ell_prose().
 #'
 #' @param biased One element of ellipsoid_prediction_list_biased.
 #' @param pred The unbiased prediction for the same ellipsoid.
@@ -1463,7 +1473,11 @@ report_bias_layer_stats <- function(biased, pred){
 
     src <- if(inherits(pred, "SpatRaster") && !is.na(ap$layer[i]) &&
               ap$layer[i] %in% names(pred)){
-      terra::global(pred[[ap$layer[i]]], "mean", na.rm = TRUE)[1, 1]
+      tryCatch(
+        terra::global(terra::mask(pred[[ap$layer[i]]], biased[[ap$name[i]]]),
+                      "mean", na.rm = TRUE)[1, 1],
+        error = function(e) NA_real_
+      )
     } else {
       NA_real_
     }
@@ -1569,7 +1583,7 @@ report_bias_prepare_code <- function(prepared){
 #'
 #' A loop is honest here because the grouping is read from the stored layer
 #' names rather than detected: two ellipsoids share this call only when the same
-#' prediction layers were biased in the same directions, and only when their
+#' prediction layers were biased with the same sampling, and only when their
 #' predictions live in the same emitted list.
 #'
 #' @param objs Object names of the ellipsoids in the group.
@@ -1586,8 +1600,9 @@ report_bias_apply_code <- function(objs, ap, pred_obj, out){
     c("    apply_bias(prepared_bias = prepared_bias,",
       paste0("               prediction = ", pred_obj, "[[nm]],"),
       paste0("               prediction_layer = \"", ap$layer[i], "\","),
-      paste0("               effect_direction = \"", ap$direction[i], "\","),
-      paste0("               verbose = FALSE)[[\"", ap$layer[i], "_biased\"]]",
+      paste0("               sampling = \"", ap$sampling[i], "\","),
+      paste0("               method = \"", ap$method[i], "\","),
+      paste0("               verbose = FALSE)[[\"", ap$name[i], "\"]]",
              if(i < nrow(ap)) "," else ""))
   }))
 
@@ -1619,11 +1634,11 @@ report_bias_prose <- function(n_ell, n_group){
 
   out <- paste0(
     "A prediction describes where conditions suit the species. It does not ",
-    "describe where anyone looked. Records accumulate near roads, towns and ",
+    "describe where anyone looked. Data accumulate near roads, towns and ",
     "reserves, so the places a species is recorded are the places that are ",
     "both suitable and sampled. This step builds a surface representing that ",
     "second component and combines it with the predictions, so that ",
-    "records drawn later carry the same uneven effort a real dataset ",
+    "data points drawn later carry the same uneven effort a real dataset ",
     "would.")
 
   if(n_ell > 0){
@@ -1669,8 +1684,8 @@ report_bias_prepare_prose <- function(prepared){
   detail <- if(n > 0){
     paste0("- `", parts$layer, "` was treated as ", parts$direction,
            ", so ", ifelse(parts$direction == "direct",
-                           "higher values raise the chance of a record",
-                           "higher values lower the chance of a record"))
+                           "higher values raise the chance of a data point",
+                           "higher values lower the chance of a data point"))
   } else {
     character(0)
   }
@@ -1754,44 +1769,64 @@ report_bias_ell_prose <- function(ell, biased, pred, obj, out){
              ""))
   }
 
-  dirs <- unique(st$direction)
+  samp <- unique(st$sampling)
 
   open <- paste0(
     "The composite was applied to ", nrow(st), " layer",
     if(nrow(st) == 1) "" else "s", " of the **", ell$ell_name,
     "** prediction, ", report_and(paste0("`", st$layer, "`")), ". ",
-    if(length(dirs) == 1 && identical(dirs, "direct")){
-      paste0("Each was multiplied by the composite directly, so cells the ",
-             "composite scores highly keep most of their value and cells it ",
-             "scores near zero lose almost all of theirs.")
-    } else if(length(dirs) == 1 && identical(dirs, "inverse")){
-      paste0("Each was multiplied by 1 minus the composite, so the ",
-             "relationship is reversed and cells the composite scores highly ",
-             "are the ones pushed toward zero.")
+    if(length(samp) == 1 && identical(samp, "centroid")){
+      paste0("Each layer was first turned into a weight that is highest near ",
+             "the center of the niche, the suitability itself or 1 over the ",
+             "Mahalanobis distance, and that weight was multiplied by the ",
+             "composite.")
+    } else if(length(samp) == 1 && identical(samp, "edge")){
+      paste0("Each layer was first turned into a weight that is highest near ",
+             "the boundary of the niche, 1 minus the suitability or the ",
+             "Mahalanobis distance itself, and that weight was multiplied by ",
+             "the composite.")
+    } else if(length(samp) == 1 && identical(samp, "uniform")){
+      paste0("Every cell with a prediction was given the same weight, so ",
+             "each surface is the composite alone, limited to the cells the ",
+             "prediction covers.")
     } else {
-      paste0("The direction differed between layers, so they are not directly ",
+      paste0("The sampling differed between layers, so they are not directly ",
              "comparable with one another.")
-    })
+    },
+    " Cells where the prediction is zero were removed first, so nothing is ",
+    "weighted outside a truncated niche.")
+
+  # The mean before bias is only comparable when the weight is the layer
+  # itself. Any other weight sits on a different scale from its source layer.
+  same_scale <- (st$method == "suitability" & st$sampling == "centroid") |
+    (st$method == "mahalanobis" & st$sampling == "edge")
+  same_scale[is.na(same_scale)] <- FALSE
+
+  show_red <- same_scale & !is.na(st$source_mean) & st$source_mean != 0
 
   lines <- paste0(
     "- `", st$name, "` ranges from ", report_num(signif(st$min, 4)), " to ",
     report_num(signif(st$max, 4)), ", mean ", report_num(signif(st$mean, 4)),
-    ifelse(is.na(st$source_mean) | st$source_mean == 0, "",
+    ifelse(!show_red, "",
            paste0(", against a mean of ",
                   report_num(signif(st$source_mean, 4)),
                   " before bias, a reduction of ",
                   report_num(round((1 - st$mean / st$source_mean) * 100, 1)),
                   "%")))
 
-  reduction <- paste0(
-    "The reduction is the share of the surface the sampling term removed. It ",
-    "is not a statement about the niche, which is unchanged: the same ",
-    "conditions are still suitable, they are simply less likely to be ",
-    "recorded.")
+  reduction <- if(any(show_red)){
+    c(paste0(
+      "The reduction is the share of the surface the sampling term removed. ",
+      "It is not a statement about the niche, which is unchanged: the same ",
+      "conditions are still suitable, they are simply less likely to be ",
+      "recorded."), "")
+  } else {
+    character(0)
+  }
 
   c(open, "",
     lines, "",
-    reduction, "",
+    reduction,
     paste0("These surfaces are in `", out, "[[\"", obj, "\"]]`."), "")
 }
 
@@ -1849,7 +1884,7 @@ report_bias_section <- function(){
         paste0("The following ", length(sel), " niche",
                if(length(sel) == 1) " was" else "s were",
                " biased together, since the same prediction layers were ",
-               "combined with the composite in the same direction."), "")
+               "combined with the composite using the same sampling."), "")
     } else {
       character(0)
     }
@@ -1893,7 +1928,7 @@ report_occ_method <- function(layer){
 }
 
 
-#' Whether a record set was drawn from a biased surface
+#' Whether a point set was drawn from a biased surface
 #'
 #' generate_occ_for_ell() records this on the set as a "biased" attribute, and
 #' that is read first because it is what the app itself decided. Membership in
@@ -1905,7 +1940,7 @@ report_occ_method <- function(layer){
 #'
 #' @param id The ell_id.
 #' @param layer The layer the set was drawn from.
-#' @param df The record set itself.
+#' @param df The point set itself.
 #'
 #' @returns A single logical.
 #'
@@ -1949,7 +1984,7 @@ report_occ_source_obj <- function(id, biased, mode){
 }
 
 
-#' Every record set in the session, flattened
+#' Every point set in the session, flattened
 #'
 #' The parameters travel with each set as attributes, so this step has better
 #' provenance than any other: nothing is inferred from the result. Sets whose
@@ -1968,10 +2003,10 @@ report_occ_sets <- function(){
                       n_occ = numeric(0), n = numeric(0), seed = numeric(0),
                       sampling = character(0), strict = logical(0),
                       mask = character(0), truncate = logical(0),
-                      effect = character(0), biased = logical(0),
+                      biased = logical(0),
                       source_obj = character(0), stringsAsFactors = FALSE)
 
-  occ <- session_data$ellipsoid_records_list
+  occ <- session_data$ellipsoid_point_sets_list
   if(length(occ) == 0) return(empty)
 
   rows <- lapply(names(occ), function(id){
@@ -2001,7 +2036,6 @@ report_occ_sets <- function(){
                  strict = as.logical(occ_meta(df, "strict", NA)),
                  mask = as.character(occ_meta(df, "mask", "none")),
                  truncate = as.logical(occ_meta(df, "truncate", NA)),
-                 effect = as.character(occ_meta(df, "effect", NA)),
                  biased = bias,
                  source_obj = report_occ_source_obj(id, bias, md),
                  stringsAsFactors = FALSE)
@@ -2020,7 +2054,7 @@ report_occ_sets <- function(){
 }
 
 
-#' Record sets grouped by the call that produced them
+#' Point sets grouped by the call that produced them
 #'
 #' occ_set_signature() already keys a set on every parameter that defines it
 #' and does not include the ellipsoid, so two sets sharing a key were made in
@@ -2075,7 +2109,7 @@ report_occ_mask_code <- function(mask){
 }
 
 
-#' Code that samples one group of record sets
+#' Code that samples one group of point sets
 #'
 #' Three samplers, chosen the way the app chooses them. Biased surfaces go to
 #' sample_biased_data(), which takes no strategy and no method because the
@@ -2102,7 +2136,7 @@ report_occ_code <- function(objs, row, out){
              paste0("                    n = ", report_num(row$n_occ), ","),
              paste0("                    truncate = ",
                     if(isTRUE(row$truncate)) "TRUE" else "FALSE", ","),
-             paste0("                    effect = \"", row$effect, "\","),
+             paste0("                    sampling = \"", row$sampling, "\","),
              paste0("                    seed = ", report_num(row$seed), ")"),
              "",
              "  as.data.frame(d)",
@@ -2178,20 +2212,20 @@ report_occ_weight_prose <- function(row){
                   "sampling weights, with no strategy applied. That surface ",
                   "is already the product of suitability and sampling effort, ",
                   "so a cell is drawn in proportion to both at once, and the ",
-                  "resulting records carry the same uneven coverage a real ",
+                  "resulting data points carry the same uneven coverage a real ",
                   "dataset would."))
   }
 
   if(identical(row$mode, "virtual")){
-    return(switch(as.character(row$effect),
-                  "direct" = paste0("Points were weighted by the multivariate ",
-                                    "normal density, so they concentrate near ",
-                                    "the centroid and thin out toward the ",
-                                    "boundary."),
-                  "inverse" = paste0("Points were weighted by the complement ",
-                                     "of that density, so they concentrate ",
-                                     "toward the boundary and thin out near ",
-                                     "the centroid."),
+    return(switch(as.character(row$sampling),
+                  "centroid" = paste0("Points were weighted by the multivariate ",
+                                      "normal density, so they concentrate near ",
+                                      "the centroid and thin out toward the ",
+                                      "boundary."),
+                  "edge" = paste0("Points were weighted by the complement ",
+                                  "of that density, so they concentrate ",
+                                  "toward the boundary and thin out near ",
+                                  "the centroid."),
                   "uniform" = paste0("Every point inside the ellipsoid was ",
                                      "given equal weight, so they are spread ",
                                      "evenly through its volume."),
@@ -2200,8 +2234,8 @@ report_occ_weight_prose <- function(row){
 
   method <- report_occ_method(row$layer)
 
-  if(identical(row$sampling, "random")){
-    return(paste0("Every eligible cell was given equal weight, so the records ",
+  if(identical(row$sampling, "uniform")){
+    return(paste0("Every eligible cell was given equal weight, so the data points ",
                   "say where the layer has a value at all rather than where it ",
                   "is high."))
   }
@@ -2209,12 +2243,12 @@ report_occ_weight_prose <- function(row){
   if(method == "suitability"){
     if(identical(row$sampling, "centroid")){
       paste0("Weights were proportional to `", row$layer, "`, so cells with ",
-             "higher values were more likely to be drawn and the records ",
+             "higher values were more likely to be drawn and the data points ",
              "concentrate where conditions sit closest to the center of the ",
              "niche.")
     } else {
       paste0("Weights were proportional to 1 minus `", row$layer, "`, so cells ",
-             "with lower values were more likely to be drawn and the records ",
+             "with lower values were more likely to be drawn and the data points ",
              "concentrate near the boundary of the niche rather than its ",
              "center.")
     }
@@ -2222,12 +2256,12 @@ report_occ_weight_prose <- function(row){
     if(identical(row$sampling, "centroid")){
       paste0("Weights were inversely proportional to `", row$layer,
              "`, a distance, so the smallest distances were the most likely to ",
-             "be drawn and the records concentrate near the center of the ",
+             "be drawn and the data points concentrate near the center of the ",
              "niche.")
     } else {
       paste0("Weights were proportional to `", row$layer, "`, a distance, so ",
              "the largest distances were the most likely to be drawn and the ",
-             "records concentrate near the boundary of the niche.")
+             "data points concentrate near the boundary of the niche.")
     }
   }
 }
@@ -2249,15 +2283,15 @@ report_generate_prose <- function(sets){
 
   out <- paste0(
     "A niche says which conditions are tolerable and a prediction says where ",
-    "they occur. Neither is a dataset. This step draws point records from ",
-    "what came before, so the result is a table of records whose origin is ",
+    "they occur. Neither is a dataset. This step draws data points from ",
+    "what came before, so the result is a table of data points whose origin is ",
     "known: the niche it came from, the rule that selected the points, and ",
     "the seed that makes the selection repeatable. That is what makes these ",
-    "records useful as a benchmark, since anything fitted to them can be ",
+    "data points useful as a benchmark, since anything fitted to them can be ",
     "compared against the niche that produced them.")
 
   out <- c(out, "",
-           paste0(n_set, " record set", if(n_set == 1) " was" else "s were",
+           paste0(n_set, " point set", if(n_set == 1) " was" else "s were",
                   " drawn across ", n_ell, " niche",
                   if(n_ell == 1) "" else "s",
                   if(n_group > 1){
@@ -2279,7 +2313,7 @@ report_generate_prose <- function(sets){
 }
 
 
-#' Paragraphs describing one group of record sets
+#' Paragraphs describing one group of point sets
 #'
 #' Members of a group differ only in which niche they came from, so they are
 #' listed rather than given a heading each. What varies between them is the
@@ -2329,10 +2363,10 @@ report_occ_group_prose <- function(row, members, objs, out){
   strict_txt <- if(!virtual && length(row$strict) == 1 && !is.na(row$strict)){
     if(isTRUE(row$strict)){
       paste0("Cells with no value and cells equal to zero were removed before ",
-             "sampling, so every record falls somewhere the layer treats as ",
+             "sampling, so every data point falls somewhere the layer treats as ",
              "inside the niche.")
     } else {
-      paste0("Cells equal to zero were kept as candidates, so records can fall ",
+      paste0("Cells equal to zero were kept as candidates, so data points can fall ",
              "outside the niche boundary wherever the layer still carries a ",
              "value there.")
     }
@@ -2343,7 +2377,7 @@ report_occ_group_prose <- function(row, members, objs, out){
   mask_txt <- if(!virtual && !is.na(row$mask) &&
                  !identical(as.character(row$mask), "none")){
     paste0("Sampling was restricted to the area covered by `", row$mask,
-           "`, so the records describe that area rather than the full study ",
+           "`, so the data points describe that area rather than the full study ",
            "extent.")
   } else {
     ""
@@ -2362,7 +2396,7 @@ report_occ_group_prose <- function(row, members, objs, out){
     character(0)
   }
 
-  tail_txt <- paste0("These records are in `", out, "`, named after the niche ",
+  tail_txt <- paste0("These data points are in `", out, "`, named after the niche ",
                      "each set came from, so one table is pulled out with, for ",
                      "example, `", out, "[[\"", objs[1], "\"]]`.")
 
@@ -2396,11 +2430,11 @@ report_generate_section <- function(){
     members <- sets[sets$group == g, , drop = FALSE]
     row <- members[1, , drop = FALSE]
     objs <- objs_all[members$id]
-    out <- if(multi) paste0("records_", g) else "records"
+    out <- if(multi) paste0("data_points_", g) else "data_points"
 
     open <- if(multi){
       c("***", "",
-        paste0("### Record set ", g), "")
+        paste0("### Point set ", g), "")
     } else {
       character(0)
     }
@@ -2412,7 +2446,7 @@ report_generate_section <- function(){
       report_occ_group_prose(row, members, objs, out))
   }))
 
-  c("## Generating records", "",
+  c("## Generating data points", "",
     report_generate_prose(sets),
     blocks)
 }

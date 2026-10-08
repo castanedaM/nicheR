@@ -269,7 +269,7 @@ observeEvent(input$predict_run_btn, {
 
     # A new prediction invalidates anything derived from the old one
     session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-    session_data$ellipsoid_records_list[[id]] <- NULL
+    session_data$ellipsoid_point_sets_list[[id]] <- NULL
 
     n_ok <- n_ok + 1L
   }
@@ -465,7 +465,7 @@ observeEvent(input$predict_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_records_list[[id]] <- NULL
+  session_data$ellipsoid_point_sets_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
   # Copies of the deleted ellipsoid are kept and become roots

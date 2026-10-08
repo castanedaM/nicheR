@@ -1118,10 +1118,10 @@ observeEvent(input$build_confirm_ell_delete_btn, {
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_records_list[[id]] <- NULL
+  session_data$ellipsoid_point_sets_list[[id]] <- NULL
   session_data$pending_ell_delete <- NULL
 
-  # Its record sets also leave the list of sets shown in the plots
+  # Its point sets also leave the list of sets shown in the plots
   # (occ_visible is defined in generate_tab.R)
   occ_visible(grep(paste0("^", id, "::"), occ_visible(),
                    value = TRUE, invert = TRUE))
@@ -1229,7 +1229,7 @@ observeEvent(input$build_next_done_btn, {
 
 # TRUE when updating would leave results that describe the old geometry.
 # That takes both a change in the working ellipsoid's centroid, covariance or
-# level from its saved copy, and a prediction, biased layer or record set
+# level from its saved copy, and a prediction, biased layer or point set
 # made from that copy. Name and lineage are left out, they change nothing
 # downstream.
 ell_update_is_stale <- function(ell){
@@ -1244,13 +1244,13 @@ ell_update_is_stale <- function(ell){
 
   has_results <- !is.null(session_data$ellipsoid_prediction_list[[id]]) ||
     !is.null(session_data$ellipsoid_prediction_list_biased[[id]]) ||
-    length(session_data$ellipsoid_records_list[[id]]) > 0
+    length(session_data$ellipsoid_point_sets_list[[id]]) > 0
 
   changed && has_results
 }
 
 # Overwrites the saved copy with the working ellipsoid. Predictions, biased
-# layers and record sets made from the old geometry are removed, since
+# layers and point sets made from the old geometry are removed, since
 # they no longer describe this ellipsoid. Shared by Update and Save and
 # continue. Returns a sentence for the notification, empty when nothing was
 # removed.
@@ -1266,12 +1266,12 @@ update_saved_ellipsoid <- function(ell){
   session_data$ellipsoid_prediction_list[[id]] <- NULL
   session_data$prediction_settings[[id]] <- NULL
   session_data$ellipsoid_prediction_list_biased[[id]] <- NULL
-  session_data$ellipsoid_records_list[[id]] <- NULL
+  session_data$ellipsoid_point_sets_list[[id]] <- NULL
 
   occ_visible(grep(paste0("^", id, "::"), occ_visible(),
                    value = TRUE, invert = TRUE))
 
-  paste0(" Its predictions, biased layers, and record sets came from ",
+  paste0(" Its predictions, biased layers, and point sets came from ",
          "the previous version and were removed.")
 }
 
