@@ -18,7 +18,7 @@ always_allow_html: true
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment  = "#>",
-  fig.path = "vignettes/figures/",
+  fig.path = "man/figures/",
   out.width = "100%"
 )
 ```
@@ -55,7 +55,7 @@ data set the mode:
 The figure below shows the workflow and the functions used at each step.
 
 ```{r, echo=FALSE, fig.align='center', fig.cap="Figure 1. Overview of the nicheR workflow."}
-knitr::include_graphics("vignettes/figures/nicheR_workflow.svg")
+knitr::include_graphics("man/figures/nicheR_workflow.svg")
 ```
 
 <br>
