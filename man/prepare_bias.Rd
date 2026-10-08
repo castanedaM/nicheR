@@ -103,5 +103,5 @@ terra::plot(bias_two$composite_surface)
 \seealso{
 \code{\link{apply_bias}} to apply the prepared bias surface to a
   suitability prediction, \code{\link{sample_biased_data}} to sample
-  records from the resulting bias-weighted surface.
+  data points from the resulting bias-weighted surface.
 }

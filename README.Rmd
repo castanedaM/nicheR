@@ -18,11 +18,162 @@ always_allow_html: true
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment  = "#>",
-  fig.path = "man/figures/README-",
+  fig.path = "vignettes/figures/",
   out.width = "100%"
 )
 ```
 
+## Background 
+
+The field of distributional ecology is evolving rapidly, with new algorithms, parameterization strategies, and hypotheses emerging at a fast pace. Evaluating these ideas requires software that can isolate mechanisms, account for bias, and clearly link ecological theory to model behavior.
+
+Virtual niche simulations help researchers test ideas by creating controlled datasets that make model behavior easier to interpret. In practice, building ellipsoid-based virtual niches in R has typically required combining several packages to define niches, map them to geography, and visualize results, making analyses harder to reproduce and build on.
+
+**nicheR** is an R package for building and visualizing **ellipsoid-based ecological niches** using environmental data.
+
+Inspired by the conceptual foundations of **NicheA** and the flexibility
+of the **virtualspecies** package, **nicheR** provides a reproducible
+framework that connects niche construction, prediction, sampling, and
+visualization in one integrated workflow.
+
+
+<br>
+
+## Package description
+
+**nicheR** defines a niche as an ellipsoid in environmental space (E-space).
+When environmental data are available, the niche is predicted onto them, and
+with raster layers the result is a map in geographic space (G-space). The input
+data set the mode:
+
+- **Virtual mode**: no environmental data. The variables are defined by the
+  user and everything happens in E-space.
+- **Tabular mode**: a table of environmental conditions is the background.
+- **Spatial mode**: raster layers are the background, so results can be mapped
+  and sampling bias can be added.
+
+The figure below shows the workflow and the functions used at each step.
+
+```{r, echo=FALSE, fig.align='center', fig.cap="Figure 1. Overview of the nicheR workflow."}
+knitr::include_graphics("vignettes/figures/nicheR_workflow.svg")
+```
+
+<br>
+
+The ideas behind each step are explained in the
+[Concepts behind nicheR](https://castanedam.github.io/nicheR/articles/concepts.html)
+vignette: E-space and G-space, the three modes, the niche as an ellipsoid,
+Mahalanobis distance and suitability, sampling bias, and the options for
+generating data.
+
+<br>
+
+## Installing the package
+
+Note: Internet connection is required to install the package.
+
+The development version of nicheR can be installed using the code below.
+
+```{r, eval=FALSE}
+
+# To install the branch with the app use remote
+remotes::install_github("castanedaM/nicheR", ref = "shinyApp")
+
+# # Installing and loading packages
+# if (!require("devtools")) install.packages("devtools")
+# 
+# # To install the package use
+# devtools::install_github("castanedaM/nicheR")
+# 
+# # To install the package and its vignettes use (if needed use: force = TRUE)
+# devtools::install_github("castanedaM/nicheR", build_vignettes = TRUE)
+```
+
+<br>
+
+*Having problems?*
+
+If you have any problems during installation, restart your R session,
+close other RStudio sessions you may have open, and try again. If during
+the installation you are asked to update packages, do so if you do not
+need a specific version of one or more of the packages. If any package
+gives an error when updating, install it alone using `install.packages()`,
+then try installing nicheR again.
+
+<br>
+
+To load the package use:
+
+```{r loading, eval=FALSE}
+library(nicheR)
+```
+
+<br>
+
+## Workflow in nicheR
+
+A typical nicheR workflow follows the steps below. Each step has a vignette
+with a complete demonstration.
+
+| Step | Main functions | Vignette |
+|------|----------------|----------|
+| 1. Build an ellipsoid | `build_ellipsoid()`, `update_ellipsoid_centroid()`, `update_ellipsoid_covariance()` | [Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) |
+| 2. Make a prediction | `predict()` | [Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html) |
+| 3. Add sampling bias (optional, spatial mode) | `prepare_bias()`, `apply_bias()` | [Working with bias](https://castanedam.github.io/nicheR/articles/bias.html) |
+| 4. Generate data | `virtual_data()`, `sample_data()`, `sample_biased_data()` | [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html) |
+| 5. Simulate communities (optional) | `random_ellipses()`, `nested_ellipses()`, `conserved_ellipses()` | [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) |
+
+Two other vignettes cover the whole workflow:
+
+- [Plotting](https://castanedam.github.io/nicheR/articles/plotting_vignette.html)
+  shows the functions for plotting niches, predictions, and data points in
+  E-space: `plot_ellipsoid()`, `add_data()`, `add_ellipsoid()`, and
+  `plot_ellipsoid_pairs()`.
+- [Shiny app](https://castanedam.github.io/nicheR/articles/shiny_app_vignette.html)
+  shows how to run the whole workflow in a graphical interface with
+  `nicheR_gui()`.
+
+<br>
+
+## Checking the vignettes
+
+Users can check nicheR vignettes for a full explanation of the package
+functionality. The vignettes can be checked online at the
+[nicheR site](https://castanedam.github.io/nicheR/) under the menu
+*Articles*.
+
+To build the vignettes when installing the package from GitHub, make sure
+to use the argument `build_vignettes = TRUE`.
+
+Check each of the vignettes with the code below:
+
+```{r , eval=FALSE}
+# Concepts behind nicheR
+vignette("concepts")
+
+# Guide to building ellipsoid-based niches
+vignette("creating_ellipsoid_based_niches")
+
+# Guide to predicting suitability and Mahalanobis distance
+vignette("predict")
+
+# Guide to preparing and applying sampling bias
+vignette("bias")
+
+# Guide to generating data from virtual niches
+vignette("generating_data")
+
+# Guide to simulating virtual communities
+vignette("virtual_communities")
+
+# Guide to visualizing ellipsoids in environmental space
+vignette("plotting_vignette")
+
+# Guide to the shiny app
+vignette("shiny_app_vignette")
+```
+
+<br>
 
 ## GSoC project description
 
@@ -36,7 +187,7 @@ knitr::opts_chunk$set(
 
 [nicheR](https://castanedam.github.io/nicheR/) builds ellipsoid-based virtual
 ecological niches from environmental data, projects them onto a study area,
-applies sampling bias, and generates virtual occurrence records. Virtual
+applies sampling bias, and generates virtual data points. Virtual
 species are used to benchmark niche models, because they are the only setting
 in which the true niche is known and model performance can be measured against
 it rather than estimated.
@@ -136,244 +287,6 @@ remotes::install_github("castanedaM/nicheR", ref = "shinyApp",
 ```{r, eval=FALSE}
 vignette("shiny_app_vignette", package = "nicheR")
 ```
-<br>
-
-## Background 
-
-The field of distributional ecology is evolving rapidly, with new algorithms, parameterization strategies, and hypotheses emerging at a fast pace. Evaluating these ideas requires software that can isolate mechanisms, account for bias, and clearly link ecological theory to model behavior.
-
-Virtual niche simulations help researchers test ideas by creating controlled datasets that make model behavior easier to interpret. In practice, building ellipsoid-based virtual niches in R has typically required combining several packages to define niches, map them to geography, and visualize results, making analyses harder to reproduce and build on.
-
-**nicheR** is an R package for building and visualizing **ellipsoid-based ecological niches** using environmental data.
-
-Inspired by the conceptual foundations of **NicheA** and the flexibility
-of the **virtualspecies** package, **nicheR** provides a reproducible
-framework that connects niche construction, prediction, sampling, and
-visualization in one integrated workflow.
-
-
-<br>
-
-## Package description
-
-**nicheR** operates across two complementary spaces:
-
-- **E-space (Environmental Space)**: Ellipsoids represent multivariate
-  environmental tolerances. This is where niches are defined, visualized,
-  and compared.
-- **G-space (Geographic Space)**: Predictions are projected across raster
-  layers to map suitable geographic regions and generate virtual
-  occurrence data.
-
-This dual-space structure allows explicit separation between niche
-definition, projection, and sampling processes, making it straightforward
-to test ecological hypotheses under controlled, reproducible conditions.
-The figure below shows a schematic view of how the package works.
-
-```{r, echo=FALSE, fig.align='center', fig.cap="Figure 1. Overview of the nicheR workflow."}
-# knitr::include_graphics("man/figures/nicheR_workflow.png")
-```
-
-<br>
-
-## Installing the package
-
-Note: Internet connection is required to install the package.
-
-The development version of nicheR can be installed using the code below.
-
-```{r, eval=FALSE}
-
-# To install the branch with the app use remote
-remotes::install_github("castanedaM/nicheR", ref = "shinyApp")
-
-# # Installing and loading packages
-# if (!require("devtools")) install.packages("devtools")
-# 
-# # To install the package use
-# devtools::install_github("castanedaM/nicheR")
-# 
-# # To install the package and its vignettes use (if needed use: force = TRUE)
-# devtools::install_github("castanedaM/nicheR", build_vignettes = TRUE)
-```
-
-<br>
-
-*Having problems?*
-
-If you have any problems during installation, restart your R session,
-close other RStudio sessions you may have open, and try again. If during
-the installation you are asked to update packages, do so if you do not
-need a specific version of one or more of the packages. If any package
-gives an error when updating, install it alone using `install.packages()`,
-then try installing nicheR again.
-
-<br>
-
-To load the package use:
-
-```{r loading, eval=FALSE}
-library(nicheR)
-```
-
-<br>
-
-## Workflow in nicheR
-
-A typical nicheR workflow follows these steps:
-
-1. **Build an ellipsoid** — define the niche from environmental ranges
-2. **Predict suitability** — project the ellipsoid onto raster or data frame inputs
-3. **Prepare bias layers** *(optional)* — define and apply sampling biases
-4. **Generate occurrences** — draw virtual occurrence records using various strategies
-5. **Simulate communities** *(optional)* — generate multi-species virtual communities
-
-A brief description of each step is presented below. For complete
-demonstrations, see the package vignettes listed in
-[Checking the vignettes].
-
-<br>
-
-### Building an ellipsoid
-
-The ellipsoid is the core object in nicheR. It represents the virtual
-species' niche as a multivariate ellipse in environmental space, defined
-by a centroid and a covariance matrix that determine its position, size,
-and orientation. Ellipsoids are built from a range data frame specifying
-the minimum and maximum for each environmental variable. nicheR computes
-the centroid, covariance matrix, semi-axes lengths, and niche volume
-automatically.
-
-nicheR includes base-R plotting functions for visualizing ellipsoids in
-E-space, both for individual dimension pairs and all pairwise combinations
-at once. Adding the environmental background contextualizes where the
-niche sits relative to available conditions.
-
-> For details on ellipsoid construction, covariance-based rotation, niche
-> volume, and visualization options, see the
-> [Building ellipsoids](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) vignette.
-
-<br>
-
-### Predictions
-
-Once the ellipsoid is built, `predict()` projects it onto environmental
-data to produce Mahalanobis distance and suitability surfaces. Suitability
-is highest at the niche centroid and decreases toward the boundary.
-Truncated outputs set values to zero (suitability) or `NA` (Mahalanobis)
-outside the ellipsoid, which is useful for enforcing strict niche-boundary
-sampling downstream. Both `SpatRaster` and `data.frame` inputs are
-supported and return matching output types.
-
-> For a full guide to prediction outputs, truncation logic, raster vs.
-> data frame workflows, and E-space vs. G-space visualization, see the
-> [Predicting suitability and Mahalanobis distance](https://castanedam.github.io/nicheR/articles/predict.html) vignette.
-
-<br>
-
-### Preparing and applying bias layers
-
-Bias layers represent external factors that influence sampling
-detectability or effort, independent of the species' actual niche. Each
-layer is assigned a direction: `"direct"` means higher values increase
-sampling probability, while `"inverse"` means higher values decrease it.
-`prepare_bias()` standardizes all layers to [0, 1], applies the
-directional transformations, and combines them into a single composite
-bias surface. `apply_bias()` then weights the suitability prediction by
-this surface to simulate non-random, biased occurrence sampling.
-
-> For details on bias surface construction, directional effects, and how
-> bias interacts with predictions and sampling, see the
-> [Sampling bias data](https://castanedam.github.io/nicheR/articles/bias.html) vignette.
-
-<br>
-
-### Generating virtual occurrences
-
-nicheR provides two sampling functions: `sample_data()` for unbiased
-sampling directly from suitability or Mahalanobis surfaces, and
-`sample_biased_data()` for sampling from a bias-weighted prediction
-surface. Three sampling strategies are available: `"centroid"` samples
-preferentially near the niche center, `"edge"` samples near the boundary,
-and `"random"` samples uniformly across the suitable area. Two weighting
-methods control sampling probability: `"suitability"` weights by
-suitability score and `"mahalanobis"` weights by distance from the
-centroid.
-
-> For a full guide to sampling strategies, methods, strict vs. non-strict
-> modes, and biased sampling workflows, see the
-> [Sampling occurrence data](https://castanedam.github.io/nicheR/articles/generating_occurrence.html) vignette.
-
-<br>
-
-### Simulating virtual communities
-
-nicheR includes functions for simulating multi-species virtual
-communities in environmental space. Three community types are available:
-`random_ellipses()` generates species with niches distributed randomly
-across E-space, `nested_ellipses()` generates nested communities where
-each species niche is contained within the previous one, and
-`conserved_ellipses()` generates communities where all species niches
-remain similar to a reference niche, representing niche conservatism.
-Community predictions produce presence-absence matrices and species
-richness maps that can be used to explore macroecological patterns.
-
-> For a full demonstration of community simulation, prediction, and
-> richness mapping, see the
-> [Virtual community simulation](https://castanedam.github.io/nicheR/articles/virtual_communities.html) vignette.
-
-<br>
-
-### Visualization
-
-nicheR includes a set of plotting functions for visualizing ellipsoids,
-predictions, and occurrence data in E-space. `plot_ellipsoid()` opens a
-new E-space plot, `add_data()` overlays points colored by a continuous
-variable, `add_ellipsoid()` overlays an ellipsoid boundary, and
-`plot_ellipsoid_pairs()` produces multi-panel pairwise projections with
-globally consistent axis limits.
-
-> For a full guide to the plotting functions and all display options, see
-> the
-> [Visualizing ellipsoids in environmental space](https://castanedam.github.io/nicheR/articles/plotting_vignette.html) vignette.
-
-<br>
-
-## Checking the vignettes
-
-Users can check nicheR vignettes for a full explanation of the package
-functionality. The vignettes can be checked online at the
-[nicheR site](https://castanedam.github.io/nicheR/) under the menu
-*Articles*.
-
-To build the vignettes when installing the package from GitHub, make sure
-to use the argument `build_vignettes = TRUE`.
-
-Check each of the vignettes with the code below:
-
-```{r , eval=FALSE}
-# Guide to building ellipsoid-based niches
-vignette("creating_ellipsoid_based_niches")
-
-# Guide to predicting suitability and Mahalanobis distance
-vignette("predict")
-
-# Guide to generate occurrence data from virtual niches
-vignette("generate_occurrence")
-
-# Guide to preparing and applying sampling bias
-vignette("bias")
-
-# Guide to simulating virtual communities
-vignette("virtual_communities")
-
-# Guide to visualizing ellipsoids in environmental space
-vignette("plotting_vignette")
-
-# Guide to the shiny app
-vignette("shiny_app_vignette")
-```
-
 <br>
 
 ## Note on AI usage
