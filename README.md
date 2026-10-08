@@ -67,7 +67,7 @@ The figure below shows the workflow and the functions used at each step.
 
 <div class="figure" style="text-align: center">
 
-<img src="man/figures/nicheR_workflow.svg" alt="Figure 1. Overview of the nicheR workflow." width="100%" />
+<img src="man/figures/nicheR_workflow.png" alt="Figure 1. Overview of the nicheR workflow." width="100%" />
 <p class="caption">
 
 Figure 1. Overview of the nicheR workflow.

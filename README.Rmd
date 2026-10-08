@@ -55,7 +55,7 @@ data set the mode:
 The figure below shows the workflow and the functions used at each step.
 
 ```{r, echo=FALSE, fig.align='center', fig.cap="Figure 1. Overview of the nicheR workflow."}
-knitr::include_graphics("man/figures/nicheR_workflow.svg")
+knitr::include_graphics("man/figures/nicheR_workflow.png")
 ```
 
 <br>
