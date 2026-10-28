@@ -97,7 +97,7 @@ step of the workflow and links to the matching package vignette. The sidebar on
 the left is how you move between steps once you have started.
 
 
-<img src='figures/shiny_app_figures/Slide1.png' 
+<img src='figures/shiny_app_figures/shiny_01.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -123,7 +123,7 @@ starts the session over. Once you have confirmed variables or built an
 ellipsoid, the app asks before doing so.
 
 <!-- SCREENSHOT: Inputs tab, input type radio buttons -->
-<img src='figures/shiny_app_figures/Slide2.png' 
+<img src='figures/shiny_app_figures/shiny_02.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -182,7 +182,7 @@ six, and type a name for each. Blank names default to `var1`, `var2`, and so on.
 letters, numbers, and underscores, and must start with a letter.
 
 <!-- SCREENSHOT: variable selectors with three slots, one unchecked -->
-<img src='figures/shiny_app_figures/Slide3.png' 
+<img src='figures/shiny_app_figures/shiny_03.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -224,7 +224,7 @@ rare species.
 
 <!-- SCREENSHOT (retake): From Stats panel with three variables, showing the
 Ellipsoid confidence level box above the range methods -->
-<img src='figures/shiny_app_figures/Slide5.png' 
+<img src='figures/shiny_app_figures/shiny_05.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -250,7 +250,7 @@ From Stats, which only sets how wide the ranges are.
 
 <!-- SCREENSHOT (retake): Ranges box after Initialize Ellipsoid, showing the
 read-only range table -->
-<img src='figures/shiny_app_figures/Slide6.png' 
+<img src='figures/shiny_app_figures/shiny_06.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -271,7 +271,7 @@ value unchanged. The rotate icon beside each slider resets that pair to zero,
 and **Reset all to zero** returns to the axis-aligned form.
 
 <!-- SCREENSHOT: covariance sliders for a three-variable ellipsoid -->
-<img src='figures/shiny_app_figures/Slide7.png' 
+<img src='figures/shiny_app_figures/shiny_07.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -295,7 +295,7 @@ that is the centroid of the ellipsoid it was copied from. For an ellipsoid built
 from its own ranges, it is the center of those ranges.
 
 <!-- SCREENSHOT: centroid sliders with one shifted -->
-<img src='figures/shiny_app_figures/Slide8.png' 
+<img src='figures/shiny_app_figures/shiny_08.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -308,7 +308,7 @@ label shows whether you are editing or viewing it.
 
 <!-- SCREENSHOT (retake): ellipsoid library with three saved versions, showing
 the five row actions and Create new ellipsoid at the bottom -->
-<img src='figures/shiny_app_figures/Slide9.png' 
+<img src='figures/shiny_app_figures/shiny_09.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -370,7 +370,7 @@ suitable area. The **Show** control lets you move between the two.
 **Combined** places an E-space panel beside a G-space panel.
 
 <!-- SCREENSHOT: E-space pairs view with an ellipsoid -->
-<img src='figures/shiny_app_figures/Slide10.png' 
+<img src='figures/shiny_app_figures/shiny_10.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -380,7 +380,7 @@ shapes, sizes, and colors, and an **Export figure** button that writes PNG,
 PDF, or SVG at a size you specify. The default is a 166 x 166 mm full-page
 publication figure.
 
-<img src='figures/shiny_app_figures/Slide11.png' 
+<img src='figures/shiny_app_figures/shiny_11.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -400,7 +400,7 @@ Prediction projects a saved ellipsoid onto your background data to produce
 suitability surfaces.
 
 <!-- SCREENSHOT (retake): Predict controls, with the truncation box open -->
-<img src='figures/shiny_app_figures/Slide12.png' 
+<img src='figures/shiny_app_figures/shiny_12.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -449,7 +449,7 @@ with the `x` and `y` coordinates. Only layers from the last prediction are
 listed.
 
 <!-- SCREENSHOT (retake): Predict library with the download icon -->
-<img src='figures/shiny_app_figures/Slide13.png' 
+<img src='figures/shiny_app_figures/shiny_13.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -474,13 +474,13 @@ Continuous layers use a viridis palette by default, changeable and reversible in
 the settings panel.
 
 <!-- SCREENSHOT: -->
-<img src='figures/shiny_app_figures/Slide14.png' 
+<img src='figures/shiny_app_figures/shiny_14.png' 
 align='center' 
 height='100%' 
 width='100%'/>
 
 <!-- SCREENSHOT: -->
-<img src='figures/shiny_app_figures/Slide15.png' 
+<img src='figures/shiny_app_figures/shiny_15.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -499,7 +499,7 @@ unbiased prediction.
 
 <!-- SCREENSHOT (retake): Bias controls, with Add new bias layer and the download
 icon in the library -->
-<img src='figures/shiny_app_figures/Slide16.png' 
+<img src='figures/shiny_app_figures/shiny_16.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -556,7 +556,7 @@ the bias is visible directly. Pick the prediction layer to compare from the
 dropdown above the maps. Applying bias jumps you to that tab automatically.
 
 <!-- SCREENSHOT: -->
-<img src='figures/shiny_app_figures/Slide17.png' 
+<img src='figures/shiny_app_figures/shiny_17.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -575,7 +575,7 @@ on how you started, because the app calls a different function in each case.
 | Virtual mode | `virtual_data()` | environmental values only |
 
 <!-- SCREENSHOT (retake): Generate controls, with the unbiased and biased surface columns -->
-<img src='figures/shiny_app_figures/Slide18.png' 
+<img src='figures/shiny_app_figures/shiny_18.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -674,7 +674,7 @@ everything. Every download is a CSV whose first columns identify the set:
 `strict` for sets drawn from a surface or `truncate` for virtual sets.
 
 <!-- SCREENSHOT (retake): Point sets panel with the new set labels -->
-<img src='figures/shiny_app_figures/Slide19.png' 
+<img src='figures/shiny_app_figures/shiny_19.png' 
 align='center' 
 height='100%' 
 width='100%'/>
@@ -719,7 +719,7 @@ them from the console.
 
 
 <!-- SCREENSHOT: -->
-<img src='figures/shiny_app_figures/Slide20.png' 
+<img src='figures/shiny_app_figures/shiny_20.png' 
 align='center' 
 height='100%' 
 width='100%'/>
