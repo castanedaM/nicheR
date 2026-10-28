@@ -38,7 +38,7 @@ knitr::opts_chunk$set(
 -   [Step 4: Generate](#step-4-generate)
     -   [Sampling from a prediction](#sampling-from-a-prediction)
     -   [Sampling in virtual mode](#sampling-in-virtual-mode)
-    -   [Record sets](#record-sets)
+    -   [Point sets](#point-sets)
 -   [Working with several ellipsoids](#working-with-several-ellipsoids)
 -   [The session report](#the-session-report)
     -   [What the report contains depends on your path](#what-the-report-contains-depends-on-your-path)
@@ -66,7 +66,7 @@ Launch the app with:
 
 ```{r}
 library(nicheR)
-run_gui()
+nicheR_gui()
 ```
 
 ### Where each control comes from
@@ -204,7 +204,7 @@ different set of ranges means a new ellipsoid.
 **Manual** lets you type a minimum and maximum for each variable. Defaults come
 from the first and third quartiles of your background data.
 
-**From Data** takes a CSV of records for your species, or any table with one column
+**From Data** takes a CSV of data for your species, or any table with one column
 per selected variable, and uses the observed minimum and maximum of each.
 Column names must match your selected variables exactly. Once matched, the
 observed bounds appear along with **Expand min** and **Expand max** fields that
@@ -215,7 +215,7 @@ widen the ranges outward by a percentage. Negative values shrink them. This is
 combined with a confidence level. Defaults are derived from your background
 data, but you can replace them with published values for your species. This is
 `ranges_from_stats()`, and it is the option to use when you know a species'
-tolerances but have no records for it, which is the usual situation for
+tolerances but have no data for it, which is the usual situation for
 rare species.
 
 > The choice between these methods, and what the confidence level does to the
@@ -321,7 +321,7 @@ Each saved row has five actions:
 - **Edit** loads the version with its covariances, centroid, and confidence
   level editable. The ranges stay as they were built. **Update** then
   overwrites that version in place. If the version already has predictions,
-  biased layers, or record sets, the app asks first: those were made from
+  biased layers, or point sets, the app asks first: those were made from
   the previous shape, so updating removes them.
 - **Add** creates a new unsaved copy, carrying over the covariance, centroid,
   and ranges of the version you copied from.
@@ -439,7 +439,7 @@ versions** selected it starts empty, since each ellipsoid has its own level.
 
 Predictions are stored per ellipsoid, so predicting one version never discards
 another's results. Re-predicting a version clears any biased surfaces and
-records derived from the old prediction, since those would otherwise be
+data points derived from the old prediction, since those would otherwise be
 stale.
 
 Once a version is predicted, the download icon on its row in the library saves
@@ -494,7 +494,7 @@ The library on this tab is view-only. Editing happens on the Build tab.
 Sampling bias weights data generation toward areas with more detection
 effort. It describes where people looked, not where the species can live, and
 the two are kept separate throughout. This whole step is optional: **Skip bias**
-at the top moves straight to Generate, and records will be sampled from the
+at the top moves straight to Generate, and data points will be sampled from the
 unbiased prediction.
 
 <!-- SCREENSHOT (retake): Bias controls, with Add new bias layer and the download
@@ -518,9 +518,12 @@ those valid in every layer (intersection). The formula used is shown once
 prepared.
 
 **Apply** weights a prediction by the composite surface. Choose which ellipsoid
-and which prediction layer, and whether the effect is direct or inverse. **All
-prediction layers** applies the bias to every layer `predict()` produced for
-that ellipsoid. Combinations that already exist are skipped, so you can keep
+and which prediction layer, and the sampling. *Centroid* weights cells near the
+niche center, *edge* weights cells near the boundary, and *uniform* weights
+every cell the same. These are the same options as in step 4, and the method,
+suitability or Mahalanobis, is detected from the layer name and shown under the
+layer selector. **All prediction layers** applies the bias to every layer
+`predict()` produced for that ellipsoid. Combinations that already exist are skipped, so you can keep
 adding without losing what is applied. Note that once bias has been applied the
 result is no longer a probability, which is why step 4 samples biased layers
 with a different function.
@@ -530,7 +533,7 @@ another layer or another ellipsoid, click **Add new bias layer** at the bottom
 of the ellipsoid library, which reopens the box. **Done** closes it again.
 
 Re-preparing the surface clears everything applied from the old one, along with
-any record sets generated from those biased layers, since those results no
+any point sets generated from those biased layers, since those results no
 longer match.
 
 Once bias is prepared, the download icon on each row of the library saves the
@@ -562,7 +565,7 @@ width='100%'/>
 
 # Step 4: Generate
 
-The final step draws virtual records. Which controls you see depends
+The final step draws virtual data points. Which controls you see depends
 on how you started, because the app calls a different function in each case.
 
 | How you started | Function used | Points carry |
@@ -583,17 +586,17 @@ width='100%'/>
 
 **Number of points** sets how many points to draw, and **Random seed** makes
 the draw reproducible. The same seed with the same settings reproduces the same
-records; change it to draw a different replicate.
+data points; change it to draw a different replicate.
 
 **Surface** lists every available prediction layer as a checkbox. You can select
-several at once and get one record set per layer. If bias has been applied,
+several at once and get one point set per layer. If bias has been applied,
 the list splits into two columns separated by a line, with the unbiased layers
 on the left and the biased layers, in orange, on the right. Selecting a layer
 from each side is how you compare what bias did to your sample.
 
 **Sampling strategy** sits under the unbiased layers, because it only applies to
 them. It controls where the points fall within the niche. *Centroid* weights
-toward the niche center, *edge* toward the boundary, and *random* samples evenly
+toward the niche center, *edge* toward the boundary, and *uniform* samples evenly
 across all suitable cells. The centroid and edge options are what let you
 simulate species that are common at their optimum versus those detected mostly
 at their margins. The strategies are checkboxes, so you can select more than one
@@ -637,22 +640,23 @@ past it.
 
 **Point distribution** chooses how density varies inside the ellipsoid.
 *Centroid* concentrates points near the centroid, *edge* concentrates them near
-the boundary, and *random* spreads them evenly through the volume. These are the
-`direct`, `inverse`, and `uniform` effects of `virtual_data()`. Edge and random
-both require truncation, so they only appear when truncation is on.
+the boundary, and *uniform* spreads them evenly through the volume. These are
+the `centroid`, `edge`, and `uniform` values of the `sampling` argument in
+`virtual_data()`. Edge and uniform both require truncation, so they only appear
+when truncation is on.
 
 The result is a table of environmental values with no coordinates. Environmental
 space plots work as usual; geographic plots are unavailable, and the app tells
 you so rather than drawing an empty map.
 
-## Record sets
+## Point sets
 
 Each run produces one set per layer and sampling strategy, and sets accumulate
 rather than replace. Changing any parameter, the seed included, gives you a new
 set alongside the old one, so a sample-size or seed series builds up in one
 place.
 
-The **Record sets** panel lists them with an eye icon each. Toggling the eye
+The **Point sets** panel lists them with an eye icon each. Toggling the eye
 controls which sets the plots draw, up to four at a time per ellipsoid. In the
 pairs view all visible sets are overlaid and color-coded with a shared legend;
 in the 2D and combined views each set gets its own panel.
@@ -663,13 +667,13 @@ seed. Sets drawn from a biased layer are labeled bias weighted. Virtual sets
 always show the sampling and whether they were truncated, since they have no
 layer name to carry that.
 
-Records are stored per ellipsoid, and the library shows how many each has
+Data points are stored per ellipsoid, and the library shows how many each has
 produced. You can download one set, every set for the working ellipsoid, or
 everything. Every download is a CSV whose first columns identify the set:
 `ell_id`, `ell_name`, `layer`, `n`, `seed`, and `sampling`, followed by
 `strict` for sets drawn from a surface or `truncate` for virtual sets.
 
-<!-- SCREENSHOT (retake): Record sets panel with the new set labels -->
+<!-- SCREENSHOT (retake): Point sets panel with the new set labels -->
 <img src='figures/shiny_app_figures/Slide19.png' 
 align='center' 
 height='100%' 
@@ -685,7 +689,7 @@ one hypothesis through the whole workflow at once.
 A typical use: build an ellipsoid from published tolerances, build a second one
 from wider ranges to represent uncertainty in those tolerances, and copy the
 first with a rotated covariance to represent correlated variables. Predict all three
-in one pass, apply the same bias surface to all three, and generate records
+in one pass, apply the same bias surface to all three, and generate data points
 from each. The **Details** column keeps track of which came from which, and
 every plot tab lets you switch between them without losing anything.
 
@@ -728,7 +732,7 @@ width='100%'/>
 Sections appear only when the objects they describe exist. Skipping bias, or
 working without geography, does not leave an empty heading in the report; the
 section is simply not written. The same rule applies within a section, so a
-Generate section built from three record sets documents three, not a
+Generate section built from three point sets documents three, not a
 placeholder for every option you did not use.
 
 | How you started | Sections written |
@@ -750,7 +754,7 @@ no Bias section. This matches what the app itself allows.
 
 **Bias** is reported per composite surface. The layers you uploaded, their
 assigned directions, the NA handling rule, and the resulting formula are all
-recorded, and the Generate section cross-references which record sets came
+recorded, and the Generate section cross-references which point sets came
 from a biased layer and which did not.
 
 ## File paths

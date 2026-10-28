@@ -32,8 +32,8 @@ knitr::opts_chunk$set(
   - [Subsampling large datasets](#subsampling-large-datasets)
   - [Fixed axis limits for comparing ellipsoids](#fixed-axis-limits-for-comparing-ellipsoids)
 - [add_data() and add_ellipsoid()](#add_data-and-add_ellipsoid)
-  - [Layering background, records, and boundary](#layering-background-records-and-boundary)
-  - [Coloring records by a continuous variable](#coloring-records-by-a-continuous-variable)
+  - [Layering background, data points, and boundary](#layering-background-data-points-and-boundary)
+  - [Coloring data points by a continuous variable](#coloring-data-points-by-a-continuous-variable)
 - [plot_ellipsoid_pairs()](#plot_ellipsoid_pairs)
   - [Pairs with background](#pairs-with-background)
   - [Pairs with predictions](#pairs-with-predictions)
@@ -53,11 +53,13 @@ The functions covered are:
 
 These functions are designed to be layered. The typical workflow is to open a plot with `plot_ellipsoid()` and then add data or boundaries on top with `add_data()` and `add_ellipsoid()`.
 
+For an explanation of E-space and of the values shown in these plots, see the vignette [Concepts behind nicheR](https://castanedam.github.io/nicheR/articles/concepts.html).
+
 <br>
 
 ## Getting ready
 
-If `nicheR` has not been installed yet, please do so. See the [Main guide](index.html) for installation instructions.
+If `nicheR` has not been installed yet, please do so. See the [Main guide](https://castanedam.github.io/nicheR/index.html) for installation instructions.
 
 ```{r get_ready, results='hide', message=FALSE, warning=FALSE}
 library(nicheR)
@@ -70,7 +72,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-We use the same example data as in the other vignettes: a two-dimensional `nicheR_ellipsoid` object for a reference species and the corresponding North American background data.
+We use the same example data as in the other vignettes: a two-dimensional `nicheR_ellipsoid` object for a reference species and the corresponding background data for part of the Americas.
 
 ```{r data}
 data("ref_ellipse", package = "nicheR")
@@ -105,7 +107,11 @@ pred_trunc <- predict(ref_ellipse,
                       verbose = FALSE)
 ```
 
-```{r include=FALSE}
+<br>
+
+The lines below define the margins and the color palettes used in the plots of this vignette.
+
+```{r settings}
 # Shared settings used throughout
 mars     <- c(4, 4, 2, 1)
 blue_pal <- hcl.colors(100, palette = "Oslo", rev = TRUE)
@@ -369,16 +375,16 @@ Without `fixed_lims`, each panel would rescale to its own data extent, making th
 
 ## add_data() and add_ellipsoid()
 
-`add_data()` and `add_ellipsoid()` layer content onto an existing plot opened by `plot_ellipsoid()`. The key thing to keep in mind is drawing order: whatever is drawn last sits on top. The typical order is background first, records second, ellipsoid boundary last.
+`add_data()` and `add_ellipsoid()` layer content onto an existing plot opened by `plot_ellipsoid()`. The key thing to keep in mind is drawing order: whatever is drawn last sits on top. The typical order is background first, data points second, ellipsoid boundary last.
 
 <br>
 
-### Layering background, records, and boundary
+### Layering background, data points, and boundary
 
-This is the most common layering pattern. We open the plot with a muted background, add records in a distinctive color, then draw the ellipsoid boundary on top so it is not obscured by the points.
+This is the most common layering pattern. We open the plot with a muted background, add data points in a distinctive color, then draw the ellipsoid boundary on top so it is not obscured by the points.
 
 ```{r layering}
-# Simulate records from inside the ellipsoid
+# Simulate data points from inside the ellipsoid
 set.seed(42)
 rec_idx <- sample(which(pred_trunc$suitability_trunc > 0), 40)
 rec_pts <- back_data[rec_idx, ref_ellipse$var_names]
@@ -393,9 +399,9 @@ plot_ellipsoid(ref_ellipse,
                pch = ".", lwd = 1,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
-               main = "Background + records + boundary")
+               main = "Background + data points + boundary")
 
-# Step 2: records on top of background
+# Step 2: data points on top of background
 add_data(rec_pts,
          x = "bio_1", y = "bio_12",
          pts_col = "#0004d5", pch = 19, cex = 1.2)
@@ -404,7 +410,7 @@ add_data(rec_pts,
 add_ellipsoid(ref_ellipse, col_ell = "#e10000", lwd = 2)
 
 legend("topright",
-       legend = c("Background", "Records", "Ellipsoid boundary"),
+       legend = c("Background", "Data points", "Ellipsoid boundary"),
        col    = c("#c5c5c5", "#0004d5", "#e10000"),
        pch    = c(16, 19, NA), lty = c(NA, NA, 1),
        lwd    = c(NA, NA, 2), cex = 0.8, bty = "n")
@@ -412,12 +418,12 @@ legend("topright",
 
 <br>
 
-### Coloring records by a continuous variable
+### Coloring data points by a continuous variable
 
-`add_data()` also supports `col_layer`, which maps a continuous column onto a palette the same way `plot_ellipsoid()` does. This is useful for showing suitability, Mahalanobis distance, or any other variable at the record locations on top of a background.
+`add_data()` also supports `col_layer`, which maps a continuous column onto a palette the same way `plot_ellipsoid()` does. This is useful for showing suitability, Mahalanobis distance, or any other variable at the data point locations on top of a background.
 
 ```{r add_data_col_layer}
-# Predict suitability at the records
+# Predict suitability at the data points
 rec_pred <- predict(ref_ellipse,
                     newdata = rec_pts,
                     include_suitability = TRUE,
@@ -434,9 +440,9 @@ plot_ellipsoid(ref_ellipse,
                pch = ".", lwd = 2,
                xlab = "Bio1 (Mean Annual Temperature)",
                ylab = "Bio12 (Annual Precipitation)",
-               main = "Records colored by suitability")
+               main = "Data points colored by suitability")
 
-# Records colored by suitability
+# Data points colored by suitability
 add_data(rec_pred,
          x = "bio_1", y = "bio_12",
          col_layer = "suitability",

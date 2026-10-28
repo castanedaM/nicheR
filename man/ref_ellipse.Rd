@@ -3,11 +3,12 @@
 \docType{data}
 \name{ref_ellipse}
 \alias{ref_ellipse}
-\title{Reference ellipse for virtual community examples}
+\title{Reference ellipse for examples}
 \format{
 An object of class \code{nicheR_ellipsoid} (which is a \code{list})
-with 13 elements:
+with 15 elements:
 \describe{
+  \item{ranges}{Matrix. The minimum and maximum of each variable used to build the niche.}
   \item{dimensions}{Integer. Number of dimensions (2).}
   \item{var_names}{Character vector. Names of variables (\code{"bio_1"}, \code{"bio_12"}).}
   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
@@ -20,7 +21,8 @@ with 13 elements:
   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
-  \item{cov_limits}{List. Axis-aligned minimum and maximum limits.}
+  \item{cov_limits}{Data frame. Minimum and maximum covariance allowed for each pair of variables.}
+  \item{cov_limits_remaining}{Data frame. Covariance limits still available after the covariance was updated.}
 }
 }
 \usage{
@@ -29,14 +31,16 @@ ref_ellipse
 \description{
 A pre-calculated \code{nicheR_ellipsoid} object representing a hypothetical
 species niche based on Annual Mean Temperature (bio_1) and Annual
-Precipitation (bio_12).
+Precipitation (bio_12). It is the example niche used across the vignettes
+and help pages.
 }
 \details{
-This object serves as a template for testing community simulation functions
-like \code{\link{conserved_ellipses}}. It was generated using
-\code{\link{build_ellipsoid}} with a centroid at (23.75, 1750) and
-specific covariance structures to reflect a typical temperature-precipitation
-relationship.
+This object was generated using \code{\link{build_ellipsoid}} with a range
+of 20 to 27 for Annual Mean Temperature and 1000 to 2500 for Annual
+Precipitation, which places the centroid at (23.5, 1750). A covariance of
+-100 between the two variables was then set with
+\code{\link{update_ellipsoid_covariance}}. It also serves as the template
+for community simulation functions like \code{\link{conserved_ellipses}}.
 }
 \examples{
 data(ref_ellipse)

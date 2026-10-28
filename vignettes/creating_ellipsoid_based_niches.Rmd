@@ -3,10 +3,8 @@ title: "Creating Ellipsoid Based Niches"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Creating Ellipsoid Based Niches}
-  %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -25,43 +23,54 @@ knitr::opts_chunk$set(
 - [Description](#description)
 - [Getting ready](#getting-ready)
 - [Loading example data](#loading-example-data)
-- [Building and visualizing ellipsoid niches](#building-and-visualizing-ellipsoid-niches)
-  - [Creating a basic ellipsoid](#creating-a-basic-ellipsoid)
-  - [Adjusting ellipsoid covariance](#adjusting-ellipsoid-covariance)
-  - [Comparing multiple species niches](#comparing-multiple-species-niches)
-  - [Save and import](#save-and-import)
+- [Defining the ranges](#defining-the-ranges)
+  - [Ranges from data](#ranges-from-data)
+  - [Ranges from statistics](#ranges-from-statistics)
+- [Building an ellipsoid](#building-an-ellipsoid)
+  - [Understanding the ellipsoid object](#understanding-the-ellipsoid-object)
+  - [Effect of the confidence level](#effect-of-the-confidence-level)
+- [Visualizing an ellipsoid](#visualizing-an-ellipsoid)
+- [Modifying an ellipsoid](#modifying-an-ellipsoid)
+  - [Adjusting the covariance](#adjusting-the-covariance)
+  - [Moving the centroid](#moving-the-centroid)
+- [Comparing multiple species niches](#comparing-multiple-species-niches)
+- [Save and import](#save-and-import)
 - [Working in more than 2 dimensions](#working-in-more-than-2-dimensions)
 
 <hr>
 
 ## Description
 
-This vignette introduces the core workflow for defining species ecological niches as ellipsoids in environmental space using the `nicheR` package. The ellipsoid-based approach follows the Hutchinsonian concept of the ecological niche by representing the set of environmental conditions under which a species can persist as an n-dimensional hypervolume in multivariate environmental space. Ellipsoids are well-suited to this task because they are a straightforward and interpretable way of capturing the shape, size, and orientation of a species' niche, including correlations between environmental variables.
+This vignette introduces the core workflow for defining species ecological niches as ellipsoids in environmental space using the `nicheR` package. Ellipsoids are well-suited to this task because they are a straightforward and interpretable way of capturing the shape, size, and orientation of a species' niche, including correlations between environmental variables.
 
 The main functions covered in this vignette are:
 
+- `ranges_from_data()` / `ranges_from_stats()`: obtain the environmental ranges of a niche from data or from summary statistics.
 - `build_ellipsoid()`: constructs a `nicheR_ellipsoid` object from user-defined environmental ranges.
 - `update_ellipsoid_covariance()`: modifies the covariance structure of an existing ellipsoid to introduce correlations between environmental variables.
+- `update_ellipsoid_centroid()`: moves an existing ellipsoid to a new position in environmental space.
 - `plot_ellipsoid()`: visualizes an ellipsoid in two-dimensional environmental space, optionally alongside background data.
 - `add_ellipsoid()`: adds an additional ellipsoid to an existing plot for visual comparison.
-- `add_data()`: overlays additional data points (centroids, other background data, records) onto an existing ellipsoid plot.
+- `add_data()`: overlays additional data points (centroids, other background data, generated points) onto an existing ellipsoid plot.
 - `plot_ellipsoid_pairs()`: plots all pairwise projections of a multidimensional ellipsoid at once.
 - `save_nicheR()` / `read_nicheR()`: saves and reloads `nicheR` objects to and from disk.
+
+For the ideas behind this step, see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid) in the Concepts vignette.
 
 <br>
 
 ## Getting ready
 
-If `nicheR` has not been installed yet, please do so. See the [Main guide](index.html) for installation instructions.
+If `nicheR` has not been installed yet, please do so. See the [Main guide](https://castanedam.github.io/nicheR/index.html) for installation instructions.
 
 Use the following lines of code to load `nicheR` and other packages needed for this vignette, and to set a working directory (if necessary).
 
-Note: We will display functions from other packages as `package::function()`.
+<u>Note</u>: We will display functions from other packages as `package::function()`.
 
 ```{r get_ready, results='hide', message=FALSE, warning=FALSE}
 # Load packages
 library(nicheR)
-#library(terra)
+library(terra)
 
 # Current directory
 getwd()
@@ -71,14 +80,13 @@ getwd()
 
 # Saving original plotting parameters
 original_par <- par(no.readonly = TRUE)
-
 ```
 
 <br>
 
 ## Loading example data
 
-The lines of code below load the environmental raster data included in the `nicheR` package. These layers represent Bioclim variables and will be used both as background data to provide environmental context and as the basis for visualizing ellipsoids.
+The lines of code below load the environmental raster data included in the `nicheR` package. These layers represent Bioclim variables for part of the Americas and will be used as background data to provide environmental context when visualizing ellipsoids.
 
 ```{r data}
 # Load raster layers
@@ -90,7 +98,7 @@ bios <- terra::rast(system.file("extdata", "ma_bios.tif",
 
 For the examples in this vignette we will work with three variables: mean annual temperature (bio_1), annual precipitation (bio_12), and precipitation seasonality (bio_15). We extract these layers and convert them to a data frame for use in plotting and background comparisons.
 
-```{r data_prep}
+```{r data_prep, fig.width = 7, fig.height = 4.5, out.width = "95%"}
 # Subset to the three variables used in this vignette
 bios <- bios[[c("bio_1", "bio_12", "bio_15")]]
 
@@ -98,7 +106,7 @@ bios <- bios[[c("bio_1", "bio_12", "bio_15")]]
 bios_df <- as.data.frame(bios, xy = TRUE)
 
 # Quick look at each variable
-terra::plot(c(bios$bio_1, bios$bio_12, bios$bio_15),
+terra::plot(bios,
             main = c("Bio 1 - Mean Annual Temperature",
                      "Bio 12 - Annual Precipitation",
                      "Bio 15 - Precipitation Seasonality"))
@@ -106,32 +114,71 @@ terra::plot(c(bios$bio_1, bios$bio_12, bios$bio_15),
 
 <br>
 
-### Building and visualizing ellipsoid niches
+## Defining the ranges
 
-### Background
+A niche in `nicheR` starts with a range for each environmental variable, that is, the lowest and the highest value that the species tolerates. The ranges are given as a data frame with one column per variable and two rows.
 
-A key distinction in ecological niche modeling is between environmental space (E-space) and geographic space (G-space). E-space is the multivariate space defined by environmental variables, such as temperature and precipitation, where each axis represents a single variable and each point represents a unique combination of environmental conditions. The ellipsoid niche is defined and parameterized entirely in E-space, where its shape, size, and position have direct ecological meaning. G-space, by contrast, is the familiar two-dimensional geographic map, where each point corresponds to a location on the landscape. Because every geographic location can be characterized by its environmental conditions, there is a direct relationship between the two concepts and once a niche is defined in E-space it can be projected onto G-space to identify which locations on a real landscape fall within the species' tolerances. This projection from E-space to G-space is what produces a map of predicted suitable habitat, and is covered in the [Making Predictions vignette](https://castanedam.github.io/nicheR/articles/predict.html).
+In the example below, we define a species tolerating mean annual temperatures between 20 and 27 degrees and annual precipitation between 1000 and 2500 mm. We will use this species throughout the vignette.
 
-The foundation of niche modeling in `nicheR` is the ellipsoid, which represents the set of environmental conditions a species can tolerate. An ellipsoid in environmental space is defined by three components: a centroid (the optimal or central environmental conditions), a covariance matrix (which controls the shape and orientation of the ellipsoid), and a volume (determined by the size of the environmental ranges). The boundary of the ellipsoid is defined by a threshold of the Mahalanobis distance from the centroid, a multivariate measure of distance that accounts for correlations among variables.
-
-The Mahalanobis distance of a point in E-space measures how far that point lies from the centroid of the ellipsoid, scaled by the covariance structure of the niche. Unlike Euclidean distance, which treats all directions equally, Mahalanobis distance accounts for the fact that the ellipsoid may extend further along some environmental axes than others, and that axes may be correlated. A point that falls exactly on the boundary of the ellipsoid has a Mahalanobis distance equal to the chi-square cutoff; points inside the ellipsoid have smaller distances and are considered suitable, while points outside have larger distances and are considered unsuitable. This means that suitability declines continuously and symmetrically from the centroid outward, reaching zero at the ellipsoid boundary.
-
-### Creating a basic ellipsoid
-
-The function `build_ellipsoid()` constructs a niche ellipsoid from user-supplied environmental ranges. The centroid is placed at the midpoint of each range, and no correlation between variables is assumed. The size of the ellipsoid along each axis is determined by the range provided.
-
-In the example below, we define a species tolerating mean annual temperatures between 20 and 32 degrees and annual precipitation between 750 and 4000 mm.
-
-```{r build}
+```{r ranges}
 # Define environmental ranges for the species
-range <- data.frame(bio_1  = c(20, 32),
-                    bio_12 = c(750, 4000))
+ref_ranges <- data.frame(bio_1 = c(20, 27),
+                         bio_12 = c(1000, 2500))
 
-# Build the ellipsoid
-ell <- build_ellipsoid(ranges = range)
+ref_ranges
 ```
 
 <br>
+
+The ranges can be written by hand, as we just did, or they can be obtained with the two functions shown below. Background data are not needed in any of these cases. The variables can have any name, so a niche can be defined in a purely theoretical space. Avoid hyphens in the names, because they are used to name the pairs of variables when setting covariances.
+
+<br>
+
+### Ranges from data
+
+If we have the environmental conditions of the sites where a species was observed, `ranges_from_data()` takes the minimum and the maximum of each variable. The arguments `expand_min` and `expand_max` widen a range by a percentage of its width, which is useful when the observations are few and likely to miss the limits of the species.
+
+```{r ranges_data}
+# Environmental conditions in six sites where a species was observed
+obs_env <- data.frame(bio_1 = c(21.5, 23.0, 24.2, 25.8, 22.4, 26.1),
+                      bio_12 = c(1200, 1650, 1800, 1400, 2300, 1100))
+
+# Ranges from the data
+ranges_from_data(obs_env)
+
+# Ranges from the data, expanding both limits of bio_1 by 10%
+ranges_from_data(obs_env,
+                 expand_min = list(bio_1 = 10),
+                 expand_max = list(bio_1 = 10))
+```
+
+<br>
+
+### Ranges from statistics
+
+If what we have is the mean and the standard deviation of each variable, for instance from a publication, `ranges_from_stats()` returns the interval that contains a given proportion of a normal distribution with those values. The proportion is set with the argument `cl`.
+
+```{r ranges_stats}
+# Ranges from means and standard deviations
+ranges_from_stats(mean = c(bio_1 = 23.5, bio_12 = 1750),
+                  sd = c(bio_1 = 1.2, bio_12 = 250),
+                  cl = 0.95)
+```
+
+<br>
+
+## Building an ellipsoid
+
+The function `build_ellipsoid()` constructs a niche ellipsoid from the ranges. The centroid is placed at the midpoint of each range, and no correlation between variables is assumed. The size of the ellipsoid along each axis is determined by the range provided.
+
+```{r build}
+# Build the ellipsoid
+ell <- build_ellipsoid(ranges = ref_ranges, cl = 0.99)
+```
+
+<br>
+
+### Understanding the ellipsoid object
 
 Printing the ellipsoid object provides a summary of its key properties.
 
@@ -143,46 +190,99 @@ print(ell)
 
 Each component of the printed output describes a different aspect of the ellipsoid:
 
-**Dimensions** reports the number of environmental variables the ellipsoid is defined in. Here we are working in 2D space (bio_1 and bio_12).
+- **Dimensions** is the number of environmental variables the ellipsoid is defined in. Here we are working in two dimensions (bio_1 and bio_12).
+- **Chi-square cutoff** is the value of Mahalanobis distance that defines the boundary of the ellipsoid. Any point in environmental space with a distance from the centroid less than or equal to this value is inside the niche. It depends on the number of dimensions and on the confidence level, `cl`.
+- **Centroid** is the center of the ellipsoid, placed at the midpoint of each range. For our species this is bio_1 = 23.5 and bio_12 = 1750.
+- **Covariance matrix** describes the shape and orientation of the ellipsoid. The diagonal values are the variances along each environmental axis. The off-diagonal values are the covariances between variables. We have not set any yet, so they are zero and the axes of the ellipsoid are aligned with the axes of the plot.
+- **Covariance limits** are the lowest and highest covariance that can be set for each pair of variables.
+- **Ellipsoid semi-axis lengths** are the half-lengths of the ellipsoid along each of its axes, in the units of the variables. The first one (`r round(ell$semi_axes_lengths[1], 1)`) runs along bio_12 and the second one (`r round(ell$semi_axes_lengths[2], 2)`) runs along bio_1, because the precipitation range is much wider in absolute terms than the temperature range.
+- **Ellipsoid axis endpoints** are the coordinates where each axis ends. They are the centroid plus and minus the semi-axis length.
+- **Ellipsoid volume** is a single number that summarizes how much environmental space the niche occupies. It is useful for comparing niche breadth across species.
 
-**Chi-square cutoff** is the Mahalanobis distance threshold that defines the outer boundary of the ellipsoid. It is derived from the chi-squared distribution with degrees of freedom equal to the number of dimensions, at a fixed probability level. Any point in environmental space with a Mahalanobis distance from the centroid less than or equal to this value is considered within the niche. A cutoff of 9.21 corresponds to the 99th percentile of the chi-squared distribution with 2 degrees of freedom.
-
-**Centroid** is the center of the ellipsoid in environmental space, placed at the midpoint of each supplied range. For our species this is bio_1 = 26 and bio_12 = 2375, which correspond exactly to the midpoints of the ranges we defined (20 to 32 and 750 to 4000 respectively).
-
-**Covariance matrix** describes the shape and orientation of the ellipsoid. The diagonal values are the variances along each environmental axis and determine how elongated the ellipsoid is in each direction. Off-diagonal values represent covariance between variables; since we have not yet applied any, these are zero and the ellipsoid axes are aligned with the coordinate axes.
-
-**Ellipsoid semi-axis lengths** are the half-lengths of the ellipsoid along each of its principal axes, in the units of the corresponding variables. These are calculated as the square root of each eigenvalue of the covariance matrix multiplied by the chi-square cutoff. The first axis (1643.879 units) runs along the bio_12 direction and the second (6.07 units) runs along bio_1, reflecting that our precipitation range is much wider in absolute terms than our temperature range.
-
-**Ellipsoid axis endpoints** give the actual coordinates of where each semi-axis terminates in environmental space. Axis 1 spans bio_12 from 731.1 to 4018.9 at a fixed bio_1 of 26, confirming that the full precipitation range of the ellipsoid is recovered from the centroid plus or minus the semi-axis length. Axis 2 spans bio_1 from 19.93 to 32.07 at a fixed bio_12 of 2375, similarly recovering the temperature range we defined.
-
-**Ellipsoid volume** is the hypervolume of the ellipsoid in the units of the environmental variables, calculated as the product of the semi-axis lengths scaled by the appropriate geometric constant (pi in 2D). This gives a single number summarizing the total amount of environmental space the niche occupies and is useful for comparing niche breadth across species.
+All these values are stored in the object and can be accessed by name, for example `ell$centroid` or `ell$volume`.
 
 <br>
 
+### Effect of the confidence level
+
+The argument `cl` sets how far from the centroid the boundary of the ellipsoid is placed. A higher value gives a larger ellipsoid for the same ranges. The default is `cl = 0.95`. In the example above we used `cl = 0.99`, and below we build the same niche with the default to compare them.
+
+```{r cl}
+# The same niche with the default confidence level
+ell_95 <- build_ellipsoid(ranges = ref_ranges, cl = 0.95, verbose = FALSE)
+
+# Chi-square cutoff of each ellipsoid
+ell$chi2_cutoff
+ell_95$chi2_cutoff
+```
+
+<br>
+
+Let's plot the two ellipsoids together with the ranges we defined, shown as a dotted rectangle. The ellipsoids are plotted with `plot_ellipsoid()` and `add_ellipsoid()`, which we will see in more detail in the next section.
+
+```{r cl_plot, fig.width = 7, fig.height = 5, out.width = "95%"}
+mars <- c(4, 4, 2, 1)
+par(mar = mars)  # adjust margins for better visualization
+
+# Ellipsoid with cl = 0.99
+plot_ellipsoid(ell, lwd = 2,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Effect of the Confidence Level")
+
+# Ellipsoid with cl = 0.95
+add_ellipsoid(ell_95, lwd = 2, lty = 2, col_ell = "#0004d5")
+
+# The ranges
+rect(xleft = ref_ranges$bio_1[1], ybottom = ref_ranges$bio_12[1],
+     xright = ref_ranges$bio_1[2], ytop = ref_ranges$bio_12[2],
+     lty = 3, border = "gray40")
+
+legend("topright", legend = c("cl = 0.99", "cl = 0.95", "Ranges"),
+       col = c("#000000", "#0004d5", "gray40"), lty = c(1, 2, 3),
+       lwd = c(2, 2, 1), bty = "n", cex = 0.8)
+```
+
+<br>
+
+With `cl = 0.99` the ellipsoid reaches the limits of the ranges. With `cl = 0.95` it is smaller and stays inside them. We will keep using `cl = 0.99`, so the niche covers the ranges we defined. For more details on what the confidence level means, see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid).
+
+<br>
+
+## Visualizing an ellipsoid
+
 The ellipsoid can be quickly visualized using `plot_ellipsoid()`. On its own, this shows the ellipsoid boundary in the selected pair of dimensions.
 
-```{r plot_basic}
+```{r plot_basic, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
 plot_ellipsoid(ell)
 ```
 
 <br>
 
-Overlaying background environmental data places the ellipsoid in the context of what is actually available in the study region. This helps evaluate whether the defined niche is ecologically realistic and how much of the available environmental space the species may be predicted to occupy. Note: Background data is not a strict requirement for defining an ellipsoid niche in `nicheR`; niches can also be defined purely in theoretical space without reference to any background data.
+Overlaying background environmental data places the ellipsoid in the context of what is actually available in the study region. This helps evaluate whether the defined niche is ecologically realistic and how much of the available environmental space the species may be predicted to occupy.
 
-```{r plot_bg}
+```{r plot_bg, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2))
 ```
 
 <br>
 
-The appearance of both the background points and the ellipsoid boundary can be adjusted using familiar base R graphical parameters: point style and size for the background are controlled via pch, cex_bg, and col_bg, while the ellipsoid line style and color are set with lty, lwd, and col_ell. The axis limits of the plot can be fixed using the fixed_lims argument, and the number of background points rendered can be reduced with bg_sample to improve plotting speed when working with dense environmental data. 
+The appearance of both the background points and the ellipsoid boundary can be adjusted using familiar base R graphical parameters: point style and size for the background are controlled via `pch`, `cex_bg`, and `col_bg`, while the ellipsoid line style and color are set with `lty`, `lwd`, and `col_ell`. The axis limits of the plot can be fixed using the `fixed_lims` argument (when background data are plotted), and the number of background points rendered can be reduced with `bg_sample` to improve plotting speed when working with dense environmental data.
 
-The `add_data()` function can be used to overlay additional information onto the plot, such as the ellipsoid centroid, species records, or a second set of background points. In the example below we add the centroid of the ellipsoid as a reference point.
+The `add_data()` function can be used to overlay additional information onto the plot, such as the ellipsoid centroid, species data points, or a second set of background points. In the example below we add the centroid of the ellipsoid as a reference point.
 
-```{r plot_styled}
+```{r plot_styled, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 2,
-               fixed_lims = list(xlim = c(5, 32), ylim = c(200, 7500)))
+               fixed_lims = list(xlim = c(5, 32), ylim = c(200, 7500)),
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)")
 
 add_data(as.data.frame(t(ell$centroid)),
          x = "bio_1", y = "bio_12",
@@ -191,11 +291,17 @@ add_data(as.data.frame(t(ell$centroid)),
 
 <br>
 
-### Adjusting ellipsoid covariance
+## Modifying an ellipsoid
 
-An important property of an ellipsoidal niche is covariance between environmental variables. Covariance captures the idea that a species may not independently tolerate the full range of each variable; instead, its tolerance along one axis may depend on conditions along another. For example, a species might tolerate high temperatures only when precipitation is also high, creating a positive covariance between temperature and precipitation.
+Once an ellipsoid is built, its shape and its position can be changed without building it again.
 
-When an ellipsoid is first created with `build_ellipsoid()`, all covariances are set to zero, meaning the ellipsoid axes are aligned with the coordinate axes. Each ellipsoid object contains a `cov_limits` element that reports the minimum and maximum covariance values that are valid for that ellipsoid given its shape and size. 
+<br>
+
+### Adjusting the covariance
+
+An important property of an ellipsoidal niche is covariance between environmental variables. Covariance captures the idea that a species may not independently tolerate the full range of each variable; instead, its tolerance along one axis may depend on conditions along another. For example, a species might tolerate high temperatures only when precipitation is low, creating a negative covariance between temperature and precipitation.
+
+When an ellipsoid is first created with `build_ellipsoid()`, all covariances are set to zero. Each ellipsoid object contains a `cov_limits` element that reports the minimum and maximum covariance values that are valid for that ellipsoid given its shape and size.
 
 ```{r cov_limits}
 # Inspect the allowable covariance range
@@ -207,166 +313,186 @@ ell$cov_limits
 The `update_ellipsoid_covariance()` function applies a new covariance value to an existing ellipsoid. All properties of the object (covariance matrix, ellipsoid boundary, volume) are recalculated to reflect the updated shape. Applying a covariance value introduces a tilt in the ellipsoid, reflecting the correlation between the two variables.
 
 ```{r update_cov}
-# Apply a positive covariance between bio_1 and bio_12
-ell2 <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = 750))
-ell2
+# Apply a negative covariance between bio_1 and bio_12
+ref_ellipse <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = -100))
+
+ref_ellipse
 ```
 
 <br>
 
-Attempting to set a covariance value outside the allowable range will return an error rather than producing an invalid ellipsoid.
+This is the reference niche used in the other vignettes. It is included in the package and can be loaded with `data("ref_ellipse", package = "nicheR")`.
+
+Attempting to set a covariance value outside the allowable range returns an error, so an invalid ellipsoid is never produced.
 
 ```{r update_cov_fail, error = TRUE}
-ell2 <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = 10000))
+ell_fail <- update_ellipsoid_covariance(ell, c("bio_1-bio_12" = 10000))
 ```
 
 <br>
 
 We can use `add_ellipsoid()` to overlay the updated ellipsoid on the same plot as the original, allowing a direct visual comparison of the two shapes. The updated ellipsoid (green) shows a clear tilt relative to the original (purple), reflecting the introduced covariance.
 
-```{r plot_cov}
+```{r plot_cov, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
 plot_ellipsoid(ell, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "purple", lty = 6,
-               fixed_lims = list(xlim = c(14, 32), ylim = c(200, 5000)))
+               fixed_lims = list(xlim = c(15, 30), ylim = c(300, 3500)),
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)")
 
-nicheR::add_data(as.data.frame(t(ell$centroid)),
-                 x = "bio_1", y = "bio_12",
-                 pts_col = "purple", cex = 1, pch = 18)
+add_ellipsoid(ref_ellipse, lwd = 3, col_ell = "forestgreen", lty = 6)
 
-add_ellipsoid(ell2, lwd = 3, col_ell = "forestgreen", lty = 6)
-
-nicheR::add_data(as.data.frame(t(ell2$centroid)),
-                 x = "bio_1", y = "bio_12",
-                 pts_col = "forestgreen", cex = 1, pch = 18)
+add_data(as.data.frame(t(ref_ellipse$centroid)),
+         x = "bio_1", y = "bio_12",
+         pts_col = "forestgreen", cex = 1.5, pch = 18)
 ```
 
 <br>
 
-### Comparing multiple species niches
+### Moving the centroid
 
-To illustrate how different niches can be represented and compared, we will build two additional species and progressively add them to the same environmental space. This demonstrates both the range of niche shapes that can be parameterized and the use of `add_ellipsoid()` for visual comparison.
+The `update_ellipsoid_centroid()` function moves an ellipsoid to a new position. The new centroid is given as a named vector with one value per variable. The size, shape, and orientation of the ellipsoid stay the same, and the ranges stored in the object are shifted by the same amount.
 
-Let's start with a second species characterized by cooler and wetter environmental requirements.
+```{r update_centroid}
+# Move the niche toward warmer and wetter conditions
+ell_moved <- update_ellipsoid_centroid(ref_ellipse,
+                                       new_centroid = c(bio_1 = 25,
+                                                        bio_12 = 2200))
 
-```{r build_sp2}
-range <- data.frame(bio_1  = c(12, 24),
-                    bio_12 = c(1400, 4500))
-ell3 <- build_ellipsoid(ranges = range)
-ell3$cov_limits
-ell3 <- update_ellipsoid_covariance(ell3, c("bio_1-bio_12" = 500))
+# Centroid and ranges after moving the niche
+ell_moved$centroid
+ell_moved$ranges
 ```
 
 <br>
 
-Plotting both species together shows how they appear in the available environmental space. Species 1 (green) occupies a broad warm-climate niche with wide precipitation tolerance, avoiding only the warmest and driest conditions due to the covariance between those variables. Species 2 (brown) is shifted toward cooler, wetter environments with a similar covariance structure, but its niche falls in a region of the background that is less represented in our background data, meaning that despite a similar niche volume, this species is realistically more limited within the actual environment of our study region.
+Let's plot the niche before (green) and after (orange) moving it.
 
-```{r plot_sp2}
-plot_ellipsoid(ell2, background = bios_df, dim = c(1, 2), bg_sample = 5000,
+```{r plot_centroid, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
+plot_ellipsoid(ref_ellipse, background = bios_df, dim = c(1, 2),
+               bg_sample = 5000, pch = ".", cex_bg = 1.5, col_bg = "gray50",
+               lwd = 3, col_ell = "forestgreen", lty = 6,
+               fixed_lims = list(xlim = c(15, 30), ylim = c(300, 3500)),
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)")
+
+add_data(as.data.frame(t(ref_ellipse$centroid)),
+         x = "bio_1", y = "bio_12",
+         pts_col = "forestgreen", cex = 1.5, pch = 18)
+
+add_ellipsoid(ell_moved, lwd = 3, col_ell = "orange", lty = 6)
+
+add_data(as.data.frame(t(ell_moved$centroid)),
+         x = "bio_1", y = "bio_12",
+         pts_col = "orange", cex = 1.5, pch = 18)
+```
+
+<br>
+
+## Comparing multiple species niches
+
+To illustrate how different niches can be represented and compared, we will build three additional species and add them to the same environmental space. This demonstrates both the range of niche shapes that can be parameterized and the use of `add_ellipsoid()` for visual comparison.
+
+```{r build_species}
+# Species 1: warm conditions and a wide range of precipitation
+ranges_1 <- data.frame(bio_1 = c(20, 32),
+                       bio_12 = c(750, 4000))
+sp_1 <- build_ellipsoid(ranges = ranges_1, cl = 0.99, verbose = FALSE)
+sp_1 <- update_ellipsoid_covariance(sp_1, c("bio_1-bio_12" = 750),
+                                    verbose = FALSE)
+
+# Species 2: cooler and wetter conditions
+ranges_2 <- data.frame(bio_1 = c(12, 24),
+                       bio_12 = c(1400, 4500))
+sp_2 <- build_ellipsoid(ranges = ranges_2, cl = 0.99, verbose = FALSE)
+sp_2 <- update_ellipsoid_covariance(sp_2, c("bio_1-bio_12" = 500),
+                                    verbose = FALSE)
+
+# Species 3: warm and dry conditions
+ranges_3 <- data.frame(bio_1 = c(18, 30),
+                       bio_12 = c(200, 1100))
+sp_3 <- build_ellipsoid(ranges = ranges_3, cl = 0.99, verbose = FALSE)
+sp_3 <- update_ellipsoid_covariance(sp_3, c("bio_1-bio_12" = 120),
+                                    verbose = FALSE)
+```
+
+<br>
+
+Let's plot the three species together to see how they appear in the available environmental space.
+
+```{r plot_species}
+par(mar = mars)
+
+plot_ellipsoid(sp_1, background = bios_df, dim = c(1, 2), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "forestgreen", lty = 6,
-               fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)))
+               fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)),
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)")
 
-add_data(as.data.frame(t(ell2$centroid)),
+add_data(as.data.frame(t(sp_1$centroid)),
          x = "bio_1", y = "bio_12",
          pts_col = "forestgreen", cex = 2, pch = 18)
 
-add_ellipsoid(ell3, lwd = 3, col_ell = "brown", lty = 6)
+add_ellipsoid(sp_2, lwd = 3, col_ell = "brown", lty = 6)
 
-add_data(as.data.frame(t(ell3$centroid)),
-         x = "bio_1", y = "bio_12",
-         pts_col = "brown", cex = 2, pch = 18)
-```
-
-<br>
-
-Now let's define a third species with a very different ecological character: a warm-adapted specialist restricted to dry environments.
-
-```{r build_sp3}
-range <- data.frame(bio_1  = c(18, 30),
-                    bio_12 = c(200, 1100))
-ell4 <- build_ellipsoid(ranges = range)
-ell4$cov_limits
-ell4 <- update_ellipsoid_covariance(ell4, c("bio_1-bio_12" = 120))
-```
-
-<br>
-
-Adding this third species to the plot shows its uniqueness compared to the other two species. While the first two species follow a broadly wet-warm axis, this species (orange) is specialized toward the warm, dry corner of the environmental space. While its thermal tolerances are still relatively wide, its explicitly specialized to dry environments. Its niche volume is smaller and its covariance is much lower than in the other two species (showing as a less extreme tilt), reflecting only a slight tendency to tolerate marginally warmer conditions in comparably wetter environments.
-
-```{r plot_sp3}
-plot_ellipsoid(ell2, background = bios_df, dim = c(1, 2), bg_sample = 5000,
-               pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
-               col_ell = "forestgreen", lty = 6,
-               fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)))
-
-add_data(as.data.frame(t(ell2$centroid)),
-         x = "bio_1", y = "bio_12",
-         pts_col = "forestgreen", cex = 2, pch = 18)
-
-add_ellipsoid(ell3, lwd = 3, col_ell = "brown", lty = 6)
-
-add_data(as.data.frame(t(ell3$centroid)),
+add_data(as.data.frame(t(sp_2$centroid)),
          x = "bio_1", y = "bio_12",
          pts_col = "brown", cex = 2, pch = 18)
 
-add_ellipsoid(ell4, lwd = 3, col_ell = "orange", lty = 6)
+add_ellipsoid(sp_3, lwd = 3, col_ell = "orange", lty = 6)
 
-add_data(as.data.frame(t(ell4$centroid)),
+add_data(as.data.frame(t(sp_3$centroid)),
          x = "bio_1", y = "bio_12",
          pts_col = "orange", cex = 2, pch = 18)
 ```
 
 <br>
 
-### Save and import
+Species 1 (green) occupies a broad warm-climate niche with wide precipitation tolerance, avoiding only the warmest and driest conditions due to the covariance between those variables. Species 2 (brown) is shifted toward cooler, wetter environments with a similar covariance structure, but its niche falls in a region that is less represented in our background data, meaning that despite a similar niche volume, this species is more limited within the actual environment of our study region.
 
-To facilitate saving `nicheR` objects between sessions, this package provides the `save_nicheR()` and `read_nicheR()` functions. These work with any `nicheR_ellipsoid` object and allow previously defined niches to be saved and reloaded without repeating the parameterization workflow. Let's save the three species we have defined so far.
+Species 3 (orange) has a very different ecological character. While the first two species follow a broadly wet-warm axis, this species is specialized toward the warm, dry corner of the environmental space. Its thermal tolerances are still relatively wide, but its niche volume is smaller and its covariance is much lower than in the other two species (showing as a less extreme tilt).
 
-```{r save_2d}
-# Save ellipsoid objects to a local directory
-temp_file1 <- file.path(tempdir(), "example_sp_1.rda")
-save_nicheR(ell2, file = temp_file1)
-
-temp_file2 <- file.path(tempdir(), "example_sp_2.rda")
-save_nicheR(ell3, file = temp_file2)
-
-temp_file3 <- file.path(tempdir(), "example_sp_3.rda")
-save_nicheR(ell4, file = temp_file3)
-```
+These three niches are included in the package as `example_sp_1`, `example_sp_2`, and `example_sp_3`.
 
 <br>
 
-We can reload any of these objects and work with them exactly as before. Below we import the first species and visualize it to confirm the niche has been recovered correctly.
+## Save and import
 
-```{r read_2d}
-# Import an ellipsoid object from a local directory
-data("example_sp_1", package = "nicheR")
+To facilitate saving `nicheR` objects between sessions, this package provides the `save_nicheR()` and `read_nicheR()` functions. These work with any `nicheR_ellipsoid` object and allow previously defined niches to be saved and reloaded without repeating the parameterization workflow. The object is saved as an RDS file, and the extension `.rds` is added to the file name if it is missing.
 
-plot_ellipsoid(example_sp_1, background = bios_df, dim = c(1, 2),
-               bg_sample = 5000, pch = ".", cex_bg = 1.5, col_bg = "gray50",
-               lwd = 3, col_ell = "forestgreen", lty = 6,
-               fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)))
+```{r save_import}
+# file name (in a temporary directory for demonstration purposes)
+temp_file <- file.path(tempdir(), "ref_ellipse.rds")
 
-add_data(as.data.frame(t(example_sp_1$centroid)),
-         x = "bio_1", y = "bio_12",
-         pts_col = "forestgreen", cex = 2, pch = 18)
+# Save the ellipsoid object to a local directory
+save_nicheR(ref_ellipse, file = temp_file, overwrite = TRUE)
+
+# Import the ellipsoid object from a local directory
+ref_imported <- read_nicheR(temp_file)
+
+# The imported niche is the same as the one we saved
+all.equal(ref_ellipse, ref_imported)
 ```
 
 <br>
 
 ## Working in more than 2 dimensions
 
-All examples so far have defined niches in two-dimensional environmental space. However, `nicheR` supports ellipsoid niches in any number of dimensions. The workflow is similar to the two-dimensional examples, with the only addition being more variables included in the `range` data frame. Here we add 'bio_15', precipitation seasonality, as an additional dimension. 
+All examples so far have defined niches in two-dimensional environmental space. However, `nicheR` supports ellipsoid niches in any number of dimensions. The workflow is the same, with the only addition being more variables included in the ranges. Here we add bio_15, precipitation seasonality, as an additional dimension.
 
 ```{r build_3d}
 # Define ranges across three environmental variables
-range <- data.frame(bio_1  = c(22, 32),
-                    bio_12 = c(800, 4200),
-                    bio_15 = c(45, 115))
+ranges_4 <- data.frame(bio_1 = c(22, 32),
+                       bio_12 = c(800, 4200),
+                       bio_15 = c(45, 115))
 
-ell5 <- build_ellipsoid(ranges = range)
-ell5
+sp_4 <- build_ellipsoid(ranges = ranges_4, cl = 0.99)
 ```
 
 <br>
@@ -374,48 +500,56 @@ ell5
 With three variables, the `cov_limits` element now reports allowable covariance ranges for each of the three variable pairs. The number of covariance parameters grows with the number of dimensions, so it is important to review these limits before making adjustments.
 
 ```{r cov_limits_3d}
-ell5$cov_limits
+sp_4$cov_limits
 ```
 
 <br>
 
-Multiple covariances can be updated simultaneously using `update_ellipsoid_covariance()`. Here we introduce a positive covariance between bio_1 and bio_12, no covariance between bio_1 and bio_15, and a negative covariance between bio_12 and bio_15, reflecting that this species is more tolerant of comparably dryer environments when those environments have extreme seasonal pulses of precipitation.
+Multiple covariances can be updated simultaneously using `update_ellipsoid_covariance()`. Here we introduce a positive covariance between bio_1 and bio_12, no covariance between bio_1 and bio_15, and a negative covariance between bio_12 and bio_15.
 
 ```{r update_cov_3d}
-ell5 <- update_ellipsoid_covariance(ell5, c("bio_1-bio_12"  =    200,
-                                             "bio_1-bio_15"  =      0,
-                                             "bio_12-bio_15" = -5000))
+sp_4 <- update_ellipsoid_covariance(sp_4, c("bio_1-bio_12" = 200,
+                                            "bio_1-bio_15" = 0,
+                                            "bio_12-bio_15" = -5000))
 ```
 
 <br>
 
-Two-dimensional projections of the multidimensional ellipsoid can be plotted individually using `plot_ellipsoid()` by specifying the `dim` argument.
+A multidimensional ellipsoid can't be shown in a single flat plot, so we look at it two variables at a time. A two-dimensional projection can be plotted with `plot_ellipsoid()` by specifying the pair of variables in the `dim` argument.
 
-```{r plot_3d}
-plot_ellipsoid(ell5, background = bios_df, dim = c(1, 2), bg_sample = 5000,
+```{r plot_3d, fig.width = 7, fig.height = 5, out.width = "95%"}
+par(mar = mars)
+
+# Annual precipitation and precipitation seasonality
+plot_ellipsoid(sp_4, background = bios_df, dim = c(2, 3), bg_sample = 5000,
                pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
                col_ell = "blue", lty = 6,
-               fixed_lims = list(xlim = c(6, 32), ylim = c(200, 5000)))
-
-plot_ellipsoid(ell5, background = bios_df, dim = c(2, 3), bg_sample = 5000,
-               pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
-               col_ell = "blue", lty = 6,
-               fixed_lims = list(xlim = c(200, 5000), ylim = c(20, 120)))
-
-plot_ellipsoid(ell5, background = bios_df, dim = c(1, 3), bg_sample = 5000,
-               pch = ".", cex_bg = 1.5, col_bg = "gray50", lwd = 3,
-               col_ell = "blue", lty = 6,
-               fixed_lims = list(xlim = c(6, 32), ylim = c(20, 120)))
+               fixed_lims = list(xlim = c(200, 5000), ylim = c(20, 120)),
+               xlab = "Bio12 (Annual Precipitation)",
+               ylab = "Bio15 (Precipitation Seasonality)")
 ```
 
 <br>
 
-Alternatively, `plot_ellipsoid_pairs()` produces all pairwise projections at once. This function offers fewer customization options than `plot_ellipsoid()` (`add_data()` and `add_ellipsoid()` don't work with this tool) and is intended primarily for quick exploratory visualization.
+Alternatively, `plot_ellipsoid_pairs()` produces all pairwise projections at once. This function offers fewer customization options than `plot_ellipsoid()` (`add_data()` and `add_ellipsoid()` don't work with it) and is intended primarily for quick exploratory visualization.
 
 ```{r plot_pairs}
-plot_ellipsoid_pairs(ell5, background = bios_df, pch = ".", cex_bg = 1.5,
+plot_ellipsoid_pairs(sp_4, background = bios_df, pch = ".", cex_bg = 1.5,
                      col_bg = "gray50", lwd = 3, lty = 6, col_ell = "blue")
 ```
+
+<br>
+
+This three-dimensional species shares the wide thermal and precipitation tolerances of Species 1, including an avoidance of the warmest and driest environments. The addition of bio_15 characterizes the species in terms of precipitation seasonality: the strong negative covariance between bio_12 and bio_15 means the species tolerates less seasonal precipitation regimes only where total precipitation is high, but depends on strongly seasonal rainfall where precipitation is comparably lower. This niche is included in the package as `example_sp_4`.
+
+Ellipsoids with three variables can also be explored in an interactive 3D plot with `plot_ellipsoid_3d()`. This function needs the package `rgl`, and the plot opens in a separate viewer, so we only show the code here.
+
+```{r plot_rgl, eval=FALSE}
+# Interactive 3D plot of the ellipsoid with the background
+plot_ellipsoid_3d(sp_4, background = bios_df, bg_sample = 5000)
+```
+
+<br>
 
 ```{r par_reset}
 # Reset plotting parameters
@@ -424,19 +558,4 @@ par(original_par)
 
 <br>
 
-This three-dimensional species shares the wide thermal and precipitation tolerances of the first example, including an avoidance of the warmest and driest environments. The addition of bio_15 characterizes the species in terms of precipitation seasonality: the strong negative covariance between bio_12 and bio_15 means the species tolerates less seasonal precipitation regimes only where total precipitation is high, but depends on strongly seasonal rainfall where precipitation is comparably lower. This makes it a good example of a species adapted to seasonally pulsed precipitation environments.
-
-<br>
-
-### Save and import
-
-We can save this three-dimensional species for use in later sessions alongside the two-dimensional examples defined above.
-
-```{r save_3d}
-temp_file4 <- file.path(tempdir(), "example_sp_4.rda")
-save_nicheR(ell5, file = temp_file4)
-```
-
-<br>
-
-This concludes the basics for defining ellipsoid-based tolerances for species in E-space. To learn how to make predictions from these ellipsoid niches and visualize them in geographic space (G-space), see the next vignette: [Making Predictions](https://castanedam.github.io/nicheR/articles/predict.html).
+This concludes the basics for defining ellipsoid-based tolerances for species in E-space. To learn how to make predictions from these ellipsoid niches and visualize them in geographic space (G-space), see the next vignette: [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).

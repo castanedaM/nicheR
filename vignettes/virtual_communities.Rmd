@@ -23,18 +23,18 @@ knitr::opts_chunk$set(
 - [Description](#description)
 - [Getting ready](#getting-ready)
 - [Loading example data](#loading-example-data)
-- [Simulating a random community](#simulating-a-random-community)
+- [Simulating random communities](#simulating-random-communities)
   - [Effect of background density](#effect-of-background-density)
   - [Effect of proportion arguments](#effect-of-proportion-arguments)
 - [Simulating nested communities](#simulating-nested-communities)
   - [Effect of proportion argument](#effect-of-proportion-argument)
   - [Effect of bias argument](#effect-of-bias-argument)
 - [Simulating niche conservatism in communities](#simulating-niche-conservatism-in-communities)
-  - [Effect of background density](#effect-of-background-density)
-  - [Effect of proportion arguments](#effect-of-proportion-arguments)
+  - [Effect of background density](#effect-of-background-density-1)
+  - [Effect of proportion arguments](#effect-of-proportion-arguments-1)
 - [Predictions for communities](#predictions-for-communities)
-  - [Predict to data frames](#predictions-to-data-frames)
-  - [Predict to SpatRaster](#predictions-to-spatraster)
+  - [Predict to data frames](#predict-to-data-frames)
+  - [Predict to SpatRaster](#predict-to-spatraster)
   - [Truncating predictions](#truncating-predictions)
   - [Simple community outcomes](#simple-community-outcomes)
 - [Save and import](#save-and-import)
@@ -50,6 +50,8 @@ The main functions that automate community simulations in `nicheR` are:
 - `random_ellipses()`: generates a set of random ellipses in the environmental space provided. A scenario in which niche conservatism is not present.
 - `nested_ellipses()`: generates a set of nested ellipses taking the reference niche as the biggest possible ellipse. A scenario in which all species niches are contained within the reference niche, and each is contained within the previous one.
 - `conserved_ellipses()`: generates a set of ellipses in the environmental space provided aiming for a set of ellipses that are similar to the reference niche. A scenario of niche conservatism.
+
+For the ideas behind ellipsoid niches and their predictions, see the vignette [Concepts behind nicheR](https://castanedam.github.io/nicheR/articles/concepts.html).
 
 <br>
 
@@ -80,7 +82,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for North America to represent the background for our simulations. For details on how to create the reference niche, see the vignette [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
+The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for part of the Americas to represent the background for our simulations. For details on how to create the reference niche, see the vignette [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 
 ```{r data}
 # Reference niche
@@ -132,7 +134,7 @@ plot_ellipsoid(ref_ellipse, background = back_data[, vars],
 
 ## Simulating random communities
 
-The `random_ellipses()` function helps to create a community of species with niches that are randomly distributed in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show an general example of how to use this function.
+The `random_ellipses()` function helps to create a community of species with niches that are randomly distributed in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show a general example of how to use this function.
 
 ```{r random}
 # Simulating the community
@@ -294,7 +296,7 @@ Play with the values for these arguments to explore different scenarios and pick
 
 ## Simulating nested communities
 
-The `nested_ellipses()` function helps to create a community of species with niches that are nested in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show an general example of how to use this function.
+The `nested_ellipses()` function helps to create a community of species with niches that are nested in the environmental space. The size and shape of these niches are constrained by the reference niche but they vary. Below we show a general example of how to use this function.
 
 ```{r nested}
 # Simulating the community
@@ -803,7 +805,7 @@ Now it is a lot more evident what was considered inside the ellipsoid in environ
 
 ### Simple community outcomes
 
-He have shown examples for a couple of the ellipses generated, but this can be done for all the ones in the community. Once all the elements in the community are considered, interesting community level metrics and indices can be explored. Using the binary results obtained from the truncated predictions we will derive further results.
+We have shown examples for a couple of the ellipses generated, but this can be done for all the ones in the community. Once all the elements in the community are considered, interesting community level metrics and indices can be explored. Using the binary results obtained from the truncated predictions we will derive further results.
 
 First, we already have a **Presence-absence matrix (PAM)** with our binary results as a data.frame. These type of matrices are commonly used in ecology because they tell us which species (columns) are where (row: each row is a site). 
 

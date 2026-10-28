@@ -10,8 +10,9 @@
 \title{Example niche ellipsoid objects for virtual communities}
 \format{
 Objects of class \code{nicheR_ellipsoid} (which are \code{list}s)
-with 13 elements:
+with 15 elements:
 \describe{
+  \item{ranges}{Matrix. The minimum and maximum of each variable used to build the niche.}
   \item{dimensions}{Integer. Number of dimensions (2 or 3).}
   \item{var_names}{Character vector. Names of variables (e.g., \code{"bio_1"}, \code{"bio_12"}).}
   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
@@ -24,14 +25,15 @@ with 13 elements:
   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
-  \item{cov_limits}{List. Axis-aligned minimum and maximum covariance limits.}
+  \item{cov_limits}{Data frame. Minimum and maximum covariance allowed for each pair of variables.}
+  \item{cov_limits_remaining}{Data frame. Covariance limits still available after the covariance was updated.}
 }
 
-An object of class \code{nicheR_ellipsoid} of length 13.
-
-An object of class \code{nicheR_ellipsoid} of length 13.
+An object of class \code{nicheR_ellipsoid} of length 14.
 
 An object of class \code{nicheR_ellipsoid} of length 14.
+
+An object of class \code{nicheR_ellipsoid} of length 15.
 }
 \usage{
 example_sp_1
@@ -53,10 +55,10 @@ These objects serve as templates for testing community simulation and projection
 functions. They were generated using \code{\link{build_ellipsoid}} and modified
 with \code{\link{update_ellipsoid_covariance}} to reflect distinct ecological strategies:
 \itemize{
-  \item \strong{\code{example_sp_1}}: A 2D niche (\code{bio_1}, \code{bio_12}) with a broad, warm-climate preference and wide precipitation tolerance. It includes a positive covariance (750) between temperature and precipitation.
-  \item \strong{\code{example_sp_2}}: A 2D niche (\code{bio_1}, \code{bio_12}) shifted toward cooler and wetter environments compared to \code{example_sp_1}, with a positive covariance (500).
-  \item \strong{\code{example_sp_3}}: A 2D niche (\code{bio_1}, \code{bio_12}) representing a warm-adapted specialist restricted to dry environments. It has a much smaller niche volume and a slight positive covariance (120).
-  \item \strong{\code{example_sp_4}}: A 3D niche (\code{bio_1}, \code{bio_12}, \code{bio_15}) adapted to seasonally pulsed precipitation environments. It features a strong negative covariance (-5000) between annual precipitation and precipitation seasonality.
+  \item \strong{\code{example_sp_1}}: A 2D niche (\code{bio_1}, \code{bio_12}) with a broad, warm-climate preference and wide precipitation tolerance (\code{bio_1} from 20 to 32, \code{bio_12} from 750 to 4000). It includes a positive covariance (750) between temperature and precipitation.
+  \item \strong{\code{example_sp_2}}: A 2D niche (\code{bio_1}, \code{bio_12}) shifted toward cooler and wetter environments compared to \code{example_sp_1} (\code{bio_1} from 12 to 24, \code{bio_12} from 1400 to 4500), with a positive covariance (500).
+  \item \strong{\code{example_sp_3}}: A 2D niche (\code{bio_1}, \code{bio_12}) representing a warm-adapted specialist restricted to dry environments (\code{bio_1} from 18 to 30, \code{bio_12} from 200 to 1100). It has a much smaller niche volume and a slight positive covariance (120).
+  \item \strong{\code{example_sp_4}}: A 3D niche (\code{bio_1}, \code{bio_12}, \code{bio_15}) adapted to seasonally pulsed precipitation environments (\code{bio_1} from 22 to 32, \code{bio_12} from 800 to 4200, \code{bio_15} from 45 to 115). It features a positive covariance (200) between temperature and precipitation and a strong negative covariance (-5000) between annual precipitation and precipitation seasonality.
 }
 }
 \examples{

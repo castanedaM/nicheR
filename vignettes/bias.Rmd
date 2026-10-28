@@ -3,217 +3,442 @@ title: "Bias surface"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Bias surface}
-  %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 10,
-  fig.height = 6,
+  fig.width = 7,
+  fig.height = 7,
   dpi = 100,
   out.width = "95%"
 )
 ```
 
+## Summary
+
+- [Description](#description)
+- [Getting ready](#getting-ready)
+- [Loading example data](#loading-example-data)
+- [Preparing the bias surface](#preparing-the-bias-surface)
+  - [Effect of the direction](#effect-of-the-direction)
+  - [Effect of the floor argument](#effect-of-the-floor-argument)
+- [Applying bias to a prediction](#applying-bias-to-a-prediction)
+  - [Keeping the weights inside the niche](#keeping-the-weights-inside-the-niche)
+  - [Effect of the sampling argument](#effect-of-the-sampling-argument)
+  - [Effect of the method argument](#effect-of-the-method-argument)
+- [Save and import](#save-and-import)
+
 <hr>
 
-# Summary
+## Description
 
--   [Description](#description)
--   [Getting ready](#getting-ready)
--   [Preparing the Bias Layer](#preparing-the-bias-layer)
-    -   [Function Arguments](#function-arguments)
-    -   [Direct vs. Inverse Bias Preparation](#direct-vs.-inverse-bias-preparation)
--   [Applying Bias to Predictions](#applying-bias-to-predictions)
-    -   [Function Arguments](#function-arguments)
-    -   [Comparing Applied Biases](#comparing-applied-biases)
-    -   [Three-Dimensional Example](#sec-three-dimensional-example)
--   [Save and export](#save-and-export)
+This vignette shows how to add sampling bias to a prediction using functions in the `nicheR` package. Real data are rarely collected evenly. Sites near roads, cities, or well-studied areas are visited more often, so the data show where people looked as well as where conditions are suitable. In `nicheR`, this uneven effort is represented with a bias surface that is combined with the prediction of a niche.
 
-<hr>
+The main functions used in this vignette are:
 
-# Description {#description}
+- `prepare_bias()`: standardizes one or more layers that represent sampling effort and combines them into one bias surface.
+- `apply_bias()`: turns a prediction into a sampling weight and multiplies it by the bias surface.
 
-Real-world biodiversity data is rarely collected systematically. Biologists often sample near roads, rivers, or research stations, creating spatial clustering that does not necessarily reflect optimal habitat.
-
-The `nicheR` package allows you to simulate these spatial sampling biases. This workflow involves two steps:
-
-1.  **`prepare_bias()`**: Standardizing raw environmental or anthropocentric covariates into probability-scaling surfaces.
-
-2.  **`apply_bias()`**: Mathematically fusing those bias surfaces with your habitat suitability predictions.
+Sampling effort changes from place to place, so these functions work only with raster layers (spatial mode). For the ideas behind this step, see [Sampling bias](https://castanedam.github.io/nicheR/articles/concepts.html#sampling-bias) in the Concepts vignette.
 
 <br>
 
-# Getting ready {#getting-ready}
+## Getting ready
 
-First, we load the core packages required for our spatial and niche operations. For this vignette, we assume you have already defined a nicheR_ellipsoid object.
+If `nicheR` has not been installed yet, please do so. See the [Main guide](https://castanedam.github.io/nicheR/index.html) for installation instructions.
+
+Use the following lines of code to load `nicheR` and other packages needed for this vignette, and to set a working directory (if necessary).
+
+<u>Note</u>: We will display functions from other packages as `package::function()`.
 
 ```{r get_ready, results='hide', message=FALSE, warning=FALSE}
+# Load packages
 library(nicheR)
 library(terra)
 
+# Current directory
+getwd()
+
+# Define new directory
+#setwd("YOUR/DIRECTORY")  # modify if setting a new directory
+
 # Saving original plotting parameters
 original_par <- par(no.readonly = TRUE)
-
-# 1. Load reference niche (nicheR_ellipsoid object)
-data("ref_ellipse", package = "nicheR")
-
-# 2. Load pre-calculated prediction surfaces (from previous vignettes)
-# These SpatRasters contain "suitability", "Mahalanobis", "suitability_trunc", etc.
-pred <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
-pred_3d <- terra::rast(system.file("extdata", "predictions_3d_rast.tif", package = "nicheR"))
 ```
 
 <br>
 
-# Preparing the Bias Layer {#preparing-the-bias-layer}
+## Loading example data
 
-Raw bias proxies (e.g., species richness, nighttime lights, distance to roads) come in varying scales and units. `prepare_bias()` resamples, aligns, and min-max standardizes these layers to a strict [0, 1] scale. If multiple layers are provided, it allows you to assign unique directional effects to each before multiplying them into a single composite surface.
+The lines of code below load the data used in this vignette. The data are included in the `nicheR` package and consist of a prediction of the reference niche for part of the Americas, and two raster layers that we will use to represent sampling effort. The reference niche is defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). For details on how the prediction was obtained, see the vignette [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).
 
-```{r, results='hide', message=FALSE, warning=FALSE}
-# Load a sample bias layer containing 'sp_richness' and 'nighttime'
-biases_file <- system.file("extdata", "ma_biases.tif", package = "nicheR")
-raw_bias <- terra::rast(biases_file)
+```{r data}
+# Prediction of the reference niche
+pred_rast <- terra::rast(system.file("extdata", "predictions_rast.tif",
+                                     package = "nicheR"))
 
-# --- Plotting the Output ---
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
-
-# Plot the raw inputs
-terra::plot(raw_bias[["sp_richness"]], main = "Species Richness")
-terra::plot(raw_bias[["nighttime"]], main = "Nighttime Lights")
+# Layers that represent sampling effort
+bias_layers <- terra::rast(system.file("extdata", "ma_biases.tif",
+                                       package = "nicheR"))
 ```
 
 <br>
 
-## Function Arguments {#function-arguments}
+Let's take a look at both objects to get familiar with them.
 
--   **`bias_surface`**: A `SpatRaster` (single or multi-layer) or a list of `SpatRaster` objects representing your raw bias proxies.
+```{r data_check}
+# Layers in the prediction
+names(pred_rast)
 
--   **`effect_direction`**: Character vector dictating how the raw values map to sampling probability:
-
-    -   `"direct"`: Higher raw values = higher sampling probability (kept as is).
-
-    -   `"inverse"`: Higher raw values = lower sampling probability (transformed to `1 - x`).
-
-    -   *Note: If providing a multi-layer raster, you can pass a vector of directions mapping to each respective layer.*
-
--   **`template_layer`**: Optional `SpatRaster`. The reference layer used to align all bias layers (matching resolution, extent, and CRS). If `NULL`, the algorithm automatically selects the finest-resolution layer from your input.
-
--   **`include_composite`**: Logical. If `TRUE` (default), the function outputs the combined, multiplied composite bias surface.
-
--   **`include_processed_layers`**: Logical. If `TRUE`, includes the standardized individual layers *before* they are multiplied together. Default is `FALSE`.
-
--   **`mask_na`**: Logical. Controls how `NA` (NoData) pixels are handled across multiple layers:
-
-    -   `TRUE` (Intersection): If a pixel is `NA` in *any* layer, the final composite pixel becomes `NA`.
-
-    -   `FALSE` (Union - default): Ignores `NA`s where other layers have valid values, preserving as much spatial coverage as possible.
-
--   **`verbose`**: Logical. If `TRUE`, prints processing steps to the console.
-
-<br>
-
-## Example: Mixed-Direction Composite Bias
-
-In this example, our `raw_bias` raster contains two layers: `sp_richness` and `nighttime` (nighttime lights/urbanization).
-
-Ecologically, sampling effort is likely highest in areas with known high species richness, but lowest in highly urbanized areas. Therefore, we will assign a `"direct"` effect to richness and an `"inverse"` effect to nighttime lights to create a realistic composite bias surface.
-
-```{r, results='hide', message=FALSE, warning=FALSE}
-# Prepare a composite bias surface mapping unique directions to each layer
-prep_composite <- prepare_bias(bias_surface = raw_bias, 
-                               effect_direction = c("direct", "inverse"), 
-                               verbose = FALSE)
-# Plot the resulting unified bias probability surface
-terra::plot(prep_composite$composite_surface, main = "Composite Bias Surface")
+# Check the bias layers
+bias_layers
 ```
 
-*Notice how the final composite surface creates "hotspots" for sampling in areas that feature both high species richness AND low urbanization, accurately reflecting the combined `effect_direction` parameter.*
-
 <br>
 
-# Applying Bias to Predictions {#applying-bias-to-predictions}
+The prediction has the two environmental variables and the four outputs of `predict()`. The bias layers are the number of species recorded (`sp_richness`) and the brightness of lights at night (`nighttime`). Let's plot them.
 
-Once your bias surface is scaled between 0 and 1, you must integrate it with your actual ecological prediction (e.g., habitat suitability). `apply_bias()` aligns the grids and multiplies the suitability by the bias. **The resulting output is a weighted surface, not a true biological probability.**
+```{r data_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(1, 2), cex = 0.7)
+marsr <- c(0.5, 0.5, 2, 4)
 
-<br>
+# Plots
+terra::plot(bias_layers[["sp_richness"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Species Richness")
 
-## Function Arguments
-
--   **`prepared_bias`**: A single-layer `SpatRaster`, or the list output generated by `prepare_bias()`.
-
--   **`prediction`**: A `SpatRaster` containing your suitability predictions. **Values must be within [0, 1]**.
-
--   **`prediction_layer`**: Character. If your `prediction` raster has multiple layers, specify the exact name of the layer to use (e.g., `"suitability"`). If `NULL`, it defaults to the first layer.
-
--   **`effect_direction`**: Character. Dictates how the prepared bias is applied to the suitability:
-
-    -   `"direct"` (default): Multiplies suitability $\times$ bias.
-
-    -   `"inverse"`: Multiplies suitability $\times$ $(1 - \text{bias})$.
-
--   **`verbose`**: Logical. If `TRUE`, prints processing steps to the console.
-
-<br>
-
-## Example: Comparing Applied Biases
-
-Below, we take a standard suitability prediction and restrict it using the composite bias layer we just prepared. We will apply it as a `"direct"` multiplier, meaning areas with high composite bias scores will retain their suitability, while areas with low bias scores will be penalized.
-
-```{r}
-# Apply the composite bias to our suitability layer
-applied_bias <- apply_bias(prepared_bias = prep_composite, 
-                           prediction = pred, 
-                           prediction_layer = "suitability",
-                           effect_direction = "direct")
-
-# --- Plotting the Output ---
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
-
-# Original Biological Suitability
-terra::plot(pred[["suitability"]], main = "Habitat Suitability")
-
-# Suitability mathematically restricted by our composite sampling bias
-terra::plot(applied_bias[[1]], main = "Suitability + Composite Bias")
+terra::plot(bias_layers[["nighttime"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Nighttime Lights")
 ```
 
-*In the final comparison, observe how the spatial footprint of the species shrinks based on the bias layer. When drawing points from the `applied_bias` raster using `sample_biased_data()`, the algorithm is forced to ignore large swaths of highly suitable habitat simply because the simulated sampling effort (driven by nighttime lights and richness) in those areas is too low.*
+<br>
 
-## Three-Dimensional Example {#sec-three-dimensional-example}
+## Preparing the bias surface
 
-Because collection bias is fundamentally geographic, the process of applying it works identically regardless of how many environmental dimensions were used to define the fundamental niche. Here, we apply the exact same composite bias surface to our 3-dimensional species prediction.
+The two layers come in different units and scales. The `prepare_bias()` function puts them on a common scale and combines them. For each layer, the function:
 
-```{r}
-# Apply the composite bias to our 3D suitability layer
-applied_bias_3d <- apply_bias(prepared_bias = prep_composite, 
-                              prediction = pred_3d, 
-                              prediction_layer = "suitability",
-                              effect_direction = "direct")
+1. Aligns the layer to a common grid.
+2. Standardizes its values to go from 0 to 1.
+3. Applies the direction of its effect. With `"direct"`, higher values mean more sampling effort. With `"inverse"`, higher values mean less effort, so the values are flipped as 1 minus the standardized value.
 
-# --- Plotting the Output ---
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2))
+The layers are then multiplied to obtain one composite surface.
 
-terra::plot(pred_3d[["suitability"]], main = "3D Habitat Suitability")
-terra::plot(applied_bias_3d[[1]], main = "3D Suitability + Composite Bias")
+In our example, we will assume that sites with more recorded species have been visited more often, so richness has a direct effect. We will also assume that collectors stay away from the brightest sites, so nighttime lights have an inverse effect.
+
+```{r prepare}
+# Preparing the bias surface
+bias_prep <- prepare_bias(bias_surface = bias_layers,
+                          effect_direction = c("direct", "inverse"))
+
+# Elements in the result
+names(bias_prep)
+
+# How the layers were combined
+bias_prep$combination_formula
 ```
+
+<br>
+
+The result is a list. The element `composite_surface` is the bias surface, a `SpatRaster` with values from 0 to 1, and `combination_formula` keeps a record of how it was calculated. Let's plot the bias surface.
+
+```{r prepare_plot, fig.width = 7, fig.height = 4.5, out.width = "95%"}
+# Plotting the bias surface
+par(cex = 0.7)
+
+terra::plot(bias_prep$composite_surface,
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Composite Bias Surface")
+```
+
+<br>
+
+Sites with high values are the ones most likely to be sampled. In our example, those are sites with many recorded species and little light at night, most of them in the south of the region. A value of 0 means that a site is never sampled.
+
+<br>
+
+### Effect of the direction
+
+To see what the direction does to each layer, we can ask `prepare_bias()` to also return the layers after they were standardized. This is done with the argument `include_processed_layers`.
+
+```{r direction}
+# Preparing the bias surface and keeping the standardized layers
+bias_steps <- prepare_bias(bias_surface = bias_layers,
+                           effect_direction = c("direct", "inverse"),
+                           include_processed_layers = TRUE,
+                           verbose = FALSE)
+
+# Names of the standardized layers
+names(bias_steps$processed_layers)
+```
+
+<br>
+
+Let's plot the two standardized layers.
+
+```{r direction_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(1, 2), cex = 0.7)
+
+# Plots
+terra::plot(bias_steps$processed_layers[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Richness (direct)")
+
+terra::plot(bias_steps$processed_layers[[2]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Nighttime Lights (inverse)")
+```
+
+<br>
+
+Richness keeps its pattern, now on a scale from 0 to 1. Nighttime lights are flipped. Most of the region is dark at night, so it stays close to 1, and only the brightest sites drop toward 0. The composite surface shown before is the product of these two layers.
+
+Play with the values of `effect_direction` to see how the composite surface changes. Keep in mind that one direction is needed for each layer, in the same order as the layers. If only one direction is given, it is used for all the layers.
+
+<br>
+
+### Effect of the floor argument
+
+In the composite surface, a few sites have values of 0 or close to it, and those sites will almost never be sampled. The argument `floor` sets a minimum value for the bias surface, so every site keeps at least a small chance of being sampled.
+
+```{r floor}
+# Preparing the bias surface with a minimum value
+bias_floor <- prepare_bias(bias_surface = bias_layers,
+                           effect_direction = c("direct", "inverse"),
+                           floor = 0.05,
+                           verbose = FALSE)
+
+# Range of values without a floor
+terra::global(bias_prep$composite_surface, fun = c("min", "max"),
+              na.rm = TRUE)
+
+# Range of values with a floor
+terra::global(bias_floor$composite_surface, fun = c("min", "max"),
+              na.rm = TRUE)
+```
+
+<br>
+
+As you can see, the lowest value is now the one we set with `floor`. All the values that were above it stay the same.
+
+The `prepare_bias()` function has other arguments that control the grid used to align the layers (`template_layer`) and how cells with missing values are treated (`mask_na`). See `?prepare_bias` for details.
+
+<br>
+
+## Applying bias to a prediction
+
+The `apply_bias()` function combines the bias surface with a prediction in two steps. First, the prediction is turned into a sampling weight, the same way it is done in `sample_data()`. Second, that weight is multiplied by the bias surface. The result is a surface of relative weights. It tells us which sites are more likely to be sampled than others, and its values are no longer suitability.
+
+Three arguments define the weight:
+
+- `prediction_layer`: the layer of the prediction to use.
+- `sampling`: where in the niche the weight is the highest. With `"centroid"` the weight is higher near the centroid, with `"edge"` it is higher near the boundary, and with `"uniform"` it is the same for every cell.
+- `method`: the kind of layer used, `"suitability"` or `"mahalanobis"`.
+
+Let's start with the most common case, which is suitability with more weight near the centroid.
+
+```{r apply}
+# Applying the bias surface to suitability
+biased <- apply_bias(prepared_bias = bias_prep,
+                     prediction = pred_rast,
+                     prediction_layer = "suitability",
+                     sampling = "centroid",
+                     method = "suitability",
+                     verbose = FALSE)
+
+# Elements in the result
+names(biased)
+
+# How the surface was calculated
+biased$combination_formula
+```
+
+<br>
+
+The result is also a list. The first element is the biased surface, and its name tells us the layer and the sampling that were used. Let's compare the prediction with the biased surface.
+
+```{r apply_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(1, 2), cex = 0.7)
+
+# Plots
+terra::plot(pred_rast[["suitability"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Suitability")
+
+terra::plot(biased[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Suitability and Bias")
+```
+
+<br>
+
+The suitable area is in the same place, but the weights changed. Sites with suitable conditions and little sampling effort lost most of their weight. The highest values are now in sites that are both suitable and well sampled, and the suitable sites in the north, where fewer species have been recorded, have low values.
+
+A surface obtained this way is included in the package as `applied_bias_rast.tif`. We will draw data points from it in the vignette [4. Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html).
+
+<br>
+
+### Keeping the weights inside the niche
+
+The layer `suitability` has values far from the niche too. They are tiny, but a data point could still be drawn there. To limit the surface to the niche, we use a truncated layer. `apply_bias()` removes the cells where the prediction is zero, so the cells outside the niche become `NA` and can't be sampled.
+
+```{r apply_trunc}
+# Applying the bias surface to truncated suitability
+biased_cent <- apply_bias(prepared_bias = bias_prep,
+                          prediction = pred_rast,
+                          prediction_layer = "suitability_trunc",
+                          sampling = "centroid",
+                          method = "suitability",
+                          verbose = FALSE)
+
+names(biased_cent)
+```
+
+<br>
+
+### Effect of the sampling argument
+
+Now let's compare the three options for `sampling`. We will use the truncated layer for all of them. This matters for `"edge"` and `"uniform"`. Without a boundary, the cells far outside the niche would get the highest weight with `"edge"`, and the same weight as any other cell with `"uniform"`.
+
+```{r sampling}
+# More weight near the boundary of the niche
+biased_edge <- apply_bias(prepared_bias = bias_prep,
+                          prediction = pred_rast,
+                          prediction_layer = "suitability_trunc",
+                          sampling = "edge",
+                          method = "suitability",
+                          verbose = FALSE)
+
+# The same weight for every cell in the niche
+biased_unif <- apply_bias(prepared_bias = bias_prep,
+                          prediction = pred_rast,
+                          prediction_layer = "suitability_trunc",
+                          sampling = "uniform",
+                          method = "suitability",
+                          verbose = FALSE)
+
+# How each surface was calculated
+biased_cent$combination_formula
+biased_edge$combination_formula
+biased_unif$combination_formula
+```
+
+<br>
+
+Let's check how the three surfaces look next to the prediction.
+
+```{r sampling_plot, fig.width = 7, fig.height = 4.5, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(2, 2), cex = 0.6)
+
+# Plots
+terra::plot(pred_rast[["suitability_trunc"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Truncated Suitability")
+
+terra::plot(biased_cent[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Bias with Centroid Sampling")
+
+terra::plot(biased_edge[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Bias with Edge Sampling")
+
+terra::plot(biased_unif[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Bias with Uniform Sampling")
+```
+
+<br>
+
+As shown in the plots, the three surfaces cover the same area, which is the niche, but the highest weights are in different places. With `"centroid"`, they are in well-sampled sites with conditions close to the centroid. With `"edge"`, they move to well-sampled sites near the boundary of the niche. With `"uniform"`, suitability makes no difference inside the niche, so the surface is the bias itself.
+
+<br>
+
+### Effect of the method argument
+
+A Mahalanobis distance layer can be used in place of suitability. Distance is the lowest at the centroid, so the weight is calculated the other way around: 1 divided by the distance for `"centroid"`, and the distance itself for `"edge"`. The argument `method` tells the function which kind of layer it is receiving.
+
+```{r method}
+# Applying the bias surface to truncated Mahalanobis distance
+biased_maha <- apply_bias(prepared_bias = bias_prep,
+                          prediction = pred_rast,
+                          prediction_layer = "Mahalanobis_trunc",
+                          sampling = "centroid",
+                          method = "mahalanobis",
+                          verbose = FALSE)
+
+# How the surface was calculated
+biased_maha$combination_formula
+```
+
+<br>
+
+The method has to agree with the layer. The function checks the name of the layer, and it stops if the name says one kind of layer and `method` says the other, because the weight would end up in the wrong part of the niche.
+
+```{r method_fail, error = TRUE}
+# A suitability layer with the method for Mahalanobis distance
+biased_wrong <- apply_bias(prepared_bias = bias_prep,
+                           prediction = pred_rast,
+                           prediction_layer = "suitability_trunc",
+                           sampling = "centroid",
+                           method = "mahalanobis",
+                           verbose = FALSE)
+```
+
+<br>
+
+Let's plot the surfaces obtained with the two methods, both with `"centroid"`.
+
+```{r method_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(1, 2), cex = 0.7)
+
+# Plots
+terra::plot(biased_cent[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Method: Suitability")
+
+terra::plot(biased_maha[[1]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Method: Mahalanobis")
+```
+
+<br>
+
+Both surfaces give more weight to sites near the centroid, but the patterns are different. With Mahalanobis distance, the few cells that are almost at the centroid get weights much higher than all the others, so most of the map looks dark. To learn what this means for the data points, see [The two methods give different patterns](https://castanedam.github.io/nicheR/articles/concepts.html#the-two-methods-give-different-patterns) in the Concepts vignette.
+
+<br>
 
 ```{r par_reset}
 # Reset plotting parameters
 par(original_par)
 ```
 
-# Save and export {#save-and-export}
+<br>
 
-```{r}
-# Save the final biased prediction layers to a temporary directory
-temp_rast <- file.path(tempdir(), "applied_bias_rast.tif")
-temp_rast_3d <- file.path(tempdir(), "applied_bias_3d_rast.tif")
+## Save and import
 
-terra::writeRaster(applied_bias[[1]], filename = temp_rast, overwrite = TRUE)
-terra::writeRaster(applied_bias_3d[[1]], filename = temp_rast_3d, overwrite = TRUE)
+The biased surfaces are `SpatRaster` objects. They can be saved with `terra::writeRaster()` and imported with `terra::rast()`.
+
+```{r save_import, eval=FALSE}
+# file name (in a temporary directory for demonstration purposes)
+temp_raster <- file.path(tempdir(), "applied_bias_rast.tif")
+
+# Save the biased surface to a local directory
+terra::writeRaster(biased[[1]], filename = temp_raster, overwrite = TRUE)
+
+# Import the biased surface from a local directory
+biased_imported <- terra::rast(temp_raster)
 ```
+
+<br>
+
+The next step is to draw data points from these surfaces. See the vignette [4. Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html).

@@ -3,401 +3,606 @@ title: "Generate data"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Generate data}
-  %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.height = 5,
+  fig.height = 7,
   dpi = 100,
   out.width = "95%"
 )
 ```
 
-<hr>
+## Summary
 
-# Summary
-
--   [Description](#description)
--   [Getting ready](#getting-ready)
--   [Part 1: Virtual Data](#sec-part-1-virtual-data)
-    -   [Basic generation](#sec-basic-generation)
-    -   [Visualizing virtual data](#sec-visualizing-virtual-data-in-2d)
-    -   [Three-dimensional virtual example](#sec-three-dimensional-virtual-example)
--   [Part 2: Spatially-Explicit Data](#sec-part-2-spatially-explicit-data)
-    -   [Basic generation in 2D](#sec-basic-generation-in-2d)
-    -   [Effect of the `sampling` argument](#sec-effect-of-the-sampling-argument)
-    -   [Effect of the `method` argument](#sec-effect-of-the-method-argument)
-    -   [Effect of the `strict` argument](#sec-effect-of-the-strict-argument)
-    -   [Three-Dimensional Example](#sec-three-dimensional-example)
--   [Part 3: Biased Data](#sec-part-3-biased-data)
-    -   [Basic biased generation in 2D](#sec-basic-biased-generation-in-2d)
-    -   [Effect of the biased `strict` argument](#sec-effect-of-the-biased-strict-argument)
-    -   [Three-Dimensional Biased Example](#sec-three-dimensional-biased-example)
--   [Save and export](#sec-save-and-export)
+- [Description](#description)
+- [Getting ready](#getting-ready)
+- [Loading example data](#loading-example-data)
+- [Generating virtual data](#generating-virtual-data)
+  - [Effect of the truncate argument](#effect-of-the-truncate-argument)
+  - [Effect of the sampling argument in virtual data](#effect-of-the-sampling-argument-in-virtual-data)
+- [Generating data from a prediction](#generating-data-from-a-prediction)
+  - [Effect of the sampling argument](#effect-of-the-sampling-argument)
+  - [Effect of the method argument](#effect-of-the-method-argument)
+  - [Effect of the strict argument](#effect-of-the-strict-argument)
+  - [Generating data from a table](#generating-data-from-a-table)
+- [Generating biased data](#generating-biased-data)
+- [Save and import](#save-and-import)
 
 <hr>
 
-# Description {#description}
+## Description
 
-The `nicheR` package allows you to simulate how a species might be distributed by generating synthetic data from continuous prediction surfaces. This vignette progresses through three levels of complexity:
+This vignette shows how to generate data points from a niche using functions in the `nicheR` package. The data points represent the sites or conditions where a virtual species was observed, and the way to generate them depends on the data available:
 
-1.  **Virtual Data:** Simulating species entirely within Environmental Space (E-Space), bypassing geographic rasters to test theoretical concepts.
+- `virtual_data()`: draws points directly from the ellipsoid. No environmental data are needed (virtual mode).
+- `sample_data()`: draws points from a prediction of the niche, which can be a raster or a table (spatial and tabular modes).
+- `sample_biased_data()`: draws points from a prediction that was combined with sampling bias (spatial mode).
 
-2.  **Geographic Data:** Acting as a "virtual ecologist" to generate presence points across a physical landscape (G-Space) based on theoretical preferences.
-
-3.  **Biased Data:** Introducing real-world collection bias (e.g., nighttime light, proximity to roads, species richness, land use land cover) to see how human sampling effort distorts our view of a species' niche.
+For the ideas behind this step, see [Generating data](https://castanedam.github.io/nicheR/articles/concepts.html#generating-data) in the Concepts vignette.
 
 <br>
 
-# Getting ready {#getting-ready}
+## Getting ready
 
-First, we load `nicheR`, this will also load `terra` as part of nicheR dependencies, alongside our pre-built fundamental niches and prediction layers. We will not be building models from scratch here; instead, we rely on data created in previous vignettes.
+If `nicheR` has not been installed yet, please do so. See the [Main guide](https://castanedam.github.io/nicheR/index.html) for installation instructions.
 
-```{r}
+Use the following lines of code to load `nicheR` and other packages needed for this vignette, and to set a working directory (if necessary).
+
+<u>Note</u>: We will display functions from other packages as `package::function()`.
+
+```{r get_ready, results='hide', message=FALSE, warning=FALSE}
 # Load packages
 library(nicheR)
+library(terra)
+
+# Current directory
+getwd()
+
+# Define new directory
+#setwd("YOUR/DIRECTORY")  # modify if setting a new directory
 
 # Saving original plotting parameters
 original_par <- par(no.readonly = TRUE)
-
-# 1. Load environmental background raster
-bios <- terra::rast(system.file("extdata", "ma_bios.tif", package = "nicheR"))
-
-# 2. Load pre-calculated reference niches
-data("ref_ellipse", package = "nicheR")  # 2D Niche (Bio1, Bio12)
-data("example_sp_4", package = "nicheR") # 3D Niche (Bio1, Bio12, Bio15)
-
-# 3. Load pre-calculated virtual backgrounds (E-Space only)
-pred_virt_2d <- utils::read.csv(system.file("extdata", "predictions_virt.csv", package = "nicheR"))
-pred_virt_3d <- utils::read.csv(system.file("extdata", "predictions_virt_3d.csv", package = "nicheR"))
-
-# 4. Load pre-calculated geographic prediction surfaces
-pred_2d <- terra::rast(system.file("extdata", "predictions_rast.tif", package = "nicheR"))
-pred_3d <- terra::rast(system.file("extdata", "predictions_3d_rast.tif", package = "nicheR"))
-
-# 5. Load pre-calculated biased prediction surfaces 
-# (Habitat Suitability * Accessibility Bias)
-bias_2d <- terra::rast(system.file("extdata", "applied_bias_rast.tif", package = "nicheR"))
-bias_3d <- terra::rast(system.file("extdata", "applied_bias_3d_rast.tif", package = "nicheR"))
 ```
 
 <br>
 
-# Part 1: Virtual Data {#sec-part-1-virtual-data}
+## Loading example data
 
-Virtual species are highly useful for controlled, purely theoretical experiments in quantitative ecology. Because the `virtual_data()` function generates points purely based on mathematical distributions, **these points do not possess spatial coordinates (Longitude/Latitude).** They exist exclusively in E-Space.
+The lines of code below load the data used in this vignette. The data are included in the `nicheR` package and were obtained in the previous vignettes:
 
-We will use the pre-calculated virtual backgrounds (`pred_virt_2d` and `pred_virt_3d`) loaded during our setup phase. These data frames contain 1,000 theoretical background points that have already been scored for suitability.
+- The reference niche, defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). See [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
+- The environmental conditions in part of the Americas, as a table, to represent the background.
+- A prediction of the reference niche for the same region. See [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).
+- The same prediction combined with sampling bias. See [3. Working with bias](https://castanedam.github.io/nicheR/articles/bias.html).
 
-<br>
+```{r data}
+# Reference niche
+data("ref_ellipse", package = "nicheR")
 
-## Basic generation {#sec-basic-generation}
+# Background data
+data("back_data", package = "nicheR")
 
-The `virtual_data()` function acts as the non-spatial twin to `sample_data()`. It picks "records" from our virtual background.
+# Prediction of the reference niche
+pred_rast <- terra::rast(system.file("extdata", "predictions_rast.tif",
+                                     package = "nicheR"))
 
-```{r}
-rec_virt_basic <- virtual_data(object = ref_ellipse, n = 1000)
-
-head(rec_virt_basic)
+# Prediction combined with sampling bias
+biased_rast <- terra::rast(system.file("extdata", "applied_bias_rast.tif",
+                                       package = "nicheR"))
 ```
 
 <br>
 
-## Visualizing virtual data in 2D {#sec-visualizing-virtual-data-in-2d}
+Let's check the layers in the two rasters. We will use their names to tell the functions which layer to sample from.
 
-Since virtual data lacks Geography, we visualize it exclusively in E-Space. The gray dots are our 1,000 background points. The orange dots are the 100 sampled individuals. Notice they cluster toward the center (red square) because higher suitability exists there.
+```{r data_check}
+# Layers in the prediction
+names(pred_rast)
 
-```{r}
-plot_ellipsoid(ref_ellipse, dim = c(1, 2), pch = ".", col_bg = "#9a9797", 
-               xlab = "Bio1 (Temp)", ylab = "Bio12 (Precip)", main = "Virtual E-Space")
-add_data(rec_virt_basic, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
+# Layer in the biased prediction
+names(biased_rast)
 ```
 
 <br>
 
-## Three-dimensional virtual example {#sec-three-dimensional-virtual-example}
+## Generating virtual data
 
-We can simulate pure virtual points across a 3-dimensional niche. The workflow is identical: generate a 3D background, score its suitability, and sample from it.
+The `virtual_data()` function generates points using only the ellipsoid. The points are drawn from the multivariate normal distribution defined by the centroid and the covariance matrix of the niche. Below we show a general example of how to use this function.
 
-```{r}
-# Sample 100 virtual records from the 3D background
-rec_virt_3d <- virtual_data(
-  n = 100, 
-  object = example_sp_4
-)
+```{r virtual}
+# Generating virtual data
+virt_data <- virtual_data(object = ref_ellipse, n = 1000)
 
-# Visualize across multiple dimensions in E-Space
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-
-plot_ellipsoid(example_sp_4, dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio12")
-add_data(rec_virt_3d, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
-
-plot_ellipsoid(example_sp_4, dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "Virtual: Bio1 v Bio15")
-add_data(rec_virt_3d, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
+# Check the first points
+head(virt_data)
 ```
 
 <br>
 
-# Part 2: Spatially-Explicit Data {#sec-part-2-spatially-explicit-data}
+The result has one row per point and one column per variable of the niche. The points have environmental values only. They have no coordinates, because no geography is involved.
 
-While virtual data exists solely in climate theory, `sample_data()` projects the niche onto a physical landscape raster. This generates spatial records with physical coordinates (Longitude/Latitude) while simultaneously extracting their underlying environmental values. As a result, we can visualize and analyze these records in both Geographic Space (G-Space) and Environmental Space (E-Space) at the same time.
+Now let's plot the points with the reference niche. We will use `plot_ellipsoid()` to plot the ellipsoid and `add_data()` to add the points.
 
-<br>
+```{r virtual_plot}
+# Variables and axis limits for the plots
+vars <- c("bio_1", "bio_12")
+xlim_v <- c(18.5, 28.5)
+ylim_v <- c(700, 2800)
 
-## Basic generation in 2D {#sec-basic-generation-in-2d}
+# Plotting the virtual data
+mars <- c(4, 4, 2, 1)
+par(mar = mars)  # adjust margins for better visualization
 
-Let's generate 100 geographically grounded records using the default suitability layer of our 2D prediction raster.
+plot_ellipsoid(ref_ellipse, lwd = 2,
+               xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Virtual Data from the Reference Niche")
 
-```{r}
-rec_geo_basic <- sample_data(
-  n = 100,
-  prediction = pred_2d,
-  prediction_layer = "suitability",
-  seed = 123
-)
-
-rec_geo_basic_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                                    rec_geo_basic[ , c("x", "y")])
-
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-
-# 1. Geographic Space
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Geographic Map")
-points(rec_geo_basic[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
-
-# 2. Environmental Space
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), 
-               dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Temp vs Precip")
-add_data(rec_geo_basic_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
+add_data(virt_data, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.5)
 ```
 
 <br>
 
-## Effect of the `sampling` argument {#sec-effect-of-the-sampling-argument}
+As you can see, there are more points near the centroid, and they become fewer toward the boundary of the ellipsoid.
 
-The `sampling` argument determines the spatial bias of the selection probability.
+<br>
 
--   **`centroid`**: Species strongly prefers optimal conditions (huddles near the center).
+### Effect of the truncate argument
 
--   **`edge`**: Species is pushed into marginal environments (repelled to boundaries).
+In the plot above, a few points are outside the ellipsoid. The normal distribution has no limits, and the boundary of this niche encloses `r round(ref_ellipse$cl * 100, 1)`% of it, so about `r round((1 - ref_ellipse$cl) * 100, 1)`% of the points are expected outside. The argument `truncate` controls whether those points are kept.
 
--   **`random`**: Uniform distribution across suitable habitats.
-
-```{r}
-rec_cent <- sample_data(100, pred_2d, "suitability", sampling = "centroid", seed = 123)
-rec_edge <- sample_data(100, pred_2d, "suitability", sampling = "edge", seed = 123)
-rec_rand <- sample_data(100, pred_2d, "suitability", sampling = "random", seed = 123)
-
-rec_cent_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_cent[ , c("x", "y")])
-rec_edge_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_edge[ , c("x", "y")])
-rec_rand_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_rand[ , c("x", "y")])
-
-par(mfrow = c(3, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
-
-# Centroid
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Centroid Sampling"); points(rec_cent[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Centroid")
-add_data(rec_cent_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-
-# Edge
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Edge Sampling"); points(rec_edge[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Edge")
-add_data(rec_edge_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-
-# Random
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Random Sampling"); points(rec_rand[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Random")
-add_data(rec_rand_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+```{r truncate}
+# Points are generated only inside the ellipsoid
+virt_trunc <- virtual_data(object = ref_ellipse, n = 1000, truncate = TRUE)
 ```
 
 <br>
 
-## Effect of the `method` argument {#sec-effect-of-the-method-argument}
+Let's plot the two sets of points to visualize the effect of the argument `truncate`.
 
-The `method` argument controls the underlying mathematical weight used to draw the samples.
+```{r truncate_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the virtual data
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
 
--   **`suitability`**: Weights linearly based on the 0-1 habitat suitability index.
+## Not truncated
+plot_ellipsoid(ref_ellipse, lwd = 2,
+               xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "truncate = FALSE")
 
--   **`mahalanobis`**: Weights based on the multivariate environmental distance, creating a stricter concentration in optimal environments.
+add_data(virt_data, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.5)
 
-```{r}
-rec_suit <- sample_data(100, pred_2d, "suitability", method = "suitability", seed = 123)
-rec_maha <- sample_data(100, pred_2d, "Mahalanobis", method = "mahalanobis", seed = 123)
+## Truncated
+plot_ellipsoid(ref_ellipse, lwd = 2,
+               xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "truncate = TRUE")
 
-rec_suit_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_suit[ , c("x", "y")])
-rec_maha_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_maha[ , c("x", "y")])
-
-
-par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
-
-# Suitability
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Method = Suitability"); points(rec_suit[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Suitability")
-add_data(rec_suit_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-
-# Mahalanobis
-terra::plot(pred_2d[["Mahalanobis"]], main = "G-Space: Method = Mahalanobis"); points(rec_maha[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Mahalanobis")
-add_data(rec_maha_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+add_data(virt_trunc, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.5)
 ```
 
 <br>
 
-## Effect of the `strict` argument {#sec-effect-of-the-strict-argument}
+With `truncate = TRUE`, all the points are inside the ellipsoid. Use this option when the boundary is meant to be a hard limit for the species.
 
-By default (`strict = FALSE`), generating records allows points to fall slightly outside the strict boundaries of the fundamental niche to simulate sink populations. Setting `strict = TRUE` (using a truncated layer) establishes a hard boundary.
+<br>
 
-```{r}
-rec_strict_F <- sample_data(100, pred_2d, "suitability", strict = FALSE, seed = 123)
-rec_strict_T <- sample_data(100, pred_2d, "suitability_trunc", strict = TRUE, seed = 123)
+### Effect of the sampling argument in virtual data
 
-rec_strict_F_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_strict_F[ , c("x", "y")])
-rec_strict_T_pts <- terra::extract(pred_2d[[c("bio_1", "bio_12")]],
-                               rec_strict_T[ , c("x", "y")])
+The argument `sampling` controls how the points are distributed inside the ellipsoid. There are three options:
 
+- `"centroid"`: more points near the centroid. This is the default.
+- `"edge"`: more points near the boundary.
+- `"uniform"`: points spread evenly through the ellipsoid.
 
-par(mfrow = c(2, 2), mar = c(3, 3, 2, 1), cex.main = 0.9) 
+The options `"edge"` and `"uniform"` need a boundary to work with, so they can only be used with `truncate = TRUE`.
 
-# Lax
-terra::plot(pred_2d[["suitability"]], main = "G-Space: Strict = FALSE"); points(rec_strict_F[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = FALSE")
-add_data(rec_strict_F_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+```{r virtual_sampling}
+# More points near the centroid
+virt_cent <- virtual_data(object = ref_ellipse, n = 500, truncate = TRUE,
+                          sampling = "centroid")
 
-# Strict
-terra::plot(pred_2d[["suitability_trunc"]], main = "G-Space: Strict = TRUE"); points(rec_strict_T[, 1:2], pch = 20, col = "red")
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict = TRUE")
-add_data(rec_strict_T_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+# More points near the boundary
+virt_edge <- virtual_data(object = ref_ellipse, n = 500, truncate = TRUE,
+                          sampling = "edge")
+
+# Points spread evenly
+virt_unif <- virtual_data(object = ref_ellipse, n = 500, truncate = TRUE,
+                          sampling = "uniform")
 ```
 
 <br>
 
-## Three-Dimensional Example {#sec-three-dimensional-example}
+Let's check the three sets of points with a plot.
 
-Generating records for a 3-dimensional niche operates exactly the same way. We simply pass the 3D prediction raster and view the outputs across multiple axes (e.g., Temperature vs. Precipitation, and Temperature vs. Seasonality).
+```{r virtual_sampling_plot, fig.width = 7, fig.height = 2.5, out.width = "95%"}
+# Plotting the virtual data
+par(mfrow = c(1, 3), cex = 0.75, mar = c(3.5, 3.5, 2, 0.5))
 
-```{r}
-rec_geo_3d <- sample_data(100, pred_3d, "suitability", seed = 123)
+## Centroid
+plot_ellipsoid(ref_ellipse, lwd = 2, xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1", ylab = "Bio12", main = "centroid")
 
-rec_geo_3d_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
-                               rec_geo_3d[ , c("x", "y")])
+add_data(virt_cent, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.4)
 
+## Edge
+plot_ellipsoid(ref_ellipse, lwd = 2, xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1", ylab = "Bio12", main = "edge")
 
-par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
-terra::plot(pred_3d[["suitability"]], main = "G-Space: 3D Projection")
-points(rec_geo_3d[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
+add_data(virt_edge, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.4)
 
-plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
-add_data(rec_geo_3d_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+## Uniform
+plot_ellipsoid(ref_ellipse, lwd = 2, xlim = xlim_v, ylim = ylim_v,
+               xlab = "Bio1", ylab = "Bio12", main = "uniform")
 
-plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
-add_data(rec_geo_3d_pts, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
+add_data(virt_unif, x = "bio_1", y = "bio_12",
+         pts_col = "#0004d5", pch = 16, cex = 0.4)
 ```
 
 <br>
 
-# Part 3: Biased Data {#sec-part-3-biased-data}
-
-In the real world, species records are heavily influenced by human accessibility. If a model is trained on biased data, it will predict *where the observers go*, rather than *where the species lives*.
-
-Using `sample_biased_data()`, we can draw points from a raster that has already been mathematically multiplied by a bias layer (e.g., nighttime light, distance to roads) to simulate this real-world distortion.
+As shown in the plots, `"centroid"` puts most of the points in the middle of the niche, `"edge"` leaves the middle almost empty, and `"uniform"` covers the whole ellipsoid evenly.
 
 <br>
 
-## Basic biased generation in 2D {#sec-basic-biased-generation-in-2d}
+## Generating data from a prediction
 
-Once the spatial points are generated, we must use `terra::extract()` to pull the underlying climate values so we can plot them in E-Space and observe the distortion.
+When environmental data are available, the niche is first predicted onto them, and the data points are then drawn from the prediction with `sample_data()`. In this case, the points can only come from conditions that exist in the region. If the prediction is a raster, each point is a cell of the raster, so it has coordinates.
 
-```{r}
-rec_bias_xy <- sample_biased_data(
-  n = 100, 
-  prediction = bias_2d, 
-  prediction_layer = "suitability_biased_direct", 
-  strict = FALSE,
-  seed = 123
-)
+Below we show a general example of how to use this function. We will draw 100 points from the truncated suitability layer of our prediction.
 
-rec_bias_xy_pts <- terra::extract(pred_3d[[c("bio_1", "bio_12", "bio_15")]],
-                               rec_bias_xy[ , c("x", "y")])
+```{r sample}
+# Generating data from the prediction
+pts_basic <- sample_data(n = 100,
+                         prediction = pred_rast,
+                         prediction_layer = "suitability_trunc")
 
-
-# Extract environmental data at these coordinates to view E-space distortion
-rec_bias_env <- terra::extract(bios, rec_bias_xy[, c("x", "y")])
-
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map")
-terra::points(rec_bias_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
-
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Distorted Niche")
-add_data(rec_bias_xy_pts, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(ref_ellipse$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
-```
-
-**Notice the Distortion:** Because observers only sampled accessible areas, the orange dots are dragged away from the optimal centroid (red square) and pushed into marginal climates.
-
-**Important Note:** Why are there no `sampling` or `method` arguments? {#bias-no-sampling}
-
-You might notice that `sample_biased_data()` is missing the `sampling` and `method` arguments found in `sample_data()`.
-
-This is mathematically intentional! In biased sampling, the prediction layer values themselves define *exactly* where points are drawn from. The raster acts as a direct, literal probability surface. Overlaying an artificial "edge" or "centroid" preference via an argument would undermine the spatial collection bias (e.g., roads) we are trying to simulate.
-
-<br>
-
-## Effect of the biased `strict` argument {#sec-effect-of-the-biased-strict-argument}
-
-While we don't control sampling strategies, we *can* control whether records are allowed in zero-probability/NA cells. Setting `strict = TRUE` acts as a strict firewall, removing any `NA` and zero-valued pixels prior to pulling samples.
-
-```{r}
-# strict = TRUE ensures sampling ONLY happens in explicitly positive bias areas
-rec_bias_strict_xy <- sample_biased_data(100, bias_2d, "suitability_biased_direct", strict = TRUE, seed = 123)
-rec_bias_strict_env <- terra::extract(bios, rec_bias_strict_xy[, c("x", "y")])
-
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 2)) 
-terra::plot(bias_2d[["suitability_biased_direct"]], main = "G-Space: Biased Map (Strict)")
-terra::points(rec_bias_strict_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
-
-plot_ellipsoid(ref_ellipse, background = as.data.frame(bios[[c("bio_1", "bio_12")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Strict Bias")
-add_data(rec_bias_strict_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
+# Check the first points
+head(pts_basic)
 ```
 
 <br>
 
-## Three-Dimensional Biased Example {#sec-three-dimensional-biased-example}
+The result is a table with the coordinates of each point and its value in the layer we used. The function also told us that it detected a truncated layer and set `strict = TRUE`. We will come back to that argument below.
 
-Finally, let's look at biased sampling on a 3-dimensional niche (`example_sp_4`).
+To see the points in environmental space (E-space), we need their environmental values. We can get them from the layers of the prediction using the coordinates.
 
-```{r}
-rec_bias_3d_xy <- sample_biased_data(100, bias_3d, "suitability_biased_direct", seed = 123)
-rec_bias_3d_env <- terra::extract(bios, rec_bias_3d_xy[, c("x", "y")])
+```{r sample_env}
+# Environmental values of the points
+env_basic <- terra::extract(pred_rast[[vars]], pts_basic[, c("x", "y")])
 
-par(mfrow = c(1, 3), mar = c(4, 4, 3, 2)) 
-terra::plot(bias_3d[["suitability_biased_direct"]], main = "G-Space: 3D Biased Map")
-terra::points(rec_bias_3d_xy[, c("x", "y")], pch = 20, col = "red", cex = 1.2)
-
-plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 2), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio12")
-add_data(rec_bias_3d_env, x = "bio_1", y = "bio_12", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_12", pts_col = "red", pch = 15, cex = 1.5)
-
-plot_ellipsoid(example_sp_4, background = as.data.frame(bios[[c("bio_1", "bio_12", "bio_15")]]), dim = c(1, 3), pch = ".", col_bg = "#9a9797", main = "E-Space: Bio1 v Bio15")
-add_data(rec_bias_3d_env, x = "bio_1", y = "bio_15", pts_col = "orange", pch = 20)
-add_data(as.data.frame(t(example_sp_4$centroid)), x = "bio_1", y = "bio_15", pts_col = "red", pch = 15, cex = 1.5)
+head(env_basic)
 ```
+
+<br>
+
+Now let's plot the points in geographic space (G-space) and in E-space.
+
+```{r sample_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting area parameters and axis limits for E-space
+par(mfrow = c(1, 2), cex = 0.7)
+marsr <- c(0.5, 0.5, 2, 4)
+lims <- list(xlim = c(15, 30), ylim = c(300, 3500))
+
+# Points in G-space
+terra::plot(pred_rast[["suitability_trunc"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Data Points in G-space")
+
+points(pts_basic[, c("x", "y")], pch = 16, cex = 0.6, col = "#e10000")
+
+# Points in E-space
+par(mar = mars)
+
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2,
+               fixed_lims = lims,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Data Points in E-space")
+
+add_data(env_basic, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.6)
+```
+
+<br>
+
+The same 100 points are shown in the two spaces. In E-space they are inside the ellipsoid, with more of them near the centroid. In G-space they are spread over the sites where those conditions are found.
+
+<br>
+
+### Effect of the sampling argument
+
+As in `virtual_data()`, the argument `sampling` controls where in the niche the points are more likely to be drawn: near the centroid with `"centroid"`, near the boundary with `"edge"`, or with the same chance for every cell with `"uniform"`.
+
+```{r sampling}
+# More points near the centroid
+pts_cent <- sample_data(n = 100, prediction = pred_rast,
+                        prediction_layer = "suitability_trunc",
+                        sampling = "centroid", verbose = FALSE)
+
+# More points near the boundary
+pts_edge <- sample_data(n = 100, prediction = pred_rast,
+                        prediction_layer = "suitability_trunc",
+                        sampling = "edge", verbose = FALSE)
+
+# The same chance for every cell
+pts_unif <- sample_data(n = 100, prediction = pred_rast,
+                        prediction_layer = "suitability_trunc",
+                        sampling = "uniform", verbose = FALSE)
+
+# Environmental values of the points
+env_cent <- terra::extract(pred_rast[[vars]], pts_cent[, c("x", "y")])
+env_edge <- terra::extract(pred_rast[[vars]], pts_edge[, c("x", "y")])
+env_unif <- terra::extract(pred_rast[[vars]], pts_unif[, c("x", "y")])
+```
+
+<br>
+
+Let's check the three sets of points in E-space.
+
+```{r sampling_plot, fig.width = 7, fig.height = 2.5, out.width = "95%"}
+# Plotting the data points
+par(mfrow = c(1, 3), cex = 0.75, mar = c(3.5, 3.5, 2, 0.5))
+
+## Centroid
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1", ylab = "Bio12", main = "centroid")
+
+add_data(env_cent, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.5)
+
+## Edge
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1", ylab = "Bio12", main = "edge")
+
+add_data(env_edge, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.5)
+
+## Uniform
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1", ylab = "Bio12", main = "uniform")
+
+add_data(env_unif, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.5)
+```
+
+<br>
+
+The patterns are similar to the ones we saw with virtual data, with one difference. Here the points are drawn from the cells of the raster, and the gray points show that those cells don't fill the ellipsoid evenly. With `"uniform"`, every cell has the same chance, so there are more points in the part of the niche that has more cells.
+
+<br>
+
+### Effect of the method argument
+
+The points can also be drawn from a Mahalanobis distance layer. The argument `method` tells the function which kind of layer it is receiving, `"suitability"` (the default) or `"mahalanobis"`, and it has to agree with the layer.
+
+```{r method}
+# Points drawn from the truncated Mahalanobis distance layer
+pts_maha <- sample_data(n = 100, prediction = pred_rast,
+                        prediction_layer = "Mahalanobis_trunc",
+                        sampling = "centroid", method = "mahalanobis",
+                        verbose = FALSE)
+
+# Environmental values of the points
+env_maha <- terra::extract(pred_rast[[vars]], pts_maha[, c("x", "y")])
+```
+
+<br>
+
+Let's compare these points with the ones we drew from suitability, both with `sampling = "centroid"`.
+
+```{r method_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the data points
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+
+## Suitability
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Method: Suitability")
+
+add_data(env_cent, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+
+## Mahalanobis distance
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Method: Mahalanobis")
+
+add_data(env_maha, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+```
+
+<br>
+
+Both methods put more points near the centroid, but the patterns are different. With suitability, the points form a cloud around the centroid. With Mahalanobis distance, there is a tight group of points at the centroid and the rest are spread over the niche. See [The two methods give different patterns](https://castanedam.github.io/nicheR/articles/concepts.html#the-two-methods-give-different-patterns) in the Concepts vignette for an explanation.
+
+<br>
+
+### Effect of the strict argument
+
+In a truncated layer, the cells outside the niche have a value of 0 (suitability) or `NA` (Mahalanobis distance). The argument `strict` controls what happens with those cells. With `strict = TRUE`, they are removed before the points are drawn, so all the points are inside the niche.
+
+If `strict` is not set, the function decides on its own. It uses `strict = TRUE` when the name of the layer contains "trunc", or when at least a quarter of the values are zero or missing. That is what happened in the examples above.
+
+To see why this argument matters, let's draw points near the boundary of the niche without removing those cells.
+
+```{r strict}
+# Points near the boundary, keeping the cells outside the niche
+pts_loose <- sample_data(n = 100, prediction = pred_rast,
+                         prediction_layer = "suitability_trunc",
+                         sampling = "edge", strict = FALSE,
+                         verbose = FALSE)
+
+# Environmental values of the points
+env_loose <- terra::extract(pred_rast[[vars]], pts_loose[, c("x", "y")])
+```
+
+<br>
+
+Let's compare these points with the ones we drew before with `sampling = "edge"`, where `strict` was set to `TRUE` by the function.
+
+```{r strict_plot, fig.width = 7, fig.height = 3.5, out.width = "95%"}
+# Plotting the data points, with wider axis limits to show the whole region
+par(mfrow = c(1, 2), cex = 0.6, mar = mars)  # set up the plotting area
+lims_wide <- list(xlim = c(3, 30), ylim = c(200, 7200))
+
+## Cells outside the niche removed
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims_wide,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "strict = TRUE")
+
+add_data(env_edge, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+
+## Cells outside the niche kept
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims_wide,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "strict = FALSE")
+
+add_data(env_loose, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+```
+
+<br>
+
+With `strict = FALSE`, most of the points are outside the niche. With `"edge"`, a cell with low suitability gets a high chance of being drawn, and the cells outside the niche have a suitability of 0, the lowest possible. To keep the points inside the niche, use a truncated layer and `strict = TRUE`. This is most important with `"edge"` and `"uniform"`.
+
+<br>
+
+### Generating data from a table
+
+`sample_data()` also works when the prediction is a table. This is useful when the environmental data are a list of sites. As an example, we will predict the reference niche onto the background table and draw points from the result.
+
+```{r table}
+# Prediction of the reference niche for the background table
+pred_table <- predict(ref_ellipse, newdata = back_data,
+                      suitability_truncated = TRUE, verbose = FALSE)
+
+# Generating data from the table
+pts_table <- sample_data(n = 100, prediction = pred_table,
+                         prediction_layer = "suitability_trunc",
+                         verbose = FALSE)
+
+# Check the first points
+head(pts_table)
+```
+
+<br>
+
+Each data point is a row of the table, with all its columns, so the environmental values come with the points and there is no need to extract them. Our table has the columns `x` and `y`, and they were kept as coordinates. A table without coordinates can also be used. In that case the points can only be shown in E-space, and the function gives a warning to let us know.
+
+<br>
+
+## Generating biased data
+
+The last option is to draw the points from a prediction that was combined with sampling bias. The surface we loaded at the beginning was obtained with `apply_bias()` from the suitability of the reference niche and a bias surface. Its values are the weights used to draw the points, so the `sample_biased_data()` function only needs the surface and the number of points.
+
+```{r biased}
+# Generating data from the biased surface
+pts_bias <- sample_biased_data(n = 100,
+                               prediction = biased_rast,
+                               prediction_layer = "suitability_centroid_biased")
+
+# Check the first points
+head(pts_bias)
+```
+
+<br>
+
+This function has no `sampling` or `method` arguments. Those choices were made in `apply_bias()`, when the surface was created.
+
+To see the effect of the bias, we will compare these points with points drawn from the same suitability layer without bias.
+
+```{r unbiased}
+# Generating data from suitability, without bias
+pts_nobias <- sample_data(n = 100, prediction = pred_rast,
+                          prediction_layer = "suitability",
+                          sampling = "centroid", verbose = FALSE)
+
+# Environmental values of the two sets of points
+env_bias <- terra::extract(pred_rast[[vars]], pts_bias[, c("x", "y")])
+env_nobias <- terra::extract(pred_rast[[vars]], pts_nobias[, c("x", "y")])
+```
+
+<br>
+
+Let's plot the two sets of points in G-space and in E-space.
+
+```{r biased_plot, fig.width = 7, fig.height = 6, out.width = "95%"}
+# Plotting area parameters
+par(mfrow = c(2, 2), cex = 0.6)
+
+# Points without bias in G-space
+terra::plot(pred_rast[["suitability"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "Without Bias in G-space")
+
+points(pts_nobias[, c("x", "y")], pch = 16, cex = 0.6, col = "#e10000")
+
+# Points with bias in G-space
+terra::plot(biased_rast[["suitability_centroid_biased"]],
+            axes = FALSE, box = TRUE, mar = marsr,
+            main = "With Bias in G-space")
+
+points(pts_bias[, c("x", "y")], pch = 16, cex = 0.6, col = "#e10000")
+
+# Points without bias in E-space
+par(mar = mars)
+
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Without Bias in E-space")
+
+add_data(env_nobias, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+
+# Points with bias in E-space
+plot_ellipsoid(ref_ellipse, background = back_data[, vars],
+               pch = ".", col_bg = "#9a9797", lwd = 2, fixed_lims = lims,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "With Bias in E-space")
+
+add_data(env_bias, x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 16, cex = 0.7)
+```
+
+<br>
+
+The clearest change is in G-space. Without bias, the points follow suitability, and many of them are in the north of the region. With bias, more of the points are in the south, where sampling effort is higher in our bias surface. In E-space the two sets look alike in this example, because the sites with more sampling effort have conditions similar to the rest of the niche. This is not always the case. When sampling effort is concentrated in sites with particular conditions, the bias also changes how the niche looks in E-space.
+
+A few points can fall outside the ellipsoid in these plots. The layer `suitability` is not truncated, so the cells outside the niche keep a small chance of being drawn. To keep all the points inside the niche, create the biased surface from a truncated layer, as shown in [3. Working with bias](https://castanedam.github.io/nicheR/articles/bias.html#keeping-the-weights-inside-the-niche).
+
+<br>
 
 ```{r par_reset}
 # Reset plotting parameters
@@ -406,18 +611,23 @@ par(original_par)
 
 <br>
 
-# Save and export {#sec-save-and-export}
+## Save and import
 
-Because we generated standard spatial coordinates and data frames, exporting these simulated datasets for testing model robustness or downstream analyses is straightforward.
+The data points are tables, so they can be saved with `write.csv()` and imported with `read.csv()`. The points drawn from a raster can be saved together with their environmental values.
 
-```{r}
-# Save Pure Virtual Data
-write.csv(rec_virt_basic, file = tempfile(), row.names = FALSE)
+```{r save_import, eval=FALSE}
+# file names (in a temporary directory for demonstration purposes)
+temp_virtual <- file.path(tempdir(), "virtual_data.csv")
+temp_points <- file.path(tempdir(), "data_points.csv")
 
-# Save Geographic Data
-write.csv(rec_geo_basic, file = tempfile(), row.names = FALSE)
+# Save virtual data
+write.csv(virt_data, file = temp_virtual, row.names = FALSE)
 
-# Save Biased Data (combining XY and environmental data)
-biased_final <- cbind(rec_bias_xy, rec_bias_env)
-write.csv(biased_final, file = tempfile(), row.names = FALSE)
+# Save data points with their environmental values
+write.csv(cbind(pts_basic, env_basic[, vars]), file = temp_points,
+          row.names = FALSE)
+
+# Import the data
+virt_data_imported <- read.csv(temp_virtual)
+pts_basic_imported <- read.csv(temp_points)
 ```

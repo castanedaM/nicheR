@@ -1,0 +1,509 @@
+---
+title: "Concepts behind nicheR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Concepts behind nicheR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 7,
+  dpi = 100,
+  out.width = "95%"
+)
+```
+
+## Summary
+
+- [Environmental space and geographic space](#environmental-space-and-geographic-space)
+- [Virtual, tabular, and spatial modes](#virtual-tabular-and-spatial-modes)
+- [The niche as an ellipsoid](#the-niche-as-an-ellipsoid)
+- [Mahalanobis distance and suitability](#mahalanobis-distance-and-suitability)
+  - [Mahalanobis distance](#mahalanobis-distance)
+  - [From distance to suitability](#from-distance-to-suitability)
+  - [The boundary and truncation](#the-boundary-and-truncation)
+- [Sampling bias](#sampling-bias)
+- [Generating data](#generating-data)
+  - [Virtual mode](#virtual-mode)
+  - [Tabular and spatial modes](#tabular-and-spatial-modes)
+  - [Centroid, edge, and uniform](#centroid-edge-and-uniform)
+  - [The two methods give different patterns](#the-two-methods-give-different-patterns)
+  - [Cells outside the niche](#cells-outside-the-niche)
+- [References](#references)
+
+<hr>
+
+This vignette explains the ideas behind the functions in `nicheR`, in the order of the workflow shown in the [Main guide](https://castanedam.github.io/nicheR/index.html). The figures use the example data included in `nicheR`: a reference niche defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation) and background environmental data for part of the Americas.
+
+<br>
+
+```{r get_ready, include=FALSE}
+# Load packages
+library(nicheR)
+
+# Reference niche
+data("ref_ellipse", package = "nicheR")
+
+# Background data
+data("back_data", package = "nicheR")
+
+# Prediction of the reference niche for the background data
+pred_ex <- predict(ref_ellipse,
+                   newdata = back_data[, ref_ellipse$var_names],
+                   include_suitability = TRUE,
+                   include_mahalanobis = TRUE,
+                   mahalanobis_truncated = TRUE,
+                   suitability_truncated = TRUE,
+                   verbose = FALSE)
+
+# Saving original plotting parameters
+original_par <- par(no.readonly = TRUE)
+```
+
+## Environmental space and geographic space
+
+A key distinction in ecological niche modeling is between environmental space (E-space; Qiao et al., 2016) and geographic space (G-space). E-space is the space defined by environmental variables, such as temperature and precipitation. Each axis is one variable and each point is one combination of environmental conditions. G-space is the familiar map, where each point is a location.
+
+The two spaces are connected, and the connection is known as Hutchinson's duality (Colwell & Rangel, 2009). It works differently in each direction:
+
+- **From G-space to E-space it is one to one.** A location has one set of environmental conditions, so each cell of a map is exactly one point in E-space.
+- **From E-space to G-space it is one to many.** The same conditions can be found in many locations, or in none.
+
+The figure below shows both directions for the example region.
+
+```{r spaces, echo=FALSE, fig.width=7, fig.height=3.5}
+# Cells inside the reference niche
+inside <- !is.na(pred_ex$Mahalanobis_trunc)
+
+# One point in E-space and the cells of the map with almost those conditions
+e_point <- c(25, 1500)
+same <- abs(back_data$bio_1 - e_point[1]) < 0.1 &
+  abs(back_data$bio_12 - e_point[2]) < 15
+
+# One cell of the map, the closest to 97 W and 19.5 N
+one <- which.min((back_data$x + 97)^2 + (back_data$y - 19.5)^2)
+
+col_many <- "#2166ac"
+col_one <- "#d95f02"
+
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))
+
+# E-space: the niche over the conditions available in the region
+plot_ellipsoid(ref_ellipse,
+               background = back_data[, ref_ellipse$var_names],
+               pch = ".", col_bg = "#9a9797", lwd = 2,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Environmental space")
+
+points(e_point[1], e_point[2], pch = 16, cex = 1.3, col = col_many)
+points(back_data$bio_1[one], back_data$bio_12[one],
+       pch = 16, cex = 1.3, col = col_one)
+
+# Where those two points are in the whole figure, to draw arrows from them later
+many_fig <- c(grconvertX(e_point[1], "user", "ndc"),
+              grconvertY(e_point[2], "user", "ndc"))
+one_fig <- c(grconvertX(back_data$bio_1[one], "user", "ndc"),
+             grconvertY(back_data$bio_12[one], "user", "ndc"))
+
+# G-space: the cells of the region, in green if they are inside the niche
+plot(back_data$x, back_data$y, pch = 15, cex = 0.2, asp = 1,
+     col = ifelse(inside, "#a6dba0", "#d9d9d9"),
+     xlab = "Longitude", ylab = "Latitude",
+     main = "Geographic space")
+
+points(back_data$x[same], back_data$y[same],
+       pch = 16, cex = 1.3, col = col_many)
+points(back_data$x[one], back_data$y[one],
+       pch = 16, cex = 1.3, col = col_one)
+
+# Arrows between the two panels
+par(xpd = NA)
+
+# One point in E-space to many cells of the map
+arrows(x0 = grconvertX(many_fig[1], "ndc", "user"),
+       y0 = grconvertY(many_fig[2], "ndc", "user"),
+       x1 = back_data$x[same], y1 = back_data$y[same],
+       length = 0.07, lwd = 1.5, col = col_many)
+
+# One cell of the map to one point in E-space
+arrows(x0 = back_data$x[one], y0 = back_data$y[one],
+       x1 = grconvertX(one_fig[1], "ndc", "user"),
+       y1 = grconvertY(one_fig[2], "ndc", "user"),
+       length = 0.07, lwd = 2, col = col_one)
+
+par(xpd = FALSE)
+```
+
+<br>
+
+The orange arrow starts at one cell of the map and ends at the only point in E-space with the conditions of that cell. The blue arrows start at one point in E-space, about 25 °C and 1,500 mm, and end at the `r sum(same)` cells of the map that have almost those conditions.
+
+Because of this connection, a niche defined in E-space can be projected onto a map to show which locations fall within the tolerances of the species. In `nicheR`, a niche is always defined in E-space. In the figure, the ellipse is the reference niche and the green cells are the locations with conditions inside it.
+
+<br>
+
+## Virtual, tabular, and spatial modes
+
+The example above uses environmental layers for a real region, but a niche does not need them. The input data set the mode, and the mode determines which outputs are available at each step.
+
+| Mode | Input | Prediction | Bias | Data points |
+|---------------|---------------|---------------|---------------|---------------|
+| Virtual | Variable names and ranges | Skipped | Not available | `virtual_data()` |
+| Tabular | A table of environmental conditions | A table | Not available | `sample_data()` |
+| Spatial | Raster layers | A raster, shown as a map | `prepare_bias()`, `apply_bias()` | `sample_data()`, `sample_biased_data()` |
+
+**Virtual mode** needs no environmental data and works in E-space only. The variables are defined by the user, so a niche can be built for any set of variables by giving each one a name and a range. There is no background and no map, so the prediction step is skipped. Data points are drawn directly from the ellipsoid. This mode suits theoretical questions, where the conditions available in a real region should play no part.
+
+**Tabular mode** starts from a table with one column per variable and one row per site. The rows are the background, that is, the conditions that exist. The niche is predicted onto the table and data points are drawn from its rows. If the table has `x` and `y` columns they are kept as coordinates, but nothing is mapped.
+
+**Spatial mode** starts from raster layers and works in E-space and G-space. Everything in tabular mode is available, plus maps and sampling bias, which needs raster layers of its own.
+
+The sections on the niche apply to the three modes in the same way. The sections on predictions, bias, and sampled data need background data, so they apply to tabular or spatial mode.
+
+<br>
+
+## The niche as an ellipsoid
+
+`nicheR` follows Hutchinson (1957), who described the niche as an n-dimensional hypervolume in which each axis is a condition the species requires. The package represents that volume as an ellipsoid in E-space (Qiao et al., 2016). An ellipsoid is consistent with performance being highest near a central set of conditions and declining toward the margins (Soberón & Peterson, 2020).
+
+The ellipsoid is a fundamental niche: everything inside it is considered part of the niche. Some of those conditions might not exist in the region of interest. In the figure above, the gray points cover only part of the ellipse.
+
+An ellipsoid is described by three things:
+
+1. The **centroid** ($\boldsymbol{\mu}$) is the center of the niche, where conditions are the most favorable.
+2. The **covariance matrix** ($\boldsymbol{\Sigma}$) sets how wide the niche is along each variable and whether the variables are related. A covariance different from zero rotates the ellipsoid. For example, a species might tolerate high temperatures only when precipitation is also high.
+3. The **confidence level** (`cl`) sets where the boundary falls. The default is 0.95, and the reference niche uses `r ref_ellipse$cl`.
+
+`build_ellipsoid()` creates an ellipsoid from a range for each variable. It places the centroid at the midpoint of each range and sets each standard deviation to one sixth of the range, so the range spans three standard deviations on either side of the centroid. The reference niche was built from a temperature range of 20 to 27 and a precipitation range of 1000 to 2500, so its centroid is at 23.5 and 1750.
+
+Note that the ranges set the location and scale of the niche, and the confidence level sets where its boundary falls. With two variables and no covariance, the boundary reaches 2.45 standard deviations from the centroid along each axis at `cl = 0.95` and 3.03 at `cl = 0.99`. Only the second coincides with the supplied ranges.
+
+> The [Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html) vignette shows how to build an ellipsoid, change its covariance, and compare several niches.
+
+<br>
+
+## Mahalanobis distance and suitability
+
+`predict()` calculates two values for every set of environmental conditions: a Mahalanobis distance and a suitability. These two quantities are mathematically connected, and understanding that connection helps to interpret what the model is telling you.
+
+<br>
+
+### Mahalanobis distance
+
+Every prediction starts with the **Mahalanobis distance** ($D^2$), which measures how far any environmental point $\mathbf{x}$ is from the niche centroid $\boldsymbol{\mu}$:
+
+$$D^2(\mathbf{x}) = (\mathbf{x} - \boldsymbol{\mu})^{\top} \boldsymbol{\Sigma}^{-1} (\mathbf{x} - \boldsymbol{\mu})$$
+
+where $\boldsymbol{\Sigma}^{-1}$ is the inverse of the covariance matrix. In simpler terms, $D^2$ measures how far a set of conditions is from the centroid in standard deviations, accounting for differences in variable scale and for correlations among variables (Farber & Kadmon, 2003). Unlike Euclidean distance, it stretches and rotates with the shape of the niche.
+
+A smaller $D^2$ means environmental conditions are similar to those at the niche center. A larger $D^2$ means they are increasingly different. $D^2$ is not bounded between 0 and 1: it is a distance, not a probability.
+
+<br>
+
+### From distance to suitability
+
+`nicheR` converts $D^2$ to **suitability** using the multivariate normal (MVN) kernel:
+
+$$S(\mathbf{x}) = \exp\!\left(-\frac{1}{2} D^2(\mathbf{x})\right)$$
+
+This transformation is not arbitrary. The exponent in the MVN probability density function is exactly $-\frac{1}{2} D^2$, so suitability is the MVN density defined by $\boldsymbol{\mu}$ and $\boldsymbol{\Sigma}$, rescaled so that it equals one at the centroid. In other words, we are treating the niche as a multivariate Gaussian centered at $\boldsymbol{\mu}$ with covariance $\boldsymbol{\Sigma}$. Suitability declines toward the margins, so it can be used directly as a sampling weight.
+
+<br>
+
+### The boundary and truncation
+
+The connection to the MVN also determines the ellipsoid boundary. The squared Mahalanobis distance of a multivariate normal variable follows a **chi-square distribution** with $n$ degrees of freedom, where $n$ is the number of environmental variables (Etherington, 2019). The ellipsoid is the set of points where $D^2$ equals $c^2$, the chi-square quantile for $n$ variables at the confidence level `cl`. This contour encloses a stated proportion of the niche's probability density.
+
+```{r cutoff}
+# Reference niche included in nicheR
+data("ref_ellipse", package = "nicheR")
+
+# Chi-square quantile for the reference niche
+qchisq(ref_ellipse$cl, df = ref_ellipse$dimensions)
+
+# The same value is stored in the niche
+ref_ellipse$chi2_cutoff
+```
+
+<br>
+
+The boundary of the reference niche is at $D^2 =$ `r round(ref_ellipse$chi2_cutoff, 2)`, where suitability is `r round(exp(-0.5 * ref_ellipse$chi2_cutoff), 2)`. Suitability is small at the boundary, but it is not zero.
+
+Without truncation, every point receives a $D^2$ and a suitability, including points far outside the ellipsoid. The truncated outputs apply the boundary:
+
+- `suitability_trunc`: $S$ inside the ellipsoid and 0 outside.
+- `Mahalanobis_trunc`: $D^2$ inside the ellipsoid and `NA` outside.
+
+The two treatments differ on purpose. Zero keeps the suitability layer complete and usable as a weight that excludes unsuitable conditions. `NA` marks distances outside the niche as undefined.
+
+The figure below brings these ideas together. The top row shows the E-space scatter colored by $D^2$ and the histogram of $D^2$ values across the background. The bottom row shows the same for suitability. The vertical dashed lines in the histograms mark chi-square quantiles at three confidence levels, showing where the ellipsoid boundary falls for each one.
+
+```{r concept_figure, echo=FALSE, fig.width=7, fig.height=5}
+levels <- c(0.50, 0.90, 0.99)
+d2_cuts <- qchisq(levels, df = ref_ellipse$dimensions)
+suit_cuts <- exp(-0.5 * d2_cuts)
+cols <- c("#1b9e77", "#d95f02", "#7570b3")
+
+par(mfrow = c(2, 2), mar = c(4, 4, 2.5, 1), cex = 0.85)
+
+# Top-left: E-space scatter colored by Mahalanobis distance
+plot_ellipsoid(ref_ellipse,
+               prediction = pred_ex,
+               col_layer = "Mahalanobis_trunc",
+               col_ell = "#e10000",
+               lwd = 2, pch = 16, cex_bg = 0.4,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Mahalanobis distance", font.main = 1)
+
+add_data(as.data.frame(t(ref_ellipse$centroid)),
+         x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 8, cex = 1.5, lwd = 2)
+
+# Top-right: histogram of D2 values with chi-square quantile lines
+hist(pred_ex$Mahalanobis[!is.na(pred_ex$Mahalanobis)],
+     freq = FALSE, breaks = 60,
+     col = "#a5d6a7",
+     xlab = expression(paste("Mahalanobis Distance (", D^2, ")")),
+     ylab = "Density",
+     main = expression(paste("Distribution of ", D^2)))
+
+lines(density(pred_ex$Mahalanobis[!is.na(pred_ex$Mahalanobis)]),
+      col = "#333333", lwd = 2)
+
+for (i in seq_along(d2_cuts)) {
+  abline(v = d2_cuts[i], col = cols[i], lwd = 2, lty = 2)
+}
+
+legend("topright",
+       legend = paste0(levels * 100, "% cl"),
+       col = cols, lwd = 2, lty = 2,
+       bty = "n", cex = 0.78)
+
+# Bottom-left: E-space scatter colored by suitability
+plot_ellipsoid(ref_ellipse,
+               prediction = pred_ex,
+               col_layer = "suitability_trunc",
+               col_ell = "#e10000",
+               lwd = 2, pch = 16, cex_bg = 0.4,
+               xlab = "Bio1 (Mean Annual Temperature)",
+               ylab = "Bio12 (Annual Precipitation)",
+               main = "Suitability", font.main = 1)
+
+add_data(as.data.frame(t(ref_ellipse$centroid)),
+         x = "bio_1", y = "bio_12",
+         pts_col = "#e10000", pch = 8, cex = 1.5, lwd = 2)
+
+# Bottom-right: histogram of suitability values with matching threshold lines
+hist(pred_ex$suitability[!is.na(pred_ex$suitability)],
+     freq = FALSE, breaks = 60,
+     col = "#a5d6a7",
+     xlab = "Suitability",
+     ylab = "Density",
+     main = "Distribution of suitability", font.main = 1)
+
+lines(density(pred_ex$suitability[!is.na(pred_ex$suitability)]),
+      col = "#333333", lwd = 2)
+
+for (i in seq_along(suit_cuts)) {
+  abline(v = suit_cuts[i], col = cols[i], lwd = 2, lty = 2)
+}
+
+legend("topright",
+       legend = paste0(levels * 100, "% cl"),
+       col = cols, lwd = 2, lty = 2,
+       bty = "n", cex = 0.78)
+```
+
+<br>
+
+The color gradients in the scatter plots are reversed between the two metrics, reflecting their mathematical relationship. $D^2$ increases as you move away from the centroid, so darker colors near the center indicate lower distance. Suitability decreases with distance, so brighter colors near the center indicate higher suitability.
+
+The same three thresholds appear in both histograms, showing the suitability value that matches each boundary. This makes it clear that the choice of `cl` has a direct effect on what suitability value marks the edge of the niche.
+
+> The [Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html) vignette shows how to obtain each of these outputs and how to plot them in E-space and G-space.
+
+<br>
+
+## Sampling bias
+
+Real data carry biases that derive from sampling. Data accumulate near roads, cities, and protected areas, and effort is uneven across a region (Phillips et al., 2009). In `nicheR`, bias is a property of the observation process and not of the species. The niche determines where a species can occur, and the bias surface determines where it is likely to be recorded.
+
+`prepare_bias()` builds this surface from any number of raster layers representing drivers of sampling effort, such as nighttime lights or distance to roads. Each layer is aligned to a common grid, rescaled to values between 0 and 1, and given a direction. A `"direct"` effect keeps the layer as it is, so high values increase the chance of a data point. An `"inverse"` effect replaces it with $1 - x$, so high values decrease it. The composite surface is the product of the layers, so a location must score well on every driver to be sampled heavily.
+
+Rescaling leaves at least one cell of each layer at exactly zero, which removes that cell from the sampling pool. The `floor` argument avoids this by raising every value below a chosen minimum to that minimum.
+
+`apply_bias()` then turns a prediction into a sampling weight, as explained in [Generating data](#generating-data), and multiplies it by the composite:
+
+$$\text{biased weight} = \text{weight} \times \text{bias}$$
+
+The result is a relative sampling weight and can no longer be read as suitability.
+
+> The [Working with bias](https://castanedam.github.io/nicheR/articles/bias.html) vignette shows how to prepare a bias surface and apply it to a prediction.
+
+<br>
+
+## Generating data
+
+`nicheR` generates data points in a different way for each mode.
+
+<br>
+
+### Virtual mode
+
+In virtual mode, `virtual_data()` draws points directly from the ellipsoid, with no geography. Without truncation, the points follow the multivariate normal defined by $\boldsymbol{\mu}$ and $\boldsymbol{\Sigma}$, and some of them fall outside the boundary. With truncation, they stay inside the ellipsoid and the `sampling` argument sets how they are distributed. They concentrate near the centroid with `"centroid"` or toward the edge with `"edge"`, and they fill the ellipsoid evenly with `"uniform"`.
+
+<br>
+
+### Tabular and spatial modes
+
+In tabular and spatial modes, `sample_data()` draws data points from a suitability or Mahalanobis prediction by weighted sampling without replacement. Every cell gets a weight, and at each draw the chance of choosing a cell is its weight divided by the sum of the weights of the cells not yet drawn. Only the relative size of the weights matters.
+
+In spatial mode, `sample_biased_data()` uses the values of a biased surface directly as weights, so the data points are shaped jointly by the niche and the observation process. It has no `sampling` or `method` argument. Those choices were made in `apply_bias()`.
+
+In all cases sampling is over the cells of the supplied surface, so conditions that are common in the study area are more likely to be drawn than equally suitable conditions that are rare (Jiménez & Soberón, 2022). In other words, `"uniform"` in `virtual_data()` is even across the niche, and `"uniform"` in `sample_data()` is even across the cells.
+
+<br>
+
+### Centroid, edge, and uniform
+
+In `sample_data()` and `apply_bias()`, the `sampling` argument sets where in the niche the weights are the highest. The `method` argument states whether the layer holds suitability or Mahalanobis distance.
+
+| `sampling` | `method = "suitability"` | `method = "mahalanobis"` |
+|------------------------|------------------------|------------------------|
+| `"centroid"` | $S$ | $1 / D^2$ |
+| `"edge"` | $1 - S$ | $D^2$ |
+| `"uniform"` | 1 | 1 |
+
+Suitability is the highest at the centroid, so it is used as it is for `"centroid"` and it is flipped as $1 - S$ for `"edge"`. $D^2$ is the lowest at the centroid, so it works the other way around. It is flipped as $1 / D^2$ for `"centroid"` and used as it is for `"edge"`.
+
+Centroid sampling reproduces the expectation that abundance is highest near the center of the niche (Brown, 1984; Martínez-Meyer et al., 2013). Empirical support for this pattern is mixed (Dallas et al., 2017), so two other designs are provided. Edge sampling represents the opposite case, in which data points concentrate near the limits of tolerance, as can happen in populations at the margins of a range (Sexton et al., 2009). Uniform sampling gives every cell the same weight and serves as the reference for the other two.
+
+<br>
+
+### The two methods give different patterns
+
+The two methods agree on the direction of the weights, but the weights change with distance in different ways. The figure below shows the weight given to one cell at each distance from the centroid, from the centroid at 0 to the boundary of the niche at `r round(ref_ellipse$chi2_cutoff, 2)`.
+
+```{r weights, echo=FALSE, fig.width=5, fig.height=3.5, out.width="70%", fig.align="center"}
+# Weights along the full range of distances inside the niche
+d2_line <- seq(0.05, ref_ellipse$chi2_cutoff, length.out = 200)
+w_line <- cbind(exp(-0.5 * d2_line), 1 / d2_line,
+                1 - exp(-0.5 * d2_line), d2_line)
+
+w_cols <- c("#1b9e77", "#d95f02", "#1b9e77", "#d95f02")
+w_ltys <- c(1, 1, 2, 2)
+w_labs <- c("Suitability, centroid", "Mahalanobis, centroid",
+            "Suitability, edge", "Mahalanobis, edge")
+
+par(mar = c(4, 4, 1, 1), cex = 0.8)
+
+# The weight of a cell by its distance from the centroid
+matplot(d2_line, w_line, type = "l", log = "y",
+        col = w_cols, lty = w_ltys, lwd = 2,
+        ylim = c(0.01, 200),
+        xlab = expression(paste("Mahalanobis distance (", D^2, ")")),
+        ylab = "Weight of one cell (log scale)")
+
+legend("topright", legend = w_labs,
+       col = w_cols, lty = w_ltys, lwd = 2,
+       bty = "n", cex = 0.85)
+```
+
+<br>
+
+A weight has no units. Sampling only uses the size of a weight relative to the other weights, so the shape of a line is what to compare between methods. The axis is on a log scale because $1 / D^2$ covers several orders of magnitude.
+
+The next figure shows what those shapes do to a sample. Each panel has 100 data points drawn from the reference niche with `sample_data()`. The gray points are the cells of the niche, and data points can only be drawn where there are cells.
+
+```{r sampled_points, echo=FALSE, warning=FALSE, fig.width=7, fig.height=6.5}
+# The four combinations of sampling and method
+designs <- data.frame(
+  sampling = c("centroid", "centroid", "edge", "edge"),
+  method = c("suitability", "mahalanobis", "suitability", "mahalanobis"),
+  layer = c("suitability_trunc", "Mahalanobis_trunc",
+            "suitability_trunc", "Mahalanobis_trunc"),
+  title = c("Suitability, centroid", "Mahalanobis, centroid",
+            "Suitability, edge", "Mahalanobis, edge"),
+  color = c("#1b9e77", "#d95f02", "#1b9e77", "#d95f02")
+)
+
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+
+for(i in 1:4){
+  # Draw 100 data points with this combination
+  pts <- sample_data(n = 100, prediction = pred_ex,
+                     prediction_layer = designs$layer[i],
+                     sampling = designs$sampling[i],
+                     method = designs$method[i],
+                     verbose = FALSE)
+
+  # The cells of the niche in gray, with the data points on top
+  plot_ellipsoid(ref_ellipse,
+                 background = pred_ex[inside, ref_ellipse$var_names],
+                 pch = 16, cex_bg = 0.3, col_bg = "#d0d0d0", lwd = 2,
+                 xlab = "Bio1 (Mean Annual Temperature)",
+                 ylab = "Bio12 (Annual Precipitation)",
+                 main = designs$title[i])
+
+  add_data(pts, x = "bio_1", y = "bio_12",
+           pts_col = designs$color[i], pch = 16, cex = 0.9)
+}
+```
+
+<br>
+
+- With `"centroid"`, $S$ decreases at a steady rate, so the points form a cloud around the centroid that thins out toward the boundary. $1 / D^2$ is high only for the few cells closest to the centroid and changes little after that. The points form a tight group at the centroid, and the rest are spread over the niche.
+- With `"edge"`, $1 - S$ levels off a short distance from the centroid, so the points cover most of the niche. $D^2$ keeps increasing up to the boundary, so more of the points are near the edge.
+
+The tight group with Mahalanobis distance is made of a few cells. It changes with the resolution of the raster, and it is a smaller part of the sample as `n` grows.
+
+The method is part of the sampling design. When describing a simulation, report the method together with the sampling.
+
+<br>
+
+### Cells outside the niche
+
+In a truncated prediction, the cells outside the niche are 0 or `NA`. With `"edge"`, a suitability of 0 becomes a weight of 1, the highest possible, and with `"uniform"` every cell has the same weight. To keep the data points inside the niche, those cells are dropped before sampling.
+
+In `sample_data()` this is controlled by the `strict` argument. It is set automatically when the layer name contains "trunc", or when at least a quarter of the cells are zero or at least a quarter are missing. It should be set explicitly when a truncated layer is used. `apply_bias()` always drops those cells.
+
+> The [Generate data](https://castanedam.github.io/nicheR/articles/generating_data.html) vignette shows both ways of generating data points and the effect of the `sampling`, `method`, and `strict` arguments.
+
+```{r par_reset, include=FALSE}
+par(original_par)
+```
+
+<br>
+
+## References
+
+Brown, J. H. (1984). On the relationship between abundance and distribution of species. *The American Naturalist*, 124(2), 255-279. https://doi.org/10.1086/284267
+
+Colwell, R. K., & Rangel, T. F. (2009). Hutchinson's duality: The once and future niche. *Proceedings of the National Academy of Sciences*, 106, 19651-19658. https://doi.org/10.1073/pnas.0901650106
+
+Dallas, T., Decker, R. R., & Hastings, A. (2017). Species are not most abundant in the centre of their geographic range or climatic niche. *Ecology Letters*, 20(12), 1526-1533. https://doi.org/10.1111/ele.12860
+
+Etherington, T. R. (2019). Mahalanobis distances and ecological niche modelling: Correcting a chi-squared probability error. *PeerJ*, 7, e6678. https://doi.org/10.7717/peerj.6678
+
+Farber, O., & Kadmon, R. (2003). Assessment of alternative approaches for bioclimatic modeling with special emphasis on the Mahalanobis distance. *Ecological Modelling*, 160(1-2), 115-130. https://doi.org/10.1016/S0304-3800(02)00327-7
+
+Hutchinson, G. E. (1957). Concluding remarks. *Cold Spring Harbor Symposia on Quantitative Biology*, 22, 415-427. https://doi.org/10.1101/SQB.1957.022.01.039
+
+Jiménez, L., & Soberón, J. (2022). Estimating the fundamental niche: Accounting for the uneven availability of existing climates in the calibration area. *Ecological Modelling*, 464, 109823. https://doi.org/10.1016/j.ecolmodel.2021.109823
+
+Martínez-Meyer, E., Díaz-Porras, D., Peterson, A. T., & Yáñez-Arenas, C. (2013). Ecological niche structure and rangewide abundance patterns of species. *Biology Letters*, 9(1), 20120637. https://doi.org/10.1098/rsbl.2012.0637
+
+Phillips, S. J., Dudík, M., Elith, J., Graham, C. H., Lehmann, A., Leathwick, J., & Ferrier, S. (2009). Sample selection bias and presence-only distribution models: Implications for background and pseudo-absence data. *Ecological Applications*, 19(1), 181-197. https://doi.org/10.1890/07-2153.1
+
+Qiao, H., Peterson, A. T., Campbell, L. P., Soberón, J., Ji, L., & Escobar, L. E. (2016). NicheA: Creating virtual species and ecological niches in multivariate environmental scenarios. *Ecography*, 39(8), 805-813. https://doi.org/10.1111/ecog.01961
+
+Sexton, J. P., McIntyre, P. J., Angert, A. L., & Rice, K. J. (2009). Evolution and ecology of species range limits. *Annual Review of Ecology, Evolution, and Systematics*, 40(1), 415-436. https://doi.org/10.1146/annurev.ecolsys.110308.120317
+
+Soberón, J., & Peterson, A. T. (2020). What is the shape of the fundamental Grinnellian niche? *Theoretical Ecology*, 13(1), 105-115. https://doi.org/10.1007/s12080-019-0432-5

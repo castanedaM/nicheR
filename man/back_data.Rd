@@ -5,7 +5,7 @@
 \alias{back_data}
 \title{Background environmental data for examples}
 \format{
-A data frame with 12,396 rows and 4 variables:
+A data frame with 10,047 rows and 10 variables:
 \describe{
   \item{x}{Longitude in decimal degrees (WGS84).}
   \item{y}{Latitude in decimal degrees (WGS84).}
@@ -20,20 +20,22 @@ A data frame with 12,396 rows and 4 variables:
 }
 }
 \source{
-\url{https://www.worldclim.org}
+WorldClim 2.1, \url{https://www.worldclim.org}
 }
 \usage{
 back_data
 }
 \description{
-A dataset containing geographic coordinates and two bioclimatic variables
+A dataset containing geographic coordinates and eight bioclimatic variables
 used as a background point cloud for generating and testing niche ellipsoids.
 }
 \details{
-This dataset represents an irregular point cloud typical of environmental
-background data used in ecological niche modeling (ENM). It is primarily
-used in the `nicheR` package to provide the environmental space for
-functions like \code{\link{conserved_ellipses}}.
+Each row is one cell of the \code{\link{ma_bios}} raster that has data,
+so this is the table version of that raster. The points sit on a regular
+10 arc-minute grid in geography and form an irregular point cloud in
+environmental space, typical of the background data used in ecological
+niche modeling (ENM). It is used in the `nicheR` package to provide the
+environmental space for functions like \code{\link{conserved_ellipses}}.
 }
 \examples{
 data(back_data)
