@@ -6,7 +6,7 @@ This is an update of an existing package.
 
 In this version the following changes were made:
 
-- Added `run_gui()`, a Shiny interface to the package workflow. The
+- Added `nicheR_gui()`, a Shiny interface to the package workflow. The
   application files are in `inst/shiny/` and are not evaluated during checks.
   The example is wrapped in `\dontrun{}` because the application blocks the
   console until closed and cannot run without a display.

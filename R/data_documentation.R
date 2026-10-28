@@ -1,9 +1,9 @@
 #' Background environmental data for examples
 #'
-#' A dataset containing geographic coordinates and two bioclimatic variables
+#' A dataset containing geographic coordinates and eight bioclimatic variables
 #' used as a background point cloud for generating and testing niche ellipsoids.
 #'
-#' @format A data frame with 12,396 rows and 4 variables:
+#' @format A data frame with 10,047 rows and 10 variables:
 #' \describe{
 #'   \item{x}{Longitude in decimal degrees (WGS84).}
 #'   \item{y}{Latitude in decimal degrees (WGS84).}
@@ -18,12 +18,14 @@
 #' }
 #'
 #' @details
-#' This dataset represents an irregular point cloud typical of environmental
-#' background data used in ecological niche modeling (ENM). It is primarily
-#' used in the `nicheR` package to provide the environmental space for
-#' functions like \code{\link{conserved_ellipses}}.
+#' Each row is one cell of the \code{\link{ma_bios}} raster that has data,
+#' so this is the table version of that raster. The points sit on a regular
+#' 10 arc-minute grid in geography and form an irregular point cloud in
+#' environmental space, typical of the background data used in ecological
+#' niche modeling (ENM). It is used in the `nicheR` package to provide the
+#' environmental space for functions like \code{\link{conserved_ellipses}}.
 #'
-#' @source \url{https://www.worldclim.org}
+#' @source WorldClim 2.1, \url{https://www.worldclim.org}
 #' @examples
 #' data(back_data)
 #' head(back_data)
@@ -31,15 +33,17 @@
 
 
 
-#' Reference ellipse for virtual community examples
+#' Reference ellipse for examples
 #'
 #' A pre-calculated \code{nicheR_ellipsoid} object representing a hypothetical
 #' species niche based on Annual Mean Temperature (bio_1) and Annual
-#' Precipitation (bio_12).
+#' Precipitation (bio_12). It is the example niche used across the vignettes
+#' and help pages.
 #'
 #' @format An object of class \code{nicheR_ellipsoid} (which is a \code{list})
-#' with 13 elements:
+#' with 15 elements:
 #' \describe{
+#'   \item{ranges}{Matrix. The minimum and maximum of each variable used to build the niche.}
 #'   \item{dimensions}{Integer. Number of dimensions (2).}
 #'   \item{var_names}{Character vector. Names of variables (\code{"bio_1"}, \code{"bio_12"}).}
 #'   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
@@ -52,15 +56,17 @@
 #'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
 #'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
 #'   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
-#'   \item{cov_limits}{List. Axis-aligned minimum and maximum limits.}
+#'   \item{cov_limits}{Data frame. Minimum and maximum covariance allowed for each pair of variables.}
+#'   \item{cov_limits_remaining}{Data frame. Covariance limits still available after the covariance was updated.}
 #' }
 #'
 #' @details
-#' This object serves as a template for testing community simulation functions
-#' like \code{\link{conserved_ellipses}}. It was generated using
-#' \code{\link{build_ellipsoid}} with a centroid at (23.75, 1750) and
-#' specific covariance structures to reflect a typical temperature-precipitation
-#' relationship.
+#' This object was generated using \code{\link{build_ellipsoid}} with a range
+#' of 20 to 27 for Annual Mean Temperature and 1000 to 2500 for Annual
+#' Precipitation, which places the centroid at (23.5, 1750). A covariance of
+#' -100 between the two variables was then set with
+#' \code{\link{update_ellipsoid_covariance}}. It also serves as the template
+#' for community simulation functions like \code{\link{conserved_ellipses}}.
 #'
 #' @examples
 #' data(ref_ellipse)
@@ -78,8 +84,9 @@
 #' covariance adjustments, visual comparisons, and multidimensional niches.
 #'
 #' @format Objects of class \code{nicheR_ellipsoid} (which are \code{list}s)
-#' with 13 elements:
+#' with 15 elements:
 #' \describe{
+#'   \item{ranges}{Matrix. The minimum and maximum of each variable used to build the niche.}
 #'   \item{dimensions}{Integer. Number of dimensions (2 or 3).}
 #'   \item{var_names}{Character vector. Names of variables (e.g., \code{"bio_1"}, \code{"bio_12"}).}
 #'   \item{centroid}{Named numeric vector. The center of the niche (\eqn{\mu}).}
@@ -92,7 +99,8 @@
 #'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
 #'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
 #'   \item{volume}{Numeric. The hyper-volume of the ellipsoid.}
-#'   \item{cov_limits}{List. Axis-aligned minimum and maximum covariance limits.}
+#'   \item{cov_limits}{Data frame. Minimum and maximum covariance allowed for each pair of variables.}
+#'   \item{cov_limits_remaining}{Data frame. Covariance limits still available after the covariance was updated.}
 #' }
 #'
 #' @details
@@ -100,10 +108,10 @@
 #' functions. They were generated using \code{\link{build_ellipsoid}} and modified
 #' with \code{\link{update_ellipsoid_covariance}} to reflect distinct ecological strategies:
 #' \itemize{
-#'   \item \strong{\code{example_sp_1}}: A 2D niche (\code{bio_1}, \code{bio_12}) with a broad, warm-climate preference and wide precipitation tolerance. It includes a positive covariance (750) between temperature and precipitation.
-#'   \item \strong{\code{example_sp_2}}: A 2D niche (\code{bio_1}, \code{bio_12}) shifted toward cooler and wetter environments compared to \code{example_sp_1}, with a positive covariance (500).
-#'   \item \strong{\code{example_sp_3}}: A 2D niche (\code{bio_1}, \code{bio_12}) representing a warm-adapted specialist restricted to dry environments. It has a much smaller niche volume and a slight positive covariance (120).
-#'   \item \strong{\code{example_sp_4}}: A 3D niche (\code{bio_1}, \code{bio_12}, \code{bio_15}) adapted to seasonally pulsed precipitation environments. It features a strong negative covariance (-5000) between annual precipitation and precipitation seasonality.
+#'   \item \strong{\code{example_sp_1}}: A 2D niche (\code{bio_1}, \code{bio_12}) with a broad, warm-climate preference and wide precipitation tolerance (\code{bio_1} from 20 to 32, \code{bio_12} from 750 to 4000). It includes a positive covariance (750) between temperature and precipitation.
+#'   \item \strong{\code{example_sp_2}}: A 2D niche (\code{bio_1}, \code{bio_12}) shifted toward cooler and wetter environments compared to \code{example_sp_1} (\code{bio_1} from 12 to 24, \code{bio_12} from 1400 to 4500), with a positive covariance (500).
+#'   \item \strong{\code{example_sp_3}}: A 2D niche (\code{bio_1}, \code{bio_12}) representing a warm-adapted specialist restricted to dry environments (\code{bio_1} from 18 to 30, \code{bio_12} from 200 to 1100). It has a much smaller niche volume and a slight positive covariance (120).
+#'   \item \strong{\code{example_sp_4}}: A 3D niche (\code{bio_1}, \code{bio_12}, \code{bio_15}) adapted to seasonally pulsed precipitation environments (\code{bio_1} from 22 to 32, \code{bio_12} from 800 to 4200, \code{bio_15} from 45 to 115). It features a positive covariance (200) between temperature and precipitation and a strong negative covariance (-5000) between annual precipitation and precipitation seasonality.
 #' }
 #'
 #' @name example_ellipsoids
@@ -163,4 +171,3 @@
 #' terra::plot(ma_bios[[1]])
 
 NULL
-

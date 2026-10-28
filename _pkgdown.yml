@@ -23,14 +23,16 @@ navbar:
     - icon: fas fa-book
       text: "Articles"
       menu:
+      -  text: "Concepts"
+         href: articles/concepts.html
       -  text: "1. Build ellipsoid"
          href: articles/creating_ellipsoid_based_niches.html
       -  text: "2. Make a Prediction"
          href: articles/predict.html
-      -  text: "3. Generate Data"
-         href: articles/generating_data.html
-      -  text: "4. Working With Bias"
+      -  text: "3. Working With Bias"
          href: articles/bias.html
+      -  text: "4. Generate Data"
+         href: articles/generating_data.html
       -  text: "5. Virtual Community Simulations"
          href: articles/virtual_communities.html
       -  text: "6. Plotting"
