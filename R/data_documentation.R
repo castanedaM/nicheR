@@ -51,7 +51,7 @@
 #'   \item{Sigma_inv}{Matrix. The precision matrix (inverse covariance).}
 #'   \item{chol_Sigma}{Matrix. Cholesky decomposition of the covariance.}
 #'   \item{eigen}{List. Eigenvectors and eigenvalues of the covariance.}
-#'   \item{cl}{Numeric. Confidence level used (e.g., 0.99).}
+#'   \item{cl}{Numeric. Confidence level used, 0.99.}
 #'   \item{chi2_cutoff}{Numeric. The chi-square quantile for the given \code{cl}.}
 #'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
 #'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
@@ -61,8 +61,10 @@
 #' }
 #'
 #' @details
-#' This object was generated using \code{\link{build_ellipsoid}} with a range
-#' of 20 to 27 for Annual Mean Temperature and 1000 to 2500 for Annual
+#' This object was generated using \code{\link{build_ellipsoid}} with
+#' \code{cl = 0.99} instead of the default 0.95, so its boundary reaches the
+#' ranges it was built from. The ranges were
+#' 20 to 27 for Annual Mean Temperature and 1000 to 2500 for Annual
 #' Precipitation, which places the centroid at (23.5, 1750). A covariance of
 #' -100 between the two variables was then set with
 #' \code{\link{update_ellipsoid_covariance}}. It also serves as the template
@@ -94,7 +96,7 @@
 #'   \item{Sigma_inv}{Matrix. The precision matrix (inverse covariance).}
 #'   \item{chol_Sigma}{Matrix. Cholesky decomposition of the covariance.}
 #'   \item{eigen}{List. Eigenvectors and eigenvalues of the covariance.}
-#'   \item{cl}{Numeric. Confidence level used (e.g., 0.99).}
+#'   \item{cl}{Numeric. Confidence level used, 0.99.}
 #'   \item{chi2_cutoff}{Numeric. The chi-square quantile for the given \code{cl}.}
 #'   \item{semi_axes_lengths}{Numeric vector. Radii of the ellipsoid axes.}
 #'   \item{axes_coordinates}{List. Vertices (endpoints) for each ellipsoid axis.}
@@ -105,7 +107,8 @@
 #'
 #' @details
 #' These objects serve as templates for testing community simulation and projection
-#' functions. They were generated using \code{\link{build_ellipsoid}} and modified
+#' functions. They were generated using \code{\link{build_ellipsoid}} with
+#' \code{cl = 0.99} instead of the default 0.95, and modified
 #' with \code{\link{update_ellipsoid_covariance}} to reflect distinct ecological strategies:
 #' \itemize{
 #'   \item \strong{\code{example_sp_1}}: A 2D niche (\code{bio_1}, \code{bio_12}) with a broad, warm-climate preference and wide precipitation tolerance (\code{bio_1} from 20 to 32, \code{bio_12} from 750 to 4000). It includes a positive covariance (750) between temperature and precipitation.

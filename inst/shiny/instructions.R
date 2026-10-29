@@ -225,6 +225,9 @@ read-only, edited in place, copied into a new version, or deleted."),
   build_library_empty = "No saved versions yet. Save the working ellipsoid to
 add it here.",
 
+  build_library_new = "New ellipsoid (not initialized). Define its ranges and
+click Initialize Ellipsoid in the Ranges box.",
+
   build_view_only = "You are viewing a saved version. Editing is locked. Use the 'Edit'
 button to go back to editing, or the copy button in the library, to make changes.",
 
@@ -421,13 +424,16 @@ predictions, its biased predictions, and any data points generated from them.",
 
   generate_sampling_tooltip = "Centroid: higher probability near the niche centroid.
   Edge: higher probability near the niche edge.
-  Uniform: equal probability across all suitable cells.",
+  Uniform: equal probability across all suitable cells.
+  Applies to unbiased surfaces only. Biased surfaces already carry their
+  sampling weights from the Bias step.",
 
   generate_surface_tooltip = "Select one or more prediction layers to sample
 from. Orange layers have bias applied.",
 
   generate_strict_tooltip = "When True, removes NA and zero-valued cells
-before sampling. Recommended for truncated layers.",
+before sampling. Recommended for truncated layers. Applies to unbiased
+surfaces only.",
 
   generate_advanced_tooltip = "Optional sampling mask that restricts where
 points can be drawn.",

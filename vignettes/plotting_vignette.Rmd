@@ -72,7 +72,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-We use the same example data as in the other vignettes: a two-dimensional `nicheR_ellipsoid` object for a reference species and the corresponding background data for part of the Americas.
+We use the same example data as in the other vignettes: a two-dimensional `nicheR_ellipsoid` object for a reference species and the corresponding background data for part of the Americas. The reference niche was built with `cl = 0.99` instead of the default 0.95 (see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid)).
 
 ```{r data}
 data("ref_ellipse", package = "nicheR")

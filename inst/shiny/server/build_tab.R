@@ -40,10 +40,6 @@ covariance_set <- reactiveVal(FALSE)
 centroid_set <- reactiveVal(FALSE)
 ell_mode <- reactiveVal("edit")
 
-# TRUE right after Create new ellipsoid, so Ranges and the library come back
-# collapsed and the user starts from the variables box
-panels_collapsed <- reactiveVal(FALSE)
-
 # Set by the session loader when it changes vars, so the observer that
 # empties the slot on a change of variables lets that one change through
 vars_reset_skip <- reactiveVal(FALSE)
@@ -65,7 +61,6 @@ set_working_ellipsoid <- function(ell, mode = "edit"){
 
   covariance_set(FALSE)
   centroid_set(FALSE)
-  panels_collapsed(FALSE)
 }
 
 # Empties the working slot. Separate from the above so every caller goes
@@ -114,7 +109,6 @@ output$build_range_method_choice_ui <- renderUI({
 
   ell <- isolate(session_data$current_ellipsoid)
   is_view <- identical(ell_mode(), "view")
-  is_collapsed <- panels_collapsed()
 
   # Read-only range table, shared by view mode and edit mode. Ranges are only
   # editable while the slot is empty, changing them later goes through
@@ -214,12 +208,12 @@ output$build_range_method_choice_ui <- renderUI({
     )
   }
 
-  # Empty slot, pick a method and build. Comes back collapsed after Create
-  # new ellipsoid, so the user checks the variables first.
+  # Empty slot, pick a method and build. Open, so after Create new ellipsoid
+  # the user starts right here.
   box(title = tags$span("Ranges", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = is_collapsed,
+      collapsed = FALSE,
       p(instructions$build_range_intro, class = "text-instruction"),
       tags$hr(style = "margin: 8px 0;"),
       cl_row,
@@ -683,8 +677,8 @@ observeEvent(input$build_reset_ranges_link, {
 
 # NEW ELLIPSOID -----------------------------------------------------------
 
-# Empties the slot, collapses Ranges and the library, and sends the user back
-# to the variables box
+# Empties the slot and sends the user to Ranges. Ranges and the library stay
+# open, and the library shows that the new ellipsoid is not initialized yet.
 start_new_ellipsoid <- function(){
 
   ell <- session_data$current_ellipsoid
@@ -698,24 +692,17 @@ start_new_ellipsoid <- function(){
   }
 
   clear_working_ellipsoid()
-  panels_collapsed(TRUE)
 
   session_data$session_range <- NULL
   session_data$df_range <- NULL
 
-  # Opens the variables box (id set in data_tab.R) and scrolls to it
+  # Scrolls to the Ranges box
   shinyjs::runjs("
-    var box = document.getElementById('build_vars_box');
-    if(box){
-      if(box.classList.contains('collapsed-box')){
-        var btn = box.querySelector('[data-widget=\"collapse\"]');
-        if(btn) btn.click();
-      }
-      box.scrollIntoView({behavior: 'smooth', block: 'start'});
-    }
+    var box = document.getElementById('build_range_method_choice_ui');
+    if(box) box.scrollIntoView({behavior: 'smooth', block: 'start'});
   ")
 
-  showNotification("Check the variables, then open Ranges to define the new ellipsoid.",
+  showNotification("Define the ranges for the new ellipsoid, then click Initialize Ellipsoid.",
                    type = "message", duration = 5)
 }
 
@@ -772,7 +759,6 @@ observeEvent(session_data$vars, {
   }
 
   clear_working_ellipsoid()
-  panels_collapsed(FALSE)
 }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
 # CONFIDENCE LEVEL --------------------------------------------------------
@@ -893,14 +879,28 @@ output$build_ellipsoid_library_ui <- renderUI({
   versions <- session_data$ellipsoid_list
   ids <- names(versions)
 
-  req(!is.null(cur_ell) || length(ids) > 0)
+  # Shown once the variables are set, so it stays on screen after Create new
+  # ellipsoid even when nothing has been saved yet
+  req(session_data$vars)
 
   is_view <- identical(ell_mode(), "view")
   is_saved <- !is.null(cur_ell) && !is.null(cur_ell$ell_id) &&
     cur_ell$ell_id %in% ids
 
-  # Working slot, the ellipsoid every plot and every downstream tab uses
-  working_row <- if(!is.null(cur_ell)){
+  # Working slot, the ellipsoid every plot and every downstream tab uses.
+  # When the slot is empty, the same green band says the new ellipsoid still
+  # has to be initialized in Ranges, with no buttons.
+  working_row <- if(is.null(cur_ell)){
+    fluidRow(
+      class = "ell-row",
+      style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
+      column(width = 12,
+             tags$span(icon("pen"),
+                       tags$span(paste0(" ", instructions$build_library_new),
+                                 class = "text-widget-inner",
+                                 style = "color: #097a21; font-weight: 500;")))
+    )
+  } else {
     fluidRow(
       class = "ell-row",
       style = "background: #f0f7f0; border-radius: 4px; margin-bottom: 6px; padding: 4px 0;",
@@ -978,9 +978,9 @@ output$build_ellipsoid_library_ui <- renderUI({
       tags$hr(style = "margin: 8px 0;"),
       fluidRow(
         column(width = 12, class = "btn-spaced",
-              actionLink("build_new_ell_btn",
-                                label = tagList(icon("plus"),
-                                                "Create new ellipsoid")))
+               actionLink("build_new_ell_btn",
+                          label = tagList(icon("plus"),
+                                          "Create new ellipsoid")))
       )
     )
   }
@@ -988,12 +988,11 @@ output$build_ellipsoid_library_ui <- renderUI({
   box(title = tags$span("Ellipsoid library", class = "text-section-header"),
       width = 12,
       collapsible = TRUE,
-      collapsed = panels_collapsed(),
+      collapsed = FALSE,
       p(instructions$build_library, class = "text-instruction"),
 
-      if(!is.null(cur_ell)){
-        tagList(working_row, tags$hr(style = "margin: 8px 0;"))
-      },
+      working_row,
+      tags$hr(style = "margin: 8px 0;"),
 
       if(length(ids) > 0){
         tagList(
@@ -1211,20 +1210,9 @@ observeEvent(input$build_confirm_save_ell_btn, {
 
   removeModal()
 
-  showModal(modalDialog(
-    title = paste0(clean_name, " saved."),
-    footer = tagList(
-      div(class = "action-btn-row",
-          actionButton("build_next_done_btn",
-                       label = "Done",
-                       class = "btn-save"))
-    ),
-    easyClose = FALSE
-  ))
-})
-
-observeEvent(input$build_next_done_btn, {
-  removeModal()
+  # Short message in the corner, no second modal to close
+  showNotification(paste0(clean_name, " saved."),
+                   type = "message", duration = 3)
 })
 
 # TRUE when updating would leave results that describe the old geometry.

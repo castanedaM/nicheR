@@ -192,3 +192,9 @@
   padding-right: 3px;
 }
 
+/* Controls that do not apply right now (e.g. sampling strategy and strict
+   filtering when only biased surfaces are selected) */
+.gen-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}

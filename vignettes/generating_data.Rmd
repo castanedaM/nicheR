@@ -77,7 +77,7 @@ original_par <- par(no.readonly = TRUE)
 
 The lines of code below load the data used in this vignette. The data are included in the `nicheR` package and were obtained in the previous vignettes:
 
-- The reference niche, defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). See [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
+- The reference niche, defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). It was built with `cl = 0.99` instead of the default 0.95, so its boundary reaches the ranges it was built from (see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid)). See [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 - The environmental conditions in part of the Americas, as a table, to represent the background.
 - A prediction of the reference niche for the same region. See [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).
 - The same prediction combined with sampling bias. See [3. Working with bias](https://castanedam.github.io/nicheR/articles/bias.html).

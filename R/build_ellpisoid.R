@@ -29,7 +29,9 @@
 #'   as columns. Rows may be ordered as min/max or max/min. Column names are required
 #'   and used as variable names.
 #' @param cl Numeric confidence level in (0, 1). Used to compute the chi-square
-#'   cutoff defining the ellipsoid contour.
+#'   cutoff defining the ellipsoid contour. Default is 0.95. With two variables
+#'   and no covariance, \code{cl = 0.99} places the boundary at the supplied
+#'   ranges, and 0.95 places it inside them.
 #' @param verbose Logical; if \code{TRUE}, prints brief progress messages.
 #'
 #' @return

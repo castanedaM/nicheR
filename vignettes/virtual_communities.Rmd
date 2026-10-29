@@ -82,7 +82,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for part of the Americas to represent the background for our simulations. For details on how to create the reference niche, see the vignette [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
+The lines of code below help us load the data to run our example community simulations. The data are included in the `nicheR` package and consist of an `nicheR_ellipsoid` object with a reference niche defined by two environmental variables (bio1 and bio12) and these environmental variables for part of the Americas to represent the background for our simulations. The reference niche was built with `cl = 0.99` instead of the default 0.95, so its boundary reaches the ranges it was built from (see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid)). For details on how to create the reference niche, see the vignette [1. Build ellipsoid](https://castanedam.github.io/nicheR/articles/creating_ellipsoid_based_niches.html).
 
 ```{r data}
 # Reference niche

@@ -180,10 +180,15 @@ output$generate_controls_ui <- renderUI({
                uiOutput("generate_surface_ui"))
       ),
 
-      # Shared by both kinds of surface: sample_data() and
-      # sample_biased_data() both take strict. One setting per run.
+      # Applies to the unbiased surfaces. A biased surface from apply_bias()
+      # has no zero-prediction cells left, so strict changes nothing there.
+      # Grayed out while only biased surfaces are ticked, see the observer
+      # under generate_surface_ui.
       fluidRow(
         column(width = 12,
+               id = "generate_strict_wrap",
+               class = if(length(isolate(input$generate_surface)) == 0 &&
+                          length(isolate(input$generate_surface_biased)) > 0) "gen-disabled",
                tags$div(class = "tooltip-label-row",
                         tags$span("Strict filtering", class = "text-widget-title"),
                         tags$span(icon("circle-info"),
@@ -494,8 +499,13 @@ output$generate_surface_ui <- renderUI({
   }
 
   # Applies to the unbiased surfaces only. Checkboxes, so several strategies
-  # can be run with the same number of points and seed.
-  sampling_block <- tagList(
+  # can be run with the same number of points and seed. Grayed out while only
+  # biased surfaces are ticked.
+  only_biased <- length(keep_unbiased) == 0 && length(keep_biased) > 0
+
+  sampling_block <- tags$div(
+    id = "generate_sampling_wrap",
+    class = if(only_biased) "gen-disabled",
     tags$div(class = "tooltip-label-row",
              tags$span("Sampling strategy", class = "text-widget-title"),
              tags$span(icon("circle-info"),
@@ -539,6 +549,16 @@ output$generate_surface_ui <- renderUI({
                          inline = FALSE, col = "color: #c47c16;"),
            uiOutput("generate_method_biased_msg_ui"))
   )
+})
+
+# Grays out the sampling strategy and strict filtering while only biased
+# surfaces are ticked, since neither applies to them. The two renderUI calls
+# above set the same class when they draw, so a redraw keeps the state.
+observe({
+  only_biased <- length(input$generate_surface) == 0 &&
+    length(input$generate_surface_biased) > 0
+  shinyjs::toggleClass("generate_sampling_wrap", "gen-disabled", condition = only_biased)
+  shinyjs::toggleClass("generate_strict_wrap", "gen-disabled", condition = only_biased)
 })
 
 # Shown only while a biased surface is ticked, the same way the unbiased

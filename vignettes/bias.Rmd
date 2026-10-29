@@ -74,7 +74,7 @@ original_par <- par(no.readonly = TRUE)
 
 ## Loading example data
 
-The lines of code below load the data used in this vignette. The data are included in the `nicheR` package and consist of a prediction of the reference niche for part of the Americas, and two raster layers that we will use to represent sampling effort. The reference niche is defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). For details on how the prediction was obtained, see the vignette [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).
+The lines of code below load the data used in this vignette. The data are included in the `nicheR` package and consist of a prediction of the reference niche for part of the Americas, and two raster layers that we will use to represent sampling effort. The reference niche is defined by two environmental variables (bio1: Mean Annual Temperature and bio12: Annual Precipitation). It was built with `cl = 0.99` instead of the default 0.95, so its boundary reaches the ranges it was built from (see [The niche as an ellipsoid](https://castanedam.github.io/nicheR/articles/concepts.html#the-niche-as-an-ellipsoid)). For details on how the prediction was obtained, see the vignette [2. Make a prediction](https://castanedam.github.io/nicheR/articles/predict.html).
 
 ```{r data}
 # Prediction of the reference niche
